@@ -7,6 +7,8 @@ const SLIDES = [
   "/images/hostel-2.jpg",
   "/images/hostel-3.jpg",
   "/images/hostel-4.jpg",
+  "/images/hostel-5.jpg",
+  "/images/hostel-6.jpg"
 ];
 
 const SLIDE_DURATION_MS = 6000;

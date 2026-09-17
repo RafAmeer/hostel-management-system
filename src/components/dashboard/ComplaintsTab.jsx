@@ -9,6 +9,16 @@ const STATUS_LABELS = {
   completed: "Completed",
 };
 
+function statusTone(status) {
+  if (status === "completed") return "ok";
+  if (status === "in_progress") return "warn";
+  return "neutral";
+}
+
+// Submit form (category + description + optional photo, per the proposal's
+// Student Module scope) on top, the student's own complaint history below.
+// Photo upload assumes a "complaint-photos" Storage bucket — if it doesn't
+// exist yet the complaint still submits, just without a photo attached.
 function ComplaintsTab({ complaints, studentId, onComplaintCreated }) {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [description, setDescription] = useState("");
@@ -18,34 +28,30 @@ function ComplaintsTab({ complaints, studentId, onComplaintCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!description.trim()) return;
+
     setSubmitting(true);
     setMessage("");
 
-    let photoUrl = null;
-
+    let photo_url = null;
     if (photo) {
       const path = `${studentId}/${Date.now()}-${photo.name}`;
       const { error: uploadError } = await supabase.storage
         .from("complaint-photos")
         .upload(path, photo);
-
-      if (uploadError) {
-        setSubmitting(false);
-        setMessage(`Couldn't upload photo: ${uploadError.message}`);
-        return;
+      if (!uploadError) {
+        const { data: publicUrlData } = supabase.storage
+          .from("complaint-photos")
+          .getPublicUrl(path);
+        photo_url = publicUrlData?.publicUrl ?? null;
       }
-
-      const { data } = supabase.storage
-        .from("complaint-photos")
-        .getPublicUrl(path);
-      photoUrl = data.publicUrl;
     }
 
     const { error } = await supabase.from("complaints").insert({
       student_id: studentId,
       category,
-      description,
-      photo_url: photoUrl,
+      description: description.trim(),
+      photo_url,
       status: "pending",
     });
 
@@ -64,7 +70,7 @@ function ComplaintsTab({ complaints, studentId, onComplaintCreated }) {
 
   return (
     <div className="tab">
-      <h2 className="tab__title">Complaints</h2>
+      <h2 className="tab__title">Complaint</h2>
 
       <form className="panel-form" onSubmit={handleSubmit}>
         <label className="field">
@@ -82,9 +88,9 @@ function ComplaintsTab({ complaints, studentId, onComplaintCreated }) {
           <span className="field__label">Description</span>
           <textarea
             rows={3}
+            placeholder="Describe the issue…"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="What's the issue?"
             required
           />
         </label>
@@ -100,33 +106,35 @@ function ComplaintsTab({ complaints, studentId, onComplaintCreated }) {
 
         {message && <p className="tab__message">{message}</p>}
 
-        <button className="primary-btn" disabled={submitting || !description}>
+        <button
+          type="submit"
+          className="primary-btn primary-btn--wide"
+          disabled={submitting}
+        >
           {submitting ? "Submitting…" : "Submit Complaint"}
         </button>
       </form>
 
-      <h3 className="tab__subtitle">Your Reports</h3>
-      <div className="list">
-        {complaints.map((c) => (
-          <div key={c.id} className="list-row">
-            <div>
-              <p className="list-row__title">{c.category}</p>
-              <p className="list-row__meta">{c.description}</p>
+      <h3 className="panel-heading panel-heading--sub">Your Complaints</h3>
+      {complaints.length === 0 ? (
+        <p className="tab__empty">No complaints submitted yet.</p>
+      ) : (
+        <div className="list">
+          {complaints.map((c) => (
+            <div key={c.id} className="list-row">
+              <div>
+                <p className="list-row__title">{c.category}</p>
+                <p className="list-row__meta">{c.description}</p>
+              </div>
+              <span className={"badge badge--" + statusTone(c.status)}>
+                {STATUS_LABELS[c.status] ?? c.status}
+              </span>
             </div>
-            <span className={"badge badge--" + statusTone(c.status)}>
-              {STATUS_LABELS[c.status] ?? c.status}
-            </span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-}
-
-function statusTone(status) {
-  if (status === "completed") return "ok";
-  if (status === "in_progress") return "warn";
-  return "neutral";
 }
 
 export default ComplaintsTab;

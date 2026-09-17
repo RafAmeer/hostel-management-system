@@ -23,6 +23,7 @@
 body {
   font-family: "Inter", Arial, Helvetica, sans-serif;
   color: var(--text-primary);
+  background: #12161f;
 }
 
 .page {
@@ -262,6 +263,17 @@ body {
 
 .sso-btn:hover {
   background: rgba(255, 255, 255, 0.22);
+}
+
+.portal-switch {
+  margin-top: 1.25rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

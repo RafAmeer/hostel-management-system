@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "../dashboard.css";
 import { supabase } from "../lib/supabaseClient.js";
+import HostelSlideshow from "../components/HostelSlideshow.jsx";
 import Sidebar from "../components/dashboard/SideBar.jsx";
 import OverviewTab from "../components/dashboard/OverviewTab";
 import RoomsTab from "../components/dashboard/RoomsTab";
@@ -19,6 +20,16 @@ import {
 // and `curfew_logs` exist in Supabase — see supabase_schema.sql for the
 // matching CREATE TABLE statements. Until those exist, each section falls
 // back to sample data so you can see the dashboard working end to end.
+
+// Labels/keys match the "Home" wireframe's sidebar + Quick Access section.
+// `icon` looks up a matching glyph in components/dashboard/icons.jsx.
+const NAV_ITEMS = [
+  { key: "overview", label: "Home", icon: "home" },
+  { key: "rooms", label: "Rooms", icon: "rooms" },
+  { key: "bookings", label: "Status", icon: "status" },
+  { key: "complaints", label: "Complaint", icon: "complaint" },
+  { key: "curfew", label: "Curfew", icon: "curfew" },
+];
 
 function StudentDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("overview");
@@ -105,26 +116,33 @@ function StudentDashboard({ user, onLogout }) {
             bookings={bookings}
             complaints={complaints}
             curfewLogs={curfewLogs}
+            onNavigate={setActiveTab}
           />
         );
     }
   };
 
   return (
-    <div className="dashboard">
-      <Sidebar
-        activeTab={activeTab}
-        onSelect={setActiveTab}
-        studentName={profile.full_name ?? user?.email}
-        onLogout={onLogout}
-      />
-      <main className="dashboard__content">
-        {loading ? (
-          <p className="tab__empty">Loading your dashboard…</p>
-        ) : (
-          renderTab()
-        )}
-      </main>
+    <div className="page">
+      <HostelSlideshow />
+      <div className="scrim" />
+
+      <div className="dashboard">
+        <Sidebar
+          navItems={NAV_ITEMS}
+          activeTab={activeTab}
+          onSelect={setActiveTab}
+          userName={profile.full_name ?? user?.email}
+          onLogout={onLogout}
+        />
+        <main className="dashboard__content">
+          {loading ? (
+            <p className="tab__empty">Loading your dashboard…</p>
+          ) : (
+            renderTab()
+          )}
+        </main>
+      </div>
     </div>
   );
 }

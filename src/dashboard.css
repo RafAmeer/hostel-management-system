@@ -1,93 +1,177 @@
 .dashboard {
+  position: relative;
+  z-index: 2;
   display: flex;
   min-height: 100vh;
-  background: #12161f;
+  background: transparent;
   color: var(--text-primary, #f5f3ee);
   font-family: "Inter", Arial, sans-serif;
 }
 
-/* Sidebar */
+/* Sidebar — floating glass icon rail, matching the login card's glass style */
 .sidebar {
-  width: 220px;
+  position: relative;
+  width: 84px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 1.1rem;
-  background: rgba(255, 255, 255, 0.04);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1.25rem 0 1.25rem 1.25rem;
+  padding: 1.5rem 0.6rem;
+  border-radius: 28px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  transition: width 0.2s ease;
 }
 
-.sidebar__brand {
+.sidebar--expanded {
+  width: 210px;
+  align-items: stretch;
+  padding: 1.5rem 1rem;
+}
+
+.sidebar__logo-wrap {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-family: "Manrope", sans-serif;
-  font-weight: 700;
-  font-size: 0.95rem;
-  margin-bottom: 2rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
 }
 
 .sidebar__logo {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #f2a65a, #c97a3a);
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #c97a3a);
+  color: #1a1206;
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
 }
 
 .sidebar__nav {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  align-items: inherit;
+  gap: 0.5rem;
   flex: 1;
+  width: 100%;
 }
 
 .sidebar__link {
-  text-align: left;
-  padding: 0.6rem 0.75rem;
-  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
   border: none;
-  background: transparent;
-  color: #c9cdd3;
-  font-size: 0.87rem;
+  background: var(--glass-strong);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-family: "Inter", sans-serif;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, width 0.2s ease,
+    border-radius 0.2s ease;
+}
+
+.sidebar--expanded .sidebar__link {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0 0.85rem;
+  border-radius: 14px;
+}
+
+.sidebar__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.sidebar__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.sidebar__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar__link:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #f5f3ee;
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--text-primary);
 }
 
 .sidebar__link--active {
-  background: rgba(242, 166, 90, 0.16);
-  color: #f2a65a;
-  font-weight: 600;
+  background: var(--accent);
+  color: #1a1206;
+  font-weight: 700;
 }
 
 .sidebar__footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: inherit;
+  gap: 0.5rem;
+  width: 100%;
+  border-top: 1px solid var(--glass-border);
   padding-top: 1rem;
+  margin-top: 0.5rem;
 }
 
 .sidebar__student {
-  font-size: 0.8rem;
-  color: #c9cdd3;
-  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.sidebar__logout {
-  width: 100%;
-  padding: 0.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: transparent;
-  color: #f5f3ee;
-  font-size: 0.8rem;
-  cursor: pointer;
+.sidebar__switch {
+  color: var(--accent);
 }
 
 .sidebar__logout:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 138, 128, 0.16);
+  color: var(--danger);
+}
+
+/* Collapse/expand tab, docked to the sidebar's edge like the wireframe */
+.sidebar__toggle {
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  transform: translateY(-50%);
+  width: 22px;
+  padding: 0.9rem 0.15rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  background: var(--glass-strong);
+  backdrop-filter: blur(12px);
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  writing-mode: vertical-rl;
+  cursor: pointer;
+}
+
+.sidebar__toggle:hover {
+  color: var(--text-primary);
 }
 
 /* Content area */
@@ -95,6 +179,28 @@
   flex: 1;
   padding: 2rem 2.5rem;
   overflow-y: auto;
+}
+
+/* Shared glass panel used by every dashboard card (Home, Rooms, placeholders) */
+.glass-panel {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  padding: 1.5rem;
+}
+
+.panel-heading {
+  font-family: "Manrope", sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-heading--sub {
+  margin-top: 1.75rem;
 }
 
 .tab__title {
@@ -166,13 +272,6 @@
   gap: 1rem;
 }
 
-.room-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 1.1rem;
-}
-
 .room-card h3 {
   font-family: "Manrope", sans-serif;
   margin-bottom: 0.4rem;
@@ -181,7 +280,7 @@
 .room-card__meta,
 .room-card__price {
   font-size: 0.82rem;
-  color: #c9cdd3;
+  color: var(--text-muted);
   margin-bottom: 0.6rem;
 }
 
@@ -277,4 +376,549 @@
 .primary-btn--wide {
   max-width: 260px;
   margin-bottom: 0.75rem;
+}
+
+/* Row actions (approve/reject, assign, etc.) */
+.list-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  width: auto;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.78rem;
+}
+
+.btn-outline {
+  width: auto;
+  padding: 0.4rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 138, 128, 0.4);
+  background: transparent;
+  color: #ff8a80;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-outline:hover {
+  background: rgba(255, 138, 128, 0.12);
+}
+
+/* Bar chart (CSS-only, no charting library needed) */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.chart-panel {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+}
+
+.chart__title {
+  font-family: "Manrope", sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.chart__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  height: 130px;
+}
+
+.chart__col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  height: 100%;
+}
+
+.chart__bar {
+  width: 100%;
+  max-width: 32px;
+  min-height: 3px;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.3s ease;
+}
+
+.chart__bar--ok { background: #8fd0c9; }
+.chart__bar--warn { background: #f2a65a; }
+.chart__bar--danger { background: #ff8a80; }
+.chart__bar--neutral { background: rgba(255, 255, 255, 0.25); }
+
+.chart__value {
+  font-size: 0.72rem;
+  color: #c9cdd3;
+}
+
+.chart__label {
+  font-size: 0.7rem;
+  color: #9aa0ab;
+  text-align: center;
+  text-transform: capitalize;
+}
+/* ---------------------------------------------------------------------- */
+/* Home page (Overview) — greeting + profile on the left, Quick Access +  */
+/* Notifications on the right, matching the wireframe.                    */
+/* ---------------------------------------------------------------------- */
+
+.home-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.home-grid__main,
+.home-grid__side {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.greeting-card {
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.greeting-card__title {
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 1.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.greeting-card__subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.profile-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-panel__avatar {
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent), #c97a3a);
+  color: #1a1206;
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 1.6rem;
+}
+
+.profile-panel__details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.profile-panel__details div {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.profile-panel__details dt {
+  color: var(--text-muted);
+  min-width: 4.5rem;
+}
+
+.profile-panel__details dd {
+  font-weight: 600;
+}
+
+.profile-panel__resident {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+.profile-panel__thumb {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+}
+
+.profile-panel__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.profile-panel__thumb span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.62rem;
+  text-align: center;
+  background: rgba(8, 12, 20, 0.62);
+  color: var(--text-primary);
+}
+
+.profile-panel__room {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.profile-panel__room strong {
+  color: var(--text-primary);
+}
+
+.quick-access {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.quick-access__btn {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-strong);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.quick-access__btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  list-style: none;
+}
+
+.notification-item {
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  background: var(--glass-strong);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.notification-item--empty {
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Rooms page — residence picker, matching the "Room Dashboard" wireframe */
+/* ---------------------------------------------------------------------- */
+
+.residence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.residence-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.residence-card--selected {
+  border-color: var(--accent);
+}
+
+/* Hostel photo bleeds to the card's edges (counters glass-panel padding)
+   and keeps the same 20px corner radius as the card, just on top only. */
+.residence-card__media {
+  position: relative;
+  margin: -1.5rem -1.5rem 0;
+  height: 112px;
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
+}
+
+.residence-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.residence-card__tag {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(18, 22, 31, 0.65);
+  color: var(--text-primary);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.residence-card__name {
+  font-family: "Manrope", sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Placeholder pages (Status, Complaint, Curfew) — same glass background, */
+/* no wireframe yet.                                                      */
+/* ---------------------------------------------------------------------- */
+
+/* Curfew status card */
+.curfew-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 320px;
+  margin-bottom: 1.5rem;
+}
+
+.curfew-status__value {
+  margin-top: 0.35rem;
+}
+
+.placeholder-panel {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* AI Summary panel (Warden Overview) */
+.ai-summary-panel {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.ai-summary-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.ai-summary-panel__header .primary-btn {
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.82rem;
+}
+
+.receipt {
+  font-family: "Courier New", ui-monospace, monospace;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 1rem 1.1rem;
+  max-width: 360px;
+}
+
+.receipt__heading {
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.receipt__divider {
+  border-top: 1px dashed rgba(255, 255, 255, 0.3);
+  margin: 0.5rem 0;
+}
+
+.receipt__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.82rem;
+  padding: 0.15rem 0;
+}
+
+.receipt__note {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: center;
+  padding-top: 0.25rem;
+}
+
+.receipt__note--placeholder {
+  color: #9aa0ab;
+}
+
+.receipt__note--error {
+  color: #ff8a80;
+}
+
+/* Compact period-picker panel (replaces the old fixed-width receipt-only
+   header once the AI summary button moved into its own chat widget) */
+.ai-period-panel {
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.ai-period-panel .period-select {
+  margin: 0.5rem 0 0.85rem;
+}
+
+/* AI chat assistant (Warden Overview) — replaces the old single
+   "Generate Summary" button with a chat-style Q&A panel */
+.ai-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ai-chat__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ai-chat__chip {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: inherit;
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ai-chat__chip:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.ai-chat__chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ai-chat__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0.25rem 0.1rem;
+}
+
+.ai-chat__bubble {
+  max-width: 85%;
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.ai-chat__bubble--user {
+  align-self: flex-end;
+  background: rgba(255, 255, 255, 0.16);
+  border-bottom-right-radius: 3px;
+}
+
+.ai-chat__bubble--assistant {
+  align-self: flex-start;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom-left-radius: 3px;
+}
+
+.ai-chat__bubble--pending {
+  color: #9aa0ab;
+  font-style: italic;
+}
+
+.ai-chat__bubble--error {
+  color: #ff8a80;
+  border-color: rgba(255, 138, 128, 0.4);
+}
+
+.ai-chat__form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ai-chat__input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  color: inherit;
+  font-size: 0.85rem;
+}
+
+.ai-chat__form .primary-btn {
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.82rem;
+}
+
+/* Technician task cards — a glass-panel per assigned request, stacked with
+   the same list-row title/meta styles the Warden tabs already use */
+.list-item-block {
+  margin-bottom: 1rem;
+}
+
+.list-item-block .ai-chat__input {
+  font-size: 0.8rem;
 }
