@@ -14,10 +14,15 @@ const SUGGESTED_QUESTIONS = [
   "How do bookings compare to the previous period?",
 ];
 
+// Floating chat-bubble launcher (bottom-right, like a typical support
+// widget) that opens/closes this same Q&A panel — replaces the old
+// always-open panel that took up permanent space on the Overview tab.
 function HostelChatbot({ stats }) {
+  const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
   const listRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -38,6 +43,7 @@ function HostelChatbot({ stats }) {
     try {
       const answer = await askHostelAssistant(text, stats);
       setMessages((prev) => [...prev, { role: "assistant", text: answer }]);
+      if (!open) setHasUnread(true);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -54,53 +60,75 @@ function HostelChatbot({ stats }) {
     send(input);
   };
 
+  const toggleOpen = () => {
+    setOpen((prev) => !prev);
+    setHasUnread(false);
+  };
+
   return (
-    <div className="ai-summary-panel ai-chat">
-      <div className="ai-summary-panel__header">
-        <h3 className="chart__title">AI Assistant</h3>
-      </div>
-
-      <div className="ai-chat__chips">
-        {SUGGESTED_QUESTIONS.map((q) => (
-          <button
-            key={q}
-            type="button"
-            className="ai-chat__chip"
-            onClick={() => send(q)}
-            disabled={sending}
-          >
-            {q}
-          </button>
-        ))}
-      </div>
-
-      <div className="ai-chat__messages" ref={listRef}>
-        {messages.length === 0 && (
-          <p className="receipt__note receipt__note--placeholder">
-            Tap a question above, or type your own — e.g. "how many complaints are still pending?"
-          </p>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={"ai-chat__bubble ai-chat__bubble--" + m.role + (m.error ? " ai-chat__bubble--error" : "")}>
-            {m.text}
+    <div className="ai-chat-widget">
+      {open && (
+        <div className="ai-summary-panel ai-chat ai-chat-widget__panel">
+          <div className="ai-summary-panel__header">
+            <h3 className="chart__title">AI Assistant</h3>
+            <button type="button" className="ai-chat-widget__close" onClick={toggleOpen} aria-label="Close AI Assistant">
+              ✕
+            </button>
           </div>
-        ))}
-        {sending && <div className="ai-chat__bubble ai-chat__bubble--assistant ai-chat__bubble--pending">Thinking…</div>}
-      </div>
 
-      <form className="ai-chat__form" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          className="ai-chat__input"
-          placeholder="Ask about bookings, complaints, curfew, rooms…"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={sending}
-        />
-        <button type="submit" className="primary-btn" disabled={sending || !input.trim()}>
-          Send
-        </button>
-      </form>
+          <div className="ai-chat__chips">
+            {SUGGESTED_QUESTIONS.map((q) => (
+              <button
+                key={q}
+                type="button"
+                className="ai-chat__chip"
+                onClick={() => send(q)}
+                disabled={sending}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+
+          <div className="ai-chat__messages" ref={listRef}>
+            {messages.length === 0 && (
+              <p className="receipt__note receipt__note--placeholder">
+                Tap a question above, or type your own — e.g. "how many complaints are still pending?"
+              </p>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className={"ai-chat__bubble ai-chat__bubble--" + m.role + (m.error ? " ai-chat__bubble--error" : "")}>
+                {m.text}
+              </div>
+            ))}
+            {sending && <div className="ai-chat__bubble ai-chat__bubble--assistant ai-chat__bubble--pending">Thinking…</div>}
+          </div>
+
+          <form className="ai-chat__form" onSubmit={handleSubmit}>
+            <input
+              type="text"
+              className="ai-chat__input"
+              placeholder="Ask about bookings, complaints, curfew, rooms…"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={sending}
+            />
+            <button type="submit" className="primary-btn" disabled={sending || !input.trim()}>
+              Send
+            </button>
+          </form>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className="ai-chat-widget__bubble"
+        onClick={toggleOpen}
+        aria-label={open ? "Close AI Assistant" : "Open AI Assistant"}
+      >
+        {open ? "✕" : "💬"}
+        {hasUnread && !open && <span className="ai-chat-widget__dot" aria-hidden="true" />}
+      </button>
     </div>
   );
 }

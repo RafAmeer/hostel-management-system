@@ -12,6 +12,7 @@ import TechnicianDashboard from "./pages/TechnicianDashboard";
 // Which dashboard renders after signing in is decided purely by the
 // `role` column, not by which login form was used.
 const STAFF_ROLES = ["warden", "finance", "technician"];
+const STAFF_ROLE_LABELS = { warden: "Warden", finance: "Finance", technician: "Technician" };
 
 const REMEMBERED_EMAIL_KEY = "hostel_remembered_email";
 
@@ -35,9 +36,11 @@ function App() {
   // Which login screen is showing when signed out — no longer a dashboard
   // toggle, just which form the person sees before they've authenticated.
   const [portal, setPortal] = useState("student"); // "student" | "staff"
-  const [mode, setMode] = useState("login"); // "login" | "signup" (student portal only)
+  const [mode, setMode] = useState("login"); // "login" | "signup" (both portals)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState(""); // staff signup only
+  const [staffRole, setStaffRole] = useState("warden"); // staff signup only
   const [rememberMe, setRememberMe] = useState(false);
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
@@ -96,6 +99,7 @@ function App() {
   const switchPortal = (nextPortal) => {
     resetMessages();
     setPassword("");
+    setFullName("");
     setMode("login");
     setPortal(nextPortal);
   };
@@ -118,7 +122,22 @@ function App() {
       return setError(error.message);
     }
 
-    const actualRole = await fetchRole(data.user.id);
+    let actualRole = await fetchRole(data.user.id);
+
+    // If this account signed up for a staff role while email confirmation
+    // was required, `profiles.role` was still stuck at the trigger's
+    // default ("student") until now — the requested role was stashed in
+    // auth user_metadata at signup time, so reconcile it on this first
+    // real login instead of silently dropping it.
+    const requestedRole = data.user.user_metadata?.requested_role;
+    if (actualRole === "student" && STAFF_ROLES.includes(requestedRole)) {
+      const { error: upgradeError } = await supabase
+        .from("profiles")
+        .update({ role: requestedRole })
+        .eq("id", data.user.id);
+      if (!upgradeError) actualRole = requestedRole;
+    }
+
     const actualIsStaff = STAFF_ROLES.includes(actualRole);
 
     if (expectedPortal === "staff" && !actualIsStaff) {
@@ -147,30 +166,61 @@ function App() {
     setLoading(false);
   };
 
-  const handleSignUp = async () => {
+  // Shared signup for both portals. Student signups keep the existing
+  // default role ("student", set by the profiles-insert trigger). Staff
+  // signups pass the chosen role through as auth user_metadata
+  // (`requested_role`) and, when a session comes back immediately (email
+  // confirmation off), apply it to `profiles.role` right away; otherwise
+  // handleLogin reconciles it the first time the confirmed account logs in.
+  const handleSignUp = async (expectedPortal) => {
     resetMessages();
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
 
-    if (error) return setError(error.message);
+    const isStaffSignup = expectedPortal === "staff";
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: isStaffSignup
+          ? { requested_role: staffRole, full_name: fullName || undefined }
+          : undefined,
+      },
+    });
+
+    if (error) {
+      setLoading(false);
+      return setError(error.message);
+    }
 
     // If email confirmation is required, Supabase returns a user but no session yet.
     if (data.user && !data.session) {
-      setInfo("Account created. Check your email to confirm before signing in.");
+      setLoading(false);
+      setInfo(
+        isStaffSignup
+          ? `Staff account created as ${STAFF_ROLE_LABELS[staffRole]}. Check your email to confirm, then sign in above.`
+          : "Account created. Check your email to confirm before signing in."
+      );
       setMode("login");
       return;
     }
 
+    if (isStaffSignup) {
+      await supabase
+        .from("profiles")
+        .update({ role: staffRole, ...(fullName ? { full_name: fullName } : {}) })
+        .eq("id", data.user.id);
+    }
+
+    setLoading(false);
     setUser(data.user ?? null);
-    setRole("student");
+    setRole(isStaffSignup ? staffRole : "student");
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (portal === "staff") return handleLogin("staff");
-    if (mode === "login") return handleLogin("student");
-    return handleSignUp();
+    const expectedPortal = portal === "staff" ? "staff" : "student";
+    if (mode === "login") return handleLogin(expectedPortal);
+    return handleSignUp(expectedPortal);
   };
 
   const handleLogOut = async () => {
@@ -214,10 +264,14 @@ function App() {
       <div className="container">
         <form className="card" onSubmit={handleSubmit}>
           <div className="avatar" aria-hidden="true" />
-          <h1 className="title">{isStaffPortal ? "Staff Login" : "Welcome Back"}</h1>
+          <h1 className="title">
+            {isStaffPortal ? (mode === "login" ? "Staff Login" : "Staff Sign Up") : "Welcome Back"}
+          </h1>
           <p className="subtitle">
             {isStaffPortal
-              ? "Sign in to your staff dashboard"
+              ? mode === "login"
+                ? "Sign in to your staff dashboard"
+                : "Create a Warden, Finance, or Technician account"
               : mode === "login"
               ? "Sign in to your hostel account"
               : "Create your hostel account"}
@@ -232,6 +286,31 @@ function App() {
             <p className="message message--info" role="status">
               {info}
             </p>
+          )}
+
+          {isStaffPortal && mode === "signup" && (
+            <>
+              <label className="field">
+                <span className="field__label">Full name</span>
+                <input
+                  type="text"
+                  autoComplete="name"
+                  placeholder="e.g. Ahmad bin Ismail"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span className="field__label">Role</span>
+                <select value={staffRole} onChange={(e) => setStaffRole(e.target.value)}>
+                  <option value="warden">Warden</option>
+                  <option value="finance">Finance</option>
+                  <option value="technician">Technician</option>
+                </select>
+              </label>
+            </>
           )}
 
           <label className="field">
@@ -250,7 +329,7 @@ function App() {
             <span className="field__label">Password</span>
             <input
               type="password"
-              autoComplete={!isStaffPortal && mode === "signup" ? "new-password" : "current-password"}
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -273,37 +352,31 @@ function App() {
           <button
             type="submit"
             className="primary-btn"
-            disabled={loading || !email || !password}
+            disabled={loading || !email || !password || (isStaffPortal && mode === "signup" && !fullName)}
           >
-            {loading
-              ? "Please wait…"
-              : isStaffPortal
-              ? "Sign In"
-              : mode === "login"
-              ? "Sign In"
-              : "Sign Up"}
+            {loading ? "Please wait…" : mode === "login" ? "Sign In" : "Sign Up"}
           </button>
+
+          <p className="switch-mode">
+            {mode === "login" ? (
+              <>
+                {isStaffPortal ? "New staff member? " : "Don't have an account? "}
+                <button type="button" onClick={() => switchMode("signup")}>
+                  Sign Up
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <button type="button" onClick={() => switchMode("login")}>
+                  Sign In
+                </button>
+              </>
+            )}
+          </p>
 
           {!isStaffPortal && (
             <>
-              <p className="switch-mode">
-                {mode === "login" ? (
-                  <>
-                    Don't have an account?{" "}
-                    <button type="button" onClick={() => switchMode("signup")}>
-                      Sign Up
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    Already have an account?{" "}
-                    <button type="button" onClick={() => switchMode("login")}>
-                      Sign In
-                    </button>
-                  </>
-                )}
-              </p>
-
               <div className="divider">
                 <span>or</span>
               </div>

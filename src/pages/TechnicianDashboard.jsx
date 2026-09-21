@@ -4,7 +4,6 @@ import { supabase } from "../lib/supabaseClient.js";
 import Sidebar from "../components/dashboard/SideBar.jsx";
 import TechnicianTasksTab from "../components/dashboard/TechnicianTasksTab";
 import TechnicianHistoryTab from "../components/dashboard/TechnicianHistoryTab";
-import { MOCK_ALL_MAINTENANCE } from "../lib/mockData";
 
 const NAV_ITEMS = [
   { key: "tasks", label: "My Tasks", icon: "tasks" },
@@ -13,13 +12,13 @@ const NAV_ITEMS = [
 
 const STATUS_FLOW = { pending: "in_progress", in_progress: "completed" };
 
-// New Technician Module per the proposal (view assigned maintenance
-// requests, update status, add remarks, view history). Same mock-data
-// fallback pattern as the other dashboards until `complaints` has an
-// `assigned_technician` column + RLS policy for the technician role.
+// Technician Module per the proposal (view assigned maintenance requests,
+// update status, add remarks, view history). Reads straight from the real
+// `complaints` table — needs an `assigned_technician` column + RLS policy
+// for the technician role (see the schema notes for this).
 function TechnicianDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("tasks");
-  const [tasks, setTasks] = useState(MOCK_ALL_MAINTENANCE);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

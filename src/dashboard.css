@@ -296,16 +296,19 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(20, 18, 14, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 0.8rem 1rem;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .list-row__title {
   font-weight: 600;
   font-size: 0.9rem;
   text-transform: capitalize;
+  color: var(--text-primary, #f5f3ee);
 }
 
 .list-row__meta {
@@ -911,6 +914,77 @@
   margin-bottom: 0;
   padding: 0.55rem 1.2rem;
   font-size: 0.82rem;
+}
+
+/* Floating chat-bubble launcher — fixed to the corner of the screen so the
+   AI Assistant is reachable from any tab without eating layout space. */
+.ai-chat-widget {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.ai-chat-widget__bubble {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: var(--glass, rgba(255, 255, 255, 0.12));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.ai-chat-widget__bubble:hover {
+  transform: scale(1.06);
+}
+
+.ai-chat-widget__dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff8a80;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+.ai-chat-widget__panel {
+  width: min(360px, calc(100vw - 3rem));
+  max-height: min(520px, calc(100vh - 8rem));
+  margin-bottom: 0;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.ai-chat-widget__panel .ai-chat__messages {
+  max-height: 260px;
+}
+
+.ai-chat-widget__close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  opacity: 0.7;
+  padding: 0.2rem;
+}
+
+.ai-chat-widget__close:hover {
+  opacity: 1;
 }
 
 /* Technician task cards — a glass-panel per assigned request, stacked with

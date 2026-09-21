@@ -155,7 +155,8 @@ body {
   margin-bottom: 0.3rem;
 }
 
-.field input {
+.field input,
+.field select {
   width: 100%;
   padding: 0.7rem 0.85rem;
   border-radius: 12px;
@@ -166,11 +167,26 @@ body {
   font-family: inherit;
 }
 
+.field select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23f5f3ee' stroke-width='1.5' fill='none' fill-rule='evenodd'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  padding-right: 2.2rem;
+}
+
+.field select option {
+  background: #1a1a1a;
+  color: var(--text-primary);
+}
+
 .field input::placeholder {
   color: rgba(245, 243, 238, 0.45);
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--focus-ring);

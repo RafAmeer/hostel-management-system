@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "../dashboard.css";
 import { supabase } from "../lib/supabaseClient.js";
 import Sidebar from "../components/dashboard/SideBar.jsx";
@@ -6,13 +6,8 @@ import WardenOverviewTab from "../components/dashboard/WardenOverviewTab";
 import WardenBookingsTab from "../components/dashboard/WardenBookingsTab";
 import WardenComplaintsTab from "../components/dashboard/WardenComplaintsTab";
 import WardenCurfewTab from "../components/dashboard/WardenCurfewTab";
-import {
-  MOCK_ALL_BOOKINGS,
-  MOCK_ALL_COMPLAINTS,
-  MOCK_ALL_CURFEW_STATUSES,
-  MOCK_ALL_ROOMS,
-  MOCK_REGISTERED_STUDENTS,
-} from "../lib/mockData";
+import HostelChatbot from "../components/dashboard/HostelChatbot";
+import { buildHostelAnalytics } from "../lib/analytics";
 
 const NAV_ITEMS = [
   { key: "overview", label: "Overview" },
@@ -24,39 +19,82 @@ const NAV_ITEMS = [
 // NOTE: this assumes tables `bookings` and `complaints` exist in Supabase
 // with RLS policies that let a warden read every row (not just their own,
 // like the student-side queries do). `curfew_logs` needs a view/RPC that
-// collapses each student's log down to one current status row before it's
-// worth swapping in here — sample data stands in for that until then.
+// collapses each student's log down to one current status row per student —
+// see curfewStatusesFromLogs below, which does that collapsing on the
+// client for now.
 //
 // Approve/reject/assign/check-in update local state immediately
 // (optimistic) so the workflow is testable right now, and best-effort
 // mirror the change to Supabase in the background.
 
+// Collapses raw curfew_logs rows (one per scan) into one current-status
+// row per student, matching the shape the Overview/Curfew tabs expect.
+// Replace this with a Supabase view/RPC once one exists — until then this
+// keeps the warden side working against real curfew_logs rows instead of
+// sample data.
+function curfewStatusesFromLogs(logs, students) {
+  const latestByStudent = new Map();
+  for (const log of logs) {
+    const existing = latestByStudent.get(log.student_id);
+    if (!existing || new Date(log.timestamp) > new Date(existing.timestamp)) {
+      latestByStudent.set(log.student_id, log);
+    }
+  }
+
+  const studentsById = new Map(students.map((s) => [s.id, s]));
+
+  return Array.from(latestByStudent.entries())
+    .filter(([, log]) => log.scan_type === "check_out")
+    .map(([studentId, log]) => {
+      const student = studentsById.get(studentId);
+      return {
+        id: studentId,
+        student_name: student?.full_name ?? "Unknown",
+        room_number: student?.room_number ?? "—",
+        check_out_time: new Date(log.timestamp).toTimeString().slice(0, 5),
+        check_in_time: null,
+        status: "out",
+      };
+    });
+}
+
 function WardenDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("overview");
-  const [bookings, setBookings] = useState(MOCK_ALL_BOOKINGS);
-  const [complaints, setComplaints] = useState(MOCK_ALL_COMPLAINTS);
-  const [curfewStatuses, setCurfewStatuses] = useState(MOCK_ALL_CURFEW_STATUSES);
-  // Rooms + registered students: same "mock until the real table/RLS is
-  // ready" story as bookings/complaints above. These feed room occupancy
-  // and headcount stats into both the charts and the AI chat assistant.
-  const [rooms, setRooms] = useState(MOCK_ALL_ROOMS);
-  const [students, setStudents] = useState(MOCK_REGISTERED_STUDENTS);
+  const [bookings, setBookings] = useState([]);
+  const [complaints, setComplaints] = useState([]);
+  const [curfewStatuses, setCurfewStatuses] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Stats period lives here (not inside WardenOverviewTab) so the same
+  // `analytics` object can also feed the floating AI Assistant widget,
+  // which now renders once at the dashboard level, reachable from every tab.
+  const [period, setPeriod] = useState("7");
+  const periodDays = period === "all" ? null : Number(period);
+
+  const analytics = useMemo(
+    () => buildHostelAnalytics({ bookings, complaints, curfewStatuses, rooms, students, periodDays }),
+    [bookings, complaints, curfewStatuses, rooms, students, periodDays]
+  );
 
   const loadAll = async () => {
     setLoading(true);
 
-    const [bookingsRes, complaintsRes, roomsRes, studentsRes] = await Promise.all([
+    const [bookingsRes, complaintsRes, roomsRes, studentsRes, curfewRes] = await Promise.all([
       supabase.from("bookings").select("*").order("created_at", { ascending: false }),
       supabase.from("complaints").select("*").order("created_at", { ascending: false }),
       supabase.from("rooms").select("*"),
       supabase.from("profiles").select("*").eq("role", "student"),
+      supabase.from("curfew_logs").select("*").order("timestamp", { ascending: false }),
     ]);
 
     if (bookingsRes.data) setBookings(bookingsRes.data);
     if (complaintsRes.data) setComplaints(complaintsRes.data);
     if (roomsRes.data) setRooms(roomsRes.data);
     if (studentsRes.data) setStudents(studentsRes.data);
+    if (curfewRes.data && studentsRes.data) {
+      setCurfewStatuses(curfewStatusesFromLogs(curfewRes.data, studentsRes.data));
+    }
 
     setLoading(false);
   };
@@ -91,6 +129,11 @@ function WardenDashboard({ user, onLogout }) {
     setCurfewStatuses((prev) =>
       prev.map((s) => (s.id === id ? { ...s, status: "checked_in", check_in_time: now } : s))
     );
+    supabase.from("curfew_logs").insert({
+      student_id: id,
+      scan_type: "check_in",
+      timestamp: new Date().toISOString(),
+    });
   };
 
   const renderTab = () => {
@@ -104,11 +147,10 @@ function WardenDashboard({ user, onLogout }) {
       default:
         return (
           <WardenOverviewTab
-            bookings={bookings}
-            complaints={complaints}
+            analytics={analytics}
+            period={period}
+            onPeriodChange={setPeriod}
             curfewStatuses={curfewStatuses}
-            rooms={rooms}
-            students={students}
           />
         );
     }
@@ -126,6 +168,10 @@ function WardenDashboard({ user, onLogout }) {
       <main className="dashboard__content">
         {loading ? <p className="tab__empty">Loading warden dashboard&hellip;</p> : renderTab()}
       </main>
+
+      {/* AI-assisted analytics per the proposal — a chat bubble the warden
+          can open from any tab, rather than a panel fixed to Overview. */}
+      {!loading && <HostelChatbot stats={analytics} />}
     </div>
   );
 }

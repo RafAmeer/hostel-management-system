@@ -13,7 +13,7 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, onNavigate }) 
     (c) => c.status !== "completed"
   ).length;
   const lastScan = curfewLogs[0];
-  const firstName = (profile.full_name ?? "Student").split(" ")[0];
+  const firstName = (profile?.full_name ?? "Student").split(" ")[0];
 
   const quickAccessItems = [
     { key: "rooms", label: "Room Registration" },
@@ -53,11 +53,11 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, onNavigate }) 
             <dl className="profile-panel__details">
               <div>
                 <dt>Name</dt>
-                <dd>{profile.full_name ?? "—"}</dd>
+                <dd>{profile?.full_name ?? "—"}</dd>
               </div>
               <div>
                 <dt>ID</dt>
-                <dd>{profile.student_id ?? "—"}</dd>
+                <dd>{profile?.student_id ?? "—"}</dd>
               </div>
               <div>
                 <dt>Semester</dt>
@@ -74,7 +74,7 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, onNavigate }) 
             <p className="profile-panel__room">
               Current Room:{" "}
               <strong>
-                {activeBooking ? activeBooking.room_number : profile.room_number ?? "Not assigned"}
+                {activeBooking ? activeBooking.room_number : profile?.room_number ?? "Not assigned"}
               </strong>
             </p>
           </div>

@@ -1,7 +1,4 @@
-import { useMemo, useState } from "react";
 import BarChart from "./BarChart";
-import HostelChatbot from "./HostelChatbot";
-import { buildHostelAnalytics } from "../../lib/analytics";
 
 const COMPLAINT_CATEGORIES = ["Plumbing", "Electrical", "Furniture", "Cleanliness", "Other"];
 
@@ -18,20 +15,11 @@ function trendLabel(trend) {
   return { text: "flat vs previous period", tone: "neutral" };
 }
 
-function WardenOverviewTab({ bookings, complaints, curfewStatuses, rooms = [], students = [] }) {
-  const [period, setPeriod] = useState("7");
-
-  const periodDays = period === "all" ? null : Number(period);
-
-  // All counts, category breakdowns, and period-over-period trends are
-  // computed here in JS — not by the AI — so the figures are guaranteed
-  // correct regardless of what the model does with them. This same object
-  // is handed to the AI chat assistant below as its only source of truth.
-  const analytics = useMemo(
-    () => buildHostelAnalytics({ bookings, complaints, curfewStatuses, rooms, students, periodDays }),
-    [bookings, complaints, curfewStatuses, rooms, students, periodDays]
-  );
-
+// `analytics` (all counts, category breakdowns, period-over-period trends)
+// is computed once in WardenDashboard — not here, and not by the AI — so
+// the same figures back both these charts and the floating AI Assistant
+// widget, which now lives outside this tab so it's reachable from any tab.
+function WardenOverviewTab({ analytics, period, onPeriodChange, curfewStatuses }) {
   const studentsOut = analytics.totals.studentsCurrentlyOut;
   const overdue = analytics.totals.overdueCurfews;
 
@@ -78,7 +66,7 @@ function WardenOverviewTab({ bookings, complaints, curfewStatuses, rooms = [], s
         <select
           className="period-select"
           value={period}
-          onChange={(e) => setPeriod(e.target.value)}
+          onChange={(e) => onPeriodChange(e.target.value)}
         >
           {PERIOD_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -107,10 +95,9 @@ function WardenOverviewTab({ bookings, complaints, curfewStatuses, rooms = [], s
         </div>
       </div>
 
-      {/* AI-assisted analytics per the proposal — reworked from a single
-          "Generate Summary" button into a chat assistant the warden can
-          ask specific questions of, per supervisor feedback. */}
-      <HostelChatbot stats={analytics} />
+      {/* Floating AI Assistant chat bubble now renders once at the
+          WardenDashboard level (see WardenDashboard.jsx) so it's reachable
+          from every tab, not just Overview. */}
 
       <div className="stat-grid">
         <div className="stat-card">

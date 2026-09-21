@@ -8,18 +8,11 @@ import RoomsTab from "../components/dashboard/RoomsTab";
 import BookingsTab from "../components/dashboard/BookingsTab";
 import ComplaintsTab from "../components/dashboard/ComplaintsTab";
 import CurfewTab from "../components/dashboard/CurfewTab";
-import {
-  MOCK_PROFILE,
-  MOCK_ROOMS,
-  MOCK_BOOKINGS,
-  MOCK_COMPLAINTS,
-  MOCK_CURFEW_LOGS,
-} from "../lib/mockData";
 
 // NOTE: this assumes tables `profiles`, `rooms`, `bookings`, `complaints`,
-// and `curfew_logs` exist in Supabase — see supabase_schema.sql for the
-// matching CREATE TABLE statements. Until those exist, each section falls
-// back to sample data so you can see the dashboard working end to end.
+// and `curfew_logs` exist in Supabase. All data below comes straight from
+// those tables — no sample/mock data is shown, so an empty table means an
+// empty (not fake) dashboard until real rows exist.
 
 // Labels/keys match the "Home" wireframe's sidebar + Quick Access section.
 // `icon` looks up a matching glyph in components/dashboard/icons.jsx.
@@ -33,11 +26,11 @@ const NAV_ITEMS = [
 
 function StudentDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("overview");
-  const [profile, setProfile] = useState(MOCK_PROFILE);
-  const [rooms, setRooms] = useState(MOCK_ROOMS);
-  const [bookings, setBookings] = useState(MOCK_BOOKINGS);
-  const [complaints, setComplaints] = useState(MOCK_COMPLAINTS);
-  const [curfewLogs, setCurfewLogs] = useState(MOCK_CURFEW_LOGS);
+  const [profile, setProfile] = useState(null);
+  const [rooms, setRooms] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [complaints, setComplaints] = useState([]);
+  const [curfewLogs, setCurfewLogs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const studentId = user?.id;
@@ -132,7 +125,7 @@ function StudentDashboard({ user, onLogout }) {
           navItems={NAV_ITEMS}
           activeTab={activeTab}
           onSelect={setActiveTab}
-          userName={profile.full_name ?? user?.email}
+          userName={profile?.full_name ?? user?.email}
           onLogout={onLogout}
         />
         <main className="dashboard__content">
