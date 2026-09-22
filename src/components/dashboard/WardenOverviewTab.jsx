@@ -1,4 +1,6 @@
 import BarChart from "./BarChart";
+import ReportExportButton from "./ReportExportButton";
+import { buildWardenReport } from "../../lib/buildReports";
 
 const COMPLAINT_CATEGORIES = ["Plumbing", "Electrical", "Furniture", "Cleanliness", "Other"];
 
@@ -57,9 +59,15 @@ function WardenOverviewTab({ analytics, period, onPeriodChange, curfewStatuses }
     { label: "Overdue Curfews", value: overdue },
   ];
 
+  const periodLabel =
+    PERIOD_OPTIONS.find((opt) => opt.value === period)?.label ?? "All time";
+
   return (
     <div className="tab">
-      <h2 className="tab__title">Warden Overview</h2>
+      <div className="tab__title-row">
+        <h2 className="tab__title">Warden Overview</h2>
+        <ReportExportButton buildReport={() => buildWardenReport(analytics, periodLabel)} />
+      </div>
 
       <div className="glass-panel ai-period-panel">
         <p className="chart__title">Stats period</p>

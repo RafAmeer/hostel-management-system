@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const STATUS_LABELS = {
   pending: "Pending",
   in_progress: "In Progress",
@@ -10,7 +12,46 @@ function statusTone(status) {
   return "neutral";
 }
 
-function WardenComplaintsTab({ complaints, onAssign, onComplete }) {
+// technicianName looks up display names from the `technicians` list (passed
+// down from WardenDashboard, sourced from profiles where role='technician')
+// so a complaint's `assigned_technician` (a user id) shows as a name.
+function technicianName(id, technicians) {
+  if (!id) return null;
+  return technicians.find((t) => t.id === id)?.full_name ?? "Unknown technician";
+}
+
+function AssignRow({ complaint, technicians, onAssign }) {
+  const [selectedId, setSelectedId] = useState(complaint.assigned_technician ?? "");
+
+  return (
+    <div className="assign-row">
+      <select
+        className="assign-row__select"
+        value={selectedId}
+        onChange={(e) => setSelectedId(e.target.value)}
+        aria-label={`Technician for ${complaint.category} complaint`}
+      >
+        <option value="" disabled>
+          Choose technician…
+        </option>
+        {technicians.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.full_name ?? t.id}
+          </option>
+        ))}
+      </select>
+      <button
+        className="primary-btn btn-sm"
+        disabled={!selectedId}
+        onClick={() => onAssign(complaint.id, selectedId)}
+      >
+        Assign
+      </button>
+    </div>
+  );
+}
+
+function WardenComplaintsTab({ complaints, technicians, onAssign, onComplete }) {
   return (
     <div className="tab">
       <h2 className="tab__title">Complaints</h2>
@@ -20,7 +61,7 @@ function WardenComplaintsTab({ complaints, onAssign, onComplete }) {
       ) : (
         <div className="list">
           {complaints.map((c) => (
-            <div key={c.id} className="list-row">
+            <div key={c.id} className="list-row list-row--wrap">
               <div>
                 <p className="list-row__title">
                   {c.student_name} &middot; {c.category}
@@ -28,17 +69,23 @@ function WardenComplaintsTab({ complaints, onAssign, onComplete }) {
                 <p className="list-row__meta">
                   {c.room_number} &middot; {c.description}
                 </p>
+                {c.assigned_technician && (
+                  <p className="list-row__meta">
+                    Assigned to {technicianName(c.assigned_technician, technicians)}
+                  </p>
+                )}
               </div>
 
               <div className="list-row__actions">
                 <span className={"badge badge--" + statusTone(c.status)}>
                   {STATUS_LABELS[c.status] ?? c.status}
                 </span>
-                {c.status === "pending" && (
-                  <button className="primary-btn btn-sm" onClick={() => onAssign(c.id)}>
-                    Assign
-                  </button>
-                )}
+                {c.status === "pending" &&
+                  (technicians.length > 0 ? (
+                    <AssignRow complaint={c} technicians={technicians} onAssign={onAssign} />
+                  ) : (
+                    <span className="list-row__meta">No technicians registered yet</span>
+                  ))}
                 {c.status === "in_progress" && (
                   <button className="primary-btn btn-sm" onClick={() => onComplete(c.id)}>
                     Mark Completed

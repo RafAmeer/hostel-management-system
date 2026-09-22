@@ -7,13 +7,15 @@ import WardenBookingsTab from "../components/dashboard/WardenBookingsTab";
 import WardenComplaintsTab from "../components/dashboard/WardenComplaintsTab";
 import WardenCurfewTab from "../components/dashboard/WardenCurfewTab";
 import HostelChatbot from "../components/dashboard/HostelChatbot";
+import ProfileTab from "../components/dashboard/ProfileTab";
 import { buildHostelAnalytics } from "../lib/analytics";
 
 const NAV_ITEMS = [
-  { key: "overview", label: "Overview" },
-  { key: "bookings", label: "Room Bookings" },
-  { key: "complaints", label: "Complaints" },
-  { key: "curfew", label: "Curfew" },
+  { key: "overview", label: "Overview", icon: "overview" },
+  { key: "bookings", label: "Room Bookings", icon: "status" },
+  { key: "complaints", label: "Complaints", icon: "complaint" },
+  { key: "curfew", label: "Curfew", icon: "curfew" },
+  { key: "profile", label: "Profile", icon: "profile" },
 ];
 
 // NOTE: this assumes tables `bookings` and `complaints` exist in Supabase
@@ -65,6 +67,8 @@ function WardenDashboard({ user, onLogout }) {
   const [curfewStatuses, setCurfewStatuses] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [students, setStudents] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   // Stats period lives here (not inside WardenOverviewTab) so the same
   // `analytics` object can also feed the floating AI Assistant widget,
@@ -80,13 +84,16 @@ function WardenDashboard({ user, onLogout }) {
   const loadAll = async () => {
     setLoading(true);
 
-    const [bookingsRes, complaintsRes, roomsRes, studentsRes, curfewRes] = await Promise.all([
-      supabase.from("bookings").select("*").order("created_at", { ascending: false }),
-      supabase.from("complaints").select("*").order("created_at", { ascending: false }),
-      supabase.from("rooms").select("*"),
-      supabase.from("profiles").select("*").eq("role", "student"),
-      supabase.from("curfew_logs").select("*").order("timestamp", { ascending: false }),
-    ]);
+    const [bookingsRes, complaintsRes, roomsRes, studentsRes, curfewRes, techniciansRes, profileRes] =
+      await Promise.all([
+        supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+        supabase.from("complaints").select("*").order("created_at", { ascending: false }),
+        supabase.from("rooms").select("*"),
+        supabase.from("profiles").select("*").eq("role", "student"),
+        supabase.from("curfew_logs").select("*").order("timestamp", { ascending: false }),
+        supabase.from("profiles").select("id, full_name").eq("role", "technician"),
+        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+      ]);
 
     if (bookingsRes.data) setBookings(bookingsRes.data);
     if (complaintsRes.data) setComplaints(complaintsRes.data);
@@ -95,6 +102,8 @@ function WardenDashboard({ user, onLogout }) {
     if (curfewRes.data && studentsRes.data) {
       setCurfewStatuses(curfewStatusesFromLogs(curfewRes.data, studentsRes.data));
     }
+    if (techniciansRes.data) setTechnicians(techniciansRes.data);
+    if (profileRes.data) setProfile(profileRes.data);
 
     setLoading(false);
   };
@@ -114,9 +123,19 @@ function WardenDashboard({ user, onLogout }) {
     supabase.from("bookings").update({ status: "rejected" }).eq("id", id);
   };
 
-  const handleAssign = (id) => {
-    setComplaints((prev) => prev.map((c) => (c.id === id ? { ...c, status: "in_progress" } : c)));
-    supabase.from("complaints").update({ status: "in_progress" }).eq("id", id);
+  // Assigns a specific technician (picked from the dropdown in
+  // WardenComplaintsTab) and moves the complaint to "in_progress" in the
+  // same update, so a complaint is never left in_progress unassigned.
+  const handleAssign = (id, technicianId) => {
+    setComplaints((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, assigned_technician: technicianId, status: "in_progress" } : c
+      )
+    );
+    supabase
+      .from("complaints")
+      .update({ assigned_technician: technicianId, status: "in_progress" })
+      .eq("id", id);
   };
 
   const handleComplete = (id) => {
@@ -141,9 +160,18 @@ function WardenDashboard({ user, onLogout }) {
       case "bookings":
         return <WardenBookingsTab bookings={bookings} onApprove={handleApprove} onReject={handleReject} />;
       case "complaints":
-        return <WardenComplaintsTab complaints={complaints} onAssign={handleAssign} onComplete={handleComplete} />;
+        return (
+          <WardenComplaintsTab
+            complaints={complaints}
+            technicians={technicians}
+            onAssign={handleAssign}
+            onComplete={handleComplete}
+          />
+        );
       case "curfew":
         return <WardenCurfewTab curfewStatuses={curfewStatuses} onCheckIn={handleCheckIn} />;
+      case "profile":
+        return <ProfileTab user={user} profile={profile} variant="staff" onSaved={setProfile} />;
       default:
         return (
           <WardenOverviewTab
@@ -162,7 +190,7 @@ function WardenDashboard({ user, onLogout }) {
         navItems={NAV_ITEMS}
         activeTab={activeTab}
         onSelect={setActiveTab}
-        userName={user?.email ?? "Warden"}
+        userName={profile?.full_name ?? user?.email ?? "Warden"}
         onLogout={onLogout}
       />
       <main className="dashboard__content">

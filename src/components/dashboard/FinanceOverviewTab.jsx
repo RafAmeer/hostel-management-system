@@ -1,4 +1,6 @@
 import BarChart from "./BarChart";
+import ReportExportButton from "./ReportExportButton";
+import { buildFinanceReport } from "../../lib/buildReports";
 
 // Basic payment/financial summary per the proposal's Finance Module
 // ("generate basic payment and financial summary reports"). Totals are
@@ -21,7 +23,10 @@ function FinanceOverviewTab({ payments }) {
 
   return (
     <div className="tab">
-      <h2 className="tab__title">Finance Overview</h2>
+      <div className="tab__title-row">
+        <h2 className="tab__title">Finance Overview</h2>
+        <ReportExportButton buildReport={() => buildFinanceReport(payments)} />
+      </div>
 
       <div className="stat-grid">
         <div className="stat-card">

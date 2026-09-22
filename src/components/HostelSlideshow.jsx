@@ -1,15 +1,20 @@
 import { useEffect, useState } from "react";
+import { assetUrl } from "../lib/assetUrl";
 
 // Drop your own hostel photos into /public/images and list them here.
 // Landscape shots (1920x1080 or similar) work best.
+//
+// The file name must match exactly, including the extension: hostel-5 and
+// hostel-6 are .png files, so listing them as .jpg made those two slides
+// fail to load (the slideshow showed a blank frame for them).
 const SLIDES = [
   "/images/hostel-1.jpg",
   "/images/hostel-2.jpg",
   "/images/hostel-3.jpg",
   "/images/hostel-4.jpg",
-  "/images/hostel-5.jpg",
-  "/images/hostel-6.jpg"
-];
+  "/images/hostel-5.png",
+  "/images/hostel-6.png",
+].map(assetUrl);
 
 const SLIDE_DURATION_MS = 6000;
 

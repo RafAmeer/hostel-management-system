@@ -2,8 +2,13 @@
 
 :root {
   --scrim: rgba(8, 12, 20, 0.62);
-  --glass: rgba(255, 255, 255, 0.10);
-  --glass-strong: rgba(255, 255, 255, 0.16);
+  /* Raised from 0.10/0.16 — at the old opacity the slideshow photo showed
+     through so strongly that panel text and borders were hard to read.
+     A stronger blur + a darker, more opaque tint keeps the "glass" look
+     but makes the panels themselves legible on top of any photo. */
+  --glass: rgba(18, 22, 31, 0.62);
+  --glass-strong: rgba(18, 22, 31, 0.74);
+  --glass-blur: 28px;
   --glass-border: rgba(255, 255, 255, 0.24);
   --text-primary: #f5f3ee;
   --text-muted: #c9cdd3;
@@ -80,8 +85,8 @@ body {
   text-align: center;
   background: var(--glass);
   border: 1px solid var(--glass-border);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
 

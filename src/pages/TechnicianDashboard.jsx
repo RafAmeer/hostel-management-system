@@ -14,8 +14,8 @@ const STATUS_FLOW = { pending: "in_progress", in_progress: "completed" };
 
 // Technician Module per the proposal (view assigned maintenance requests,
 // update status, add remarks, view history). Reads straight from the real
-// `complaints` table — needs an `assigned_technician` column + RLS policy
-// for the technician role (see the schema notes for this).
+// `complaints` table, filtered to the requests the Warden assigned to this
+// technician (assigned_technician = this user's id).
 function TechnicianDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("tasks");
   const [tasks, setTasks] = useState([]);
@@ -27,12 +27,14 @@ function TechnicianDashboard({ user, onLogout }) {
       const { data } = await supabase
         .from("complaints")
         .select("*")
+        .eq("assigned_technician", user.id)
         .order("created_at", { ascending: false });
       if (data) setTasks(data);
       setLoading(false);
     };
-    load();
-  }, []);
+    if (user?.id) load();
+    else setLoading(false);
+  }, [user?.id]);
 
   const handleAdvanceStatus = (id) => {
     setTasks((prev) =>

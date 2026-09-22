@@ -5,8 +5,14 @@ import { LogoutIcon, NAV_ICONS } from "./icons.jsx";
 // hardcoded here, so this one Sidebar works for both roles. Each item can
 // optionally carry an `icon` key (see icons.jsx) — items without one just
 // fall back to a plain dot so older callers (e.g. WardenDashboard) still work.
+// The sidebar starts open (icons + labels) on every dashboard. Only on very
+// narrow screens does it start as the icon rail, so it doesn't cover the page.
+const NARROW_SCREEN_PX = 720;
+
 function Sidebar({ navItems, activeTab, onSelect, userName, onLogout }) {
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== "undefined" && window.innerWidth < NARROW_SCREEN_PX
+  );
 
   return (
     <aside className={"sidebar" + (collapsed ? "" : " sidebar--expanded")}>

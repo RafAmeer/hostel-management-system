@@ -1,3 +1,7 @@
+import { assetUrl } from "../../lib/assetUrl";
+import Avatar from "./Avatar";
+import AnnouncementsPanel from "./AnnouncementsPanel";
+
 function getGreetingTime() {
   const hour = new Date().getHours();
   if (hour < 12) return "morning";
@@ -5,9 +9,9 @@ function getGreetingTime() {
   return "evening";
 }
 
-// Matches the "Home" wireframe: a greeting banner + profile card on the
-// left, Quick Access + Notifications panels on the right.
-function OverviewTab({ profile, bookings, complaints, curfewLogs, onNavigate }) {
+// Matches the "Home" wireframe: a greeting banner, news & announcements and
+// the profile card on the left, Quick Access + Notifications on the right.
+function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements = [], onNavigate }) {
   const activeBooking = bookings.find((b) => b.status !== "cancelled");
   const openComplaints = complaints.filter(
     (c) => c.status !== "completed"
@@ -44,12 +48,17 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, onNavigate }) 
           </p>
         </section>
 
+        <AnnouncementsPanel announcements={announcements} />
+
         <section className="glass-panel profile-panel">
-          <h3 className="panel-heading">Profile</h3>
+          <div className="profile-panel__head">
+            <h3 className="panel-heading">Profile</h3>
+            <button type="button" className="link-btn" onClick={() => onNavigate?.("profile")}>
+              Edit profile
+            </button>
+          </div>
           <div className="profile-panel__row">
-            <div className="profile-panel__avatar" aria-hidden="true">
-              {firstName.charAt(0).toUpperCase()}
-            </div>
+            <Avatar url={profile?.avatar_url} name={profile?.full_name} size={76} />
             <dl className="profile-panel__details">
               <div>
                 <dt>Name</dt>
@@ -68,7 +77,7 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, onNavigate }) 
 
           <div className="profile-panel__resident">
             <div className="profile-panel__thumb">
-              <img src="/images/hostel-1.jpg" alt="Current residence" />
+              <img src={assetUrl("/images/hostel-1.jpg")} alt="Current residence" />
               <span>Current Resident</span>
             </div>
             <p className="profile-panel__room">

@@ -106,6 +106,23 @@ export function HistoryIcon(props) {
   );
 }
 
+export function UserIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="8.5" r="3.5" />
+      <path d="M5 20c.6-3.6 3.5-5.5 7-5.5s6.4 1.9 7 5.5" />
+    </svg>
+  );
+}
+
+export function BarsIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 20V11M12 20V4M19 20v-6" />
+    </svg>
+  );
+}
+
 export const NAV_ICONS = {
   home: HomeIcon,
   rooms: BedIcon,
@@ -115,4 +132,6 @@ export const NAV_ICONS = {
   payments: DollarIcon,
   tasks: WrenchIcon,
   history: HistoryIcon,
+  profile: UserIcon,
+  overview: BarsIcon,
 };
