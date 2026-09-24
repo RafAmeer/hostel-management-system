@@ -15,7 +15,7 @@ function TechnicianHistoryTab({ tasks }) {
             <div key={t.id} className="list-row">
               <div>
                 <p className="list-row__title">
-                  {t.category} &middot; Room {t.room_number}
+                  {t.category} &middot; {t.hostel ? `${t.hostel}, ` : ""}Room {t.room_number ?? "—"}
                 </p>
                 <p className="list-row__meta">{t.description}</p>
                 {t.remarks?.length > 0 && (

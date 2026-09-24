@@ -1,6 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+const FACILITY_ICONS = {
+  "Wi-Fi": "📶",
+  Laundry: "🧺",
+  Parking: "🚗",
+  "Study area": "📚",
+  "24-hour security": "🛡️",
+  "Shared kitchen": "🍳",
+  "Air-conditioning": "❄️",
+  "Nearby shops": "🏪",
+  Lounge: "🛋️",
+};
+
 const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -11,14 +23,29 @@ const FOCUSABLE =
 function HostelDetailModal({
   residence,
   rooms,
+  roomGenders = {},
   bookingRoomId,
   message,
   onBook,
   onClose,
 }) {
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [selectedFloorId, setSelectedFloorId] = useState(null);
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
+
+  const floors = residence.floors ?? [];
+  const selectedFloor = floors.find((f) => f.id === selectedFloorId) ?? null;
+
+  // A floor's rooms come from the real Supabase `rooms` table when the
+  // warden has added rows for it (rooms.floor === this floor's label,
+  // rooms.residence === this hostel's id); otherwise we show the mock
+  // preview rooms from src/data/residences.js so browsing still works
+  // before any real inventory exists. Real rows always win.
+  const realRoomsForFloor = selectedFloor
+    ? rooms.filter((r) => r.floor === selectedFloor.label)
+    : [];
+  const floorRooms = realRoomsForFloor.length > 0 ? realRoomsForFloor : selectedFloor?.rooms ?? [];
 
   const gallery = residence.gallery?.length
     ? residence.gallery
@@ -156,7 +183,7 @@ function HostelDetailModal({
               <ul className="chip-list" aria-label="Facilities">
                 {residence.facilities.map((f) => (
                   <li key={f} className="chip">
-                    {f}
+                    <span aria-hidden="true">{FACILITY_ICONS[f] ?? "✅"}</span> {f}
                   </li>
                 ))}
               </ul>
@@ -164,41 +191,106 @@ function HostelDetailModal({
           </section>
 
           <section className="hostel-modal__rooms">
-            <h4 className="panel-heading">Available rooms</h4>
-            {message && (
-              <p className="tab__message" role="status">
-                {message}
-              </p>
-            )}
-            {rooms.length === 0 ? (
-              <p className="tab__empty">No rooms are listed for this hostel yet.</p>
-            ) : (
-              <div className="room-grid">
-                {rooms.map((room) => {
-                  const full = room.occupied_count >= room.capacity;
-                  return (
-                    <div key={room.id} className="room-card room-card--modal">
-                      <h5 className="room-card__number">{room.room_number}</h5>
-                      <p className="room-card__meta">
-                        {room.occupied_count}/{room.capacity} occupied
-                      </p>
-                      <p className="room-card__price">RM {room.price}/semester</p>
-                      <button
-                        type="button"
-                        className="primary-btn"
-                        disabled={full || bookingRoomId === room.id}
-                        onClick={() => onBook(room)}
-                      >
-                        {full
-                          ? "Full"
-                          : bookingRoomId === room.id
-                          ? "Booking…"
-                          : "Book this room"}
-                      </button>
+            {!selectedFloor ? (
+              <>
+                <h4 className="panel-heading">Select a floor</h4>
+                {floors.length === 0 ? (
+                  <p className="tab__empty">No floors are listed for this hostel yet.</p>
+                ) : (
+                  <div className="floor-grid">
+                    {floors.map((floor) => {
+                      const real = rooms.filter((r) => r.floor === floor.label);
+                      const list = real.length > 0 ? real : floor.rooms ?? [];
+                      const availableCount = list.filter(
+                        (r) => (r.occupied_count ?? 0) < (r.capacity ?? 1)
+                      ).length;
+                      return (
+                        <button
+                          key={floor.id}
+                          type="button"
+                          className="floor-card"
+                          onClick={() => setSelectedFloorId(floor.id)}
+                        >
+                          <span className="floor-card__label">{floor.label}</span>
+                          <span className="floor-card__meta">
+                            {availableCount} of {list.length} rooms available
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {residence.mapQuery && (
+                  <>
+                    <h4 className="panel-heading" style={{ marginTop: "1.25rem" }}>
+                      Location
+                    </h4>
+                    <div className="hostel-modal__map">
+                      <iframe
+                        title={`${residence.name} location`}
+                        src={`https://www.google.com/maps?q=${encodeURIComponent(residence.mapQuery)}&output=embed`}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
                     </div>
-                  );
-                })}
-              </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="hostel-modal__rooms-header">
+                  <button type="button" className="btn-outline btn-outline--neutral" onClick={() => setSelectedFloorId(null)}>
+                    ← All floors
+                  </button>
+                  <h4 className="panel-heading">{selectedFloor.label}</h4>
+                </div>
+
+                {message && (
+                  <p className="tab__message" role="status">
+                    {message}
+                  </p>
+                )}
+                {floorRooms.length === 0 ? (
+                  <p className="tab__empty">No rooms are listed on this floor yet.</p>
+                ) : (
+                  <div className="room-grid">
+                    {floorRooms.map((room) => {
+                      const key = room.id ?? room.room_number;
+                      const full = (room.occupied_count ?? 0) >= (room.capacity ?? 1);
+                      const gender = room.gender ?? roomGenders[room.id];
+                      return (
+                        <div key={key} className="room-card room-card--modal">
+                          <h5 className="room-card__number">{room.room_number}</h5>
+                          <p className="room-card__meta">
+                            {room.occupied_count ?? 0}/{room.capacity ?? "—"} occupied
+                          </p>
+                          {room.price != null && (
+                            <p className="room-card__price">RM {room.price}/semester</p>
+                          )}
+                          {gender && (
+                            <span className={"badge badge--" + (gender === "female" ? "female" : "male")}>
+                              {gender === "female" ? "Female room" : "Male room"}
+                            </span>
+                          )}
+                          {room.mock ? (
+                            <p className="room-card__hint">Not open for booking yet — ask the warden.</p>
+                          ) : (
+                            <button
+                              type="button"
+                              className="primary-btn"
+                              disabled={full || bookingRoomId === room.id}
+                              onClick={() => onBook(room)}
+                            >
+                              {full ? "Full" : bookingRoomId === room.id ? "Booking…" : "Book this room"}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
           </section>
         </div>

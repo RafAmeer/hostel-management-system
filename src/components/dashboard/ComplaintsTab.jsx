@@ -19,8 +19,10 @@ function statusTone(status) {
 // Student Module scope) on top, the student's own complaint history below.
 // Photo upload assumes a "complaint-photos" Storage bucket — if it doesn't
 // exist yet the complaint still submits, just without a photo attached.
-function ComplaintsTab({ complaints, studentId, onComplaintCreated }) {
+function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumber = "", onComplaintCreated }) {
   const [category, setCategory] = useState(CATEGORIES[0]);
+  const [hostelId, setHostelId] = useState(residences[0]?.id ?? "");
+  const [roomNumber, setRoomNumber] = useState(defaultRoomNumber ?? "");
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -47,9 +49,13 @@ function ComplaintsTab({ complaints, studentId, onComplaintCreated }) {
       }
     }
 
+    const hostelName = residences.find((r) => r.id === hostelId)?.name ?? null;
+
     const { error } = await supabase.from("complaints").insert({
       student_id: studentId,
       category,
+      hostel: hostelName,
+      room_number: roomNumber.trim() || null,
       description: description.trim(),
       photo_url,
       status: "pending",
@@ -82,6 +88,29 @@ function ComplaintsTab({ complaints, studentId, onComplaintCreated }) {
               </option>
             ))}
           </select>
+        </label>
+
+        <label className="field">
+          <span className="field__label">Hostel</span>
+          <select value={hostelId} onChange={(e) => setHostelId(e.target.value)} required>
+            {residences.length === 0 && <option value="">No hostels available</option>}
+            {residences.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span className="field__label">Room number</span>
+          <input
+            type="text"
+            value={roomNumber}
+            onChange={(e) => setRoomNumber(e.target.value)}
+            placeholder="e.g. MC-G01"
+            required
+          />
         </label>
 
         <label className="field">
@@ -124,7 +153,11 @@ function ComplaintsTab({ complaints, studentId, onComplaintCreated }) {
             <div key={c.id} className="list-row">
               <div>
                 <p className="list-row__title">{c.category}</p>
-                <p className="list-row__meta">{c.description}</p>
+                <p className="list-row__meta">
+                  {[c.hostel, c.room_number].filter(Boolean).join(" · ")}
+                  {(c.hostel || c.room_number) && " — "}
+                  {c.description}
+                </p>
               </div>
               <span className={"badge badge--" + statusTone(c.status)}>
                 {STATUS_LABELS[c.status] ?? c.status}

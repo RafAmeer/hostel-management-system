@@ -11,6 +11,7 @@ import CurfewTab from "../components/dashboard/CurfewTab";
 import ProfileTab from "../components/dashboard/ProfileTab";
 import ProfileForm from "../components/dashboard/ProfileForm";
 import { isStudentProfileComplete } from "../lib/studentProfile";
+import { mergeResidences } from "../lib/residences";
 
 // NOTE: this assumes tables `profiles`, `rooms`, `bookings`, `complaints`,
 // `curfew_logs` and `announcements` exist in Supabase (the announcements
@@ -22,12 +23,12 @@ import { isStudentProfileComplete } from "../lib/studentProfile";
 // Labels/keys match the "Home" wireframe's sidebar + Quick Access section.
 // `icon` looks up a matching glyph in components/dashboard/icons.jsx.
 const NAV_ITEMS = [
+  { key: "profile", label: "Profile", icon: "profile" },
   { key: "overview", label: "Home", icon: "home" },
   { key: "rooms", label: "Rooms", icon: "rooms" },
   { key: "bookings", label: "Status", icon: "status" },
   { key: "complaints", label: "Complaint", icon: "complaint" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
-  { key: "profile", label: "Profile", icon: "profile" },
 ];
 
 // PostgREST's "no rows" code — a brand-new account whose profile row hasn't
@@ -43,6 +44,7 @@ function StudentDashboard({ user, onLogout }) {
   const [complaints, setComplaints] = useState([]);
   const [curfewLogs, setCurfewLogs] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
+  const [residences, setResidences] = useState(mergeResidences([]));
   const [loading, setLoading] = useState(true);
 
   const studentId = user?.id;
@@ -50,7 +52,7 @@ function StudentDashboard({ user, onLogout }) {
   const loadAll = async () => {
     setLoading(true);
 
-    const [profileRes, roomsRes, bookingsRes, complaintsRes, curfewRes, announcementsRes] =
+    const [profileRes, roomsRes, bookingsRes, complaintsRes, curfewRes, announcementsRes, hostelsRes] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", studentId).single(),
         supabase.from("rooms").select("*").order("room_number"),
@@ -76,6 +78,10 @@ function StudentDashboard({ user, onLogout }) {
           .order("pinned", { ascending: false })
           .order("created_at", { ascending: false })
           .limit(20),
+        // Warden-added hostels merge on top of the starter placeholder list
+        // (mergeResidences) — a missing/empty table just means "no
+        // warden-added hostels yet", not an error.
+        supabase.from("hostels").select("*"),
       ]);
 
     if (profileRes.data) {
@@ -89,6 +95,7 @@ function StudentDashboard({ user, onLogout }) {
     if (complaintsRes.data) setComplaints(complaintsRes.data);
     if (curfewRes.data) setCurfewLogs(curfewRes.data);
     if (announcementsRes.data) setAnnouncements(announcementsRes.data);
+    setResidences(mergeResidences(hostelsRes.data));
 
     setLoading(false);
   };
@@ -105,7 +112,10 @@ function StudentDashboard({ user, onLogout }) {
         return (
           <RoomsTab
             rooms={rooms}
+            residences={residences}
             studentId={studentId}
+            studentGender={profile?.gender}
+            semester={profile?.semester}
             onBookingCreated={loadAll}
           />
         );
@@ -116,6 +126,8 @@ function StudentDashboard({ user, onLogout }) {
           <ComplaintsTab
             complaints={complaints}
             studentId={studentId}
+            residences={residences}
+            defaultRoomNumber={profile?.room_number}
             onComplaintCreated={loadAll}
           />
         );

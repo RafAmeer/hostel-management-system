@@ -6,13 +6,16 @@ import WardenOverviewTab from "../components/dashboard/WardenOverviewTab";
 import WardenBookingsTab from "../components/dashboard/WardenBookingsTab";
 import WardenComplaintsTab from "../components/dashboard/WardenComplaintsTab";
 import WardenCurfewTab from "../components/dashboard/WardenCurfewTab";
+import WardenHostelsTab from "../components/dashboard/WardenHostelsTab";
 import HostelChatbot from "../components/dashboard/HostelChatbot";
 import ProfileTab from "../components/dashboard/ProfileTab";
 import { buildHostelAnalytics } from "../lib/analytics";
+import { mergeResidences } from "../lib/residences";
 
 const NAV_ITEMS = [
   { key: "overview", label: "Overview", icon: "overview" },
   { key: "bookings", label: "Room Bookings", icon: "status" },
+  { key: "hostels", label: "Hostels & Rooms", icon: "rooms" },
   { key: "complaints", label: "Complaints", icon: "complaint" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
   { key: "profile", label: "Profile", icon: "profile" },
@@ -69,6 +72,7 @@ function WardenDashboard({ user, onLogout }) {
   const [students, setStudents] = useState([]);
   const [technicians, setTechnicians] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [hostels, setHostels] = useState([]);
   const [loading, setLoading] = useState(true);
   // Stats period lives here (not inside WardenOverviewTab) so the same
   // `analytics` object can also feed the floating AI Assistant widget,
@@ -84,7 +88,7 @@ function WardenDashboard({ user, onLogout }) {
   const loadAll = async () => {
     setLoading(true);
 
-    const [bookingsRes, complaintsRes, roomsRes, studentsRes, curfewRes, techniciansRes, profileRes] =
+    const [bookingsRes, complaintsRes, roomsRes, studentsRes, curfewRes, techniciansRes, profileRes, hostelsRes] =
       await Promise.all([
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
         supabase.from("complaints").select("*").order("created_at", { ascending: false }),
@@ -93,6 +97,7 @@ function WardenDashboard({ user, onLogout }) {
         supabase.from("curfew_logs").select("*").order("timestamp", { ascending: false }),
         supabase.from("profiles").select("id, full_name").eq("role", "technician"),
         supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+        supabase.from("hostels").select("*"),
       ]);
 
     if (bookingsRes.data) setBookings(bookingsRes.data);
@@ -104,6 +109,7 @@ function WardenDashboard({ user, onLogout }) {
     }
     if (techniciansRes.data) setTechnicians(techniciansRes.data);
     if (profileRes.data) setProfile(profileRes.data);
+    setHostels(hostelsRes.data ?? []);
 
     setLoading(false);
   };
@@ -170,6 +176,14 @@ function WardenDashboard({ user, onLogout }) {
         );
       case "curfew":
         return <WardenCurfewTab curfewStatuses={curfewStatuses} onCheckIn={handleCheckIn} />;
+      case "hostels":
+        return (
+          <WardenHostelsTab
+            residences={mergeResidences(hostels)}
+            rooms={rooms}
+            onChanged={loadAll}
+          />
+        );
       case "profile":
         return <ProfileTab user={user} profile={profile} variant="staff" onSaved={setProfile} />;
       default:

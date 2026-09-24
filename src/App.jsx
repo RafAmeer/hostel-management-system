@@ -36,9 +36,12 @@ function App() {
   // Which login screen is showing when signed out — no longer a dashboard
   // toggle, just which form the person sees before they've authenticated.
   const [portal, setPortal] = useState("student"); // "student" | "staff"
-  const [mode, setMode] = useState("login"); // "login" | "signup" (both portals)
+  const [mode, setMode] = useState("login"); // "login" | "signup" | "forgot" | "reset" (both portals)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState(""); // "reset" mode only
+  const [staffTitle, setStaffTitle] = useState(""); // staff signup only
   const [fullName, setFullName] = useState(""); // staff signup only
   const [staffRole, setStaffRole] = useState("warden"); // staff signup only
   const [rememberMe, setRememberMe] = useState(false);
@@ -84,7 +87,14 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Clicking the "reset password" email link lands back here with a
+      // temporary recovery session — show the "choose a new password"
+      // form instead of dropping the user straight into a dashboard.
+      if (event === "PASSWORD_RECOVERY") {
+        setMode("reset");
+        return;
+      }
       syncFromSession(session);
     });
 
@@ -124,11 +134,12 @@ function App() {
 
     let actualRole = await fetchRole(data.user.id);
 
-    // If this account signed up for a staff role while email confirmation
-    // was required, `profiles.role` was still stuck at the trigger's
-    // default ("student") until now — the requested role was stashed in
-    // auth user_metadata at signup time, so reconcile it on this first
-    // real login instead of silently dropping it.
+    // Belt-and-braces fallback only: the real fix is the database trigger
+    // in supabase/migrations/2026-09-22_phase1_profile_and_staff_fix.sql,
+    // which sets the requested role at profile-creation time (server-side,
+    // so it isn't blocked by RLS). This client-side attempt only helps
+    // accounts created before that migration is run, and will silently
+    // no-op (fine) once RLS is in place, since the trigger already did it.
     const requestedRole = data.user.user_metadata?.requested_role;
     if (actualRole === "student" && STAFF_ROLES.includes(requestedRole)) {
       const { error: upgradeError } = await supabase
@@ -181,8 +192,11 @@ function App() {
       email,
       password,
       options: {
+        // Without this, Supabase's confirmation email sends people to a
+        // generic Supabase page instead of back into this app.
+        emailRedirectTo: window.location.origin,
         data: isStaffSignup
-          ? { requested_role: staffRole, full_name: fullName || undefined }
+          ? { requested_role: staffRole, title: staffTitle || undefined, full_name: fullName || undefined }
           : undefined,
       },
     });
@@ -207,7 +221,11 @@ function App() {
     if (isStaffSignup) {
       await supabase
         .from("profiles")
-        .update({ role: staffRole, ...(fullName ? { full_name: fullName } : {}) })
+        .update({
+          role: staffRole,
+          ...(fullName ? { full_name: fullName } : {}),
+          ...(staffTitle ? { title: staffTitle } : {}),
+        })
         .eq("id", data.user.id);
     }
 
@@ -216,10 +234,40 @@ function App() {
     setRole(isStaffSignup ? staffRole : "student");
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    resetMessages();
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    setLoading(false);
+    if (error) return setError(error.message);
+    setInfo("Check your email for a link to reset your password.");
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    resetMessages();
+    if (newPassword.length < 6) {
+      return setError("Password must be at least 6 characters.");
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
+    if (error) return setError(error.message);
+    setNewPassword("");
+    setInfo("Password updated. Signing you in…");
+    // The recovery session is already a real session, so onAuthStateChange
+    // will pick it up and route to the right dashboard on its own.
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const expectedPortal = portal === "staff" ? "staff" : "student";
     if (mode === "login") return handleLogin(expectedPortal);
+    if (mode === "forgot") return handleForgotPassword(e);
+    if (mode === "reset") return handleResetPassword(e);
     return handleSignUp(expectedPortal);
   };
 
@@ -233,15 +281,17 @@ function App() {
     setRole(null);
   };
 
-  // Placeholder for i-CATS identity SSO — wire up the real provider once
+  // Placeholder for campus identity SSO — wire up the real provider once
   // it's configured in the Supabase dashboard (Settings > Auth > Providers).
-  const handleICatsLogin = async () => {
+  const handleCampusSSOLogin = async () => {
     resetMessages();
-    setInfo("i-CATS Identity sign-in isn't set up yet.");
+    setInfo("Campus SSO sign-in isn't set up yet.");
   };
 
   const switchMode = (nextMode) => {
     resetMessages();
+    setPassword("");
+    setNewPassword("");
     setMode(nextMode);
   };
 
@@ -264,11 +314,24 @@ function App() {
       <div className="container">
         <form className="card" onSubmit={handleSubmit}>
           <div className="avatar" aria-hidden="true" />
+          <p className="brand-name">NestLink</p>
           <h1 className="title">
-            {isStaffPortal ? (mode === "login" ? "Staff Login" : "Staff Sign Up") : "Welcome Back"}
+            {mode === "forgot"
+              ? "Reset your password"
+              : mode === "reset"
+              ? "Choose a new password"
+              : isStaffPortal
+              ? mode === "login"
+                ? "Staff Login"
+                : "Staff Sign Up"
+              : "Welcome Back"}
           </h1>
           <p className="subtitle">
-            {isStaffPortal
+            {mode === "forgot"
+              ? "We'll email you a link to reset it."
+              : mode === "reset"
+              ? "Enter a new password for your account."
+              : isStaffPortal
               ? mode === "login"
                 ? "Sign in to your staff dashboard"
                 : "Create a Warden, Finance, or Technician account"
@@ -290,6 +353,18 @@ function App() {
 
           {isStaffPortal && mode === "signup" && (
             <>
+              <label className="field">
+                <span className="field__label">Title</span>
+                <select value={staffTitle} onChange={(e) => setStaffTitle(e.target.value)} required>
+                  <option value="" disabled>
+                    Select title
+                  </option>
+                  <option value="Mr">Mr</option>
+                  <option value="Ms">Ms</option>
+                  <option value="Mdm">Mdm</option>
+                </select>
+              </label>
+
               <label className="field">
                 <span className="field__label">Full name</span>
                 <input
@@ -313,30 +388,45 @@ function App() {
             </>
           )}
 
-          <label className="field">
-            <span className="field__label">Email</span>
-            <input
-              type="email"
-              autoComplete="email"
-              placeholder={isStaffPortal ? "staff@icats.edu.my" : "you@icats.edu.my"}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </label>
+          {mode !== "reset" && (
+            <label className="field">
+              <span className="field__label">Email</span>
+              <input
+                type="email"
+                autoComplete="email"
+                placeholder={isStaffPortal ? "staff@nestlink.edu.my" : "you@nestlink.edu.my"}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </label>
+          )}
 
-          <label className="field">
-            <span className="field__label">Password</span>
-            <input
-              type="password"
-              autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-              required
-            />
-          </label>
+          {mode !== "forgot" && (
+            <label className="field">
+              <span className="field__label">{mode === "reset" ? "New password" : "Password"}</span>
+              <div className="password-input">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={mode === "signup" ? "new-password" : mode === "reset" ? "new-password" : "current-password"}
+                  placeholder="••••••••"
+                  value={mode === "reset" ? newPassword : password}
+                  onChange={(e) => (mode === "reset" ? setNewPassword(e.target.value) : setPassword(e.target.value))}
+                  minLength={6}
+                  required
+                />
+                <button
+                  type="button"
+                  className="password-input__toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  tabIndex={-1}
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
+            </label>
+          )}
 
           {!isStaffPortal && mode === "login" && (
             <label className="remember">
@@ -349,51 +439,79 @@ function App() {
             </label>
           )}
 
+          {mode === "login" && (
+            <button type="button" className="forgot-password-link" onClick={() => switchMode("forgot")}>
+              Forgot password?
+            </button>
+          )}
+
           <button
             type="submit"
             className="primary-btn"
-            disabled={loading || !email || !password || (isStaffPortal && mode === "signup" && !fullName)}
+            disabled={
+              loading ||
+              (mode === "forgot" ? !email : mode === "reset" ? !newPassword : !email || !password) ||
+              (isStaffPortal && mode === "signup" && (!fullName || !staffTitle))
+            }
           >
-            {loading ? "Please wait…" : mode === "login" ? "Sign In" : "Sign Up"}
+            {loading
+              ? "Please wait…"
+              : mode === "forgot"
+              ? "Send reset link"
+              : mode === "reset"
+              ? "Update password"
+              : mode === "login"
+              ? "Sign In"
+              : "Sign Up"}
           </button>
 
-          <p className="switch-mode">
-            {mode === "login" ? (
-              <>
-                {isStaffPortal ? "New staff member? " : "Don't have an account? "}
-                <button type="button" onClick={() => switchMode("signup")}>
-                  Sign Up
-                </button>
-              </>
-            ) : (
-              <>
-                Already have an account?{" "}
-                <button type="button" onClick={() => switchMode("login")}>
-                  Sign In
-                </button>
-              </>
-            )}
-          </p>
+          {mode === "forgot" ? (
+            <p className="switch-mode">
+              <button type="button" onClick={() => switchMode("login")}>
+                ← Back to sign in
+              </button>
+            </p>
+          ) : mode === "reset" ? null : (
+            <p className="switch-mode">
+              {mode === "login" ? (
+                <>
+                  {isStaffPortal ? "New staff member? " : "Don't have an account? "}
+                  <button type="button" onClick={() => switchMode("signup")}>
+                    Sign Up
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{" "}
+                  <button type="button" onClick={() => switchMode("login")}>
+                    Sign In
+                  </button>
+                </>
+              )}
+            </p>
+          )}
 
-          {!isStaffPortal && (
+          {!isStaffPortal && mode !== "forgot" && mode !== "reset" && (
             <>
               <div className="divider">
                 <span>or</span>
               </div>
 
-              <button type="button" className="sso-btn" onClick={handleICatsLogin}>
-                Login with i-CATS Identity
+              <button type="button" className="sso-btn" onClick={handleCampusSSOLogin}>
+                Login with Campus SSO
               </button>
             </>
           )}
 
-          <button
-            type="button"
-            className="portal-switch"
-            onClick={() => switchPortal(isStaffPortal ? "student" : "staff")}
-          >
-            {isStaffPortal ? "← Back to student login" : "Staff? Login here"}
-          </button>
+          {mode !== "reset" && (
+            <button
+              type="button"
+              className="portal-switch"
+              onClick={() => switchPortal(isStaffPortal ? "student" : "staff")}
+            >
+              {isStaffPortal ? "← Back to student login" : "Staff? Login here"}
+            </button>
+          )}
         </form>
       </div>
     </div>

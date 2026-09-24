@@ -1,6 +1,6 @@
-import { assetUrl } from "../../lib/assetUrl";
 import Avatar from "./Avatar";
 import AnnouncementsPanel from "./AnnouncementsPanel";
+import { NAV_ICONS } from "./icons";
 
 function getGreetingTime() {
   const hour = new Date().getHours();
@@ -9,8 +9,8 @@ function getGreetingTime() {
   return "evening";
 }
 
-// Matches the "Home" wireframe: a greeting banner, news & announcements and
-// the profile card on the left, Quick Access + Notifications on the right.
+// Matches the "Home" wireframe: a combined greeting + profile card and news
+// & announcements on the left, Quick Access + Notifications on the right.
 function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements = [], onNavigate }) {
   const activeBooking = bookings.find((b) => b.status !== "cancelled");
   const openComplaints = complaints.filter(
@@ -20,10 +20,10 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
   const firstName = (profile?.full_name ?? "Student").split(" ")[0];
 
   const quickAccessItems = [
-    { key: "rooms", label: "Room Registration" },
-    { key: "bookings", label: "Status Tracking" },
-    { key: "complaints", label: "Complaint" },
-    { key: "curfew", label: "Curfew" },
+    { key: "rooms", label: "Room Registration", icon: "rooms" },
+    { key: "bookings", label: "Status Tracking", icon: "status" },
+    { key: "complaints", label: "Complaint", icon: "complaint" },
+    { key: "curfew", label: "Curfew", icon: "curfew" },
   ];
 
   const notifications = [];
@@ -39,20 +39,16 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
   return (
     <div className="tab home-grid">
       <div className="home-grid__main">
-        <section className="glass-panel greeting-card">
-          <h2 className="greeting-card__title">
-            Good {getGreetingTime()}, {firstName}.
-          </h2>
-          <p className="greeting-card__subtitle">
-            Here's a quick look at your hostel status.
-          </p>
-        </section>
-
-        <AnnouncementsPanel announcements={announcements} />
-
         <section className="glass-panel profile-panel">
           <div className="profile-panel__head">
-            <h3 className="panel-heading">Profile</h3>
+            <div>
+              <h2 className="greeting-card__title">
+                Good {getGreetingTime()}, {firstName}.
+              </h2>
+              <p className="greeting-card__subtitle">
+                Here's a quick look at your hostel status.
+              </p>
+            </div>
             <button type="button" className="link-btn" onClick={() => onNavigate?.("profile")}>
               Edit profile
             </button>
@@ -70,40 +66,48 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
               </div>
               <div>
                 <dt>Semester</dt>
-                <dd>{activeBooking?.semester ?? "—"}</dd>
+                <dd>{activeBooking?.semester ?? profile?.semester ?? "—"}</dd>
               </div>
             </dl>
           </div>
 
-          <div className="profile-panel__resident">
-            <div className="profile-panel__thumb">
-              <img src={assetUrl("/images/hostel-1.jpg")} alt="Current residence" />
-              <span>Current Resident</span>
-            </div>
-            <p className="profile-panel__room">
-              Current Room:{" "}
-              <strong>
-                {activeBooking ? activeBooking.room_number : profile?.room_number ?? "Not assigned"}
-              </strong>
-            </p>
+          <div className="room-tag">
+            <span className="room-tag__ring" aria-hidden="true" />
+            <span className="room-tag__eyebrow">Your room</span>
+            <span className="room-tag__number">
+              {activeBooking ? activeBooking.room_number : profile?.room_number ?? "Not assigned"}
+            </span>
+            <span className="room-tag__hostel">
+              {profile?.in_hostel === false ? "Not staying in hostel" : "Current resident"}
+            </span>
           </div>
         </section>
+
+        <AnnouncementsPanel announcements={announcements} />
       </div>
 
       <div className="home-grid__side">
         <section className="glass-panel side-panel">
           <h3 className="panel-heading">Quick Access</h3>
           <div className="quick-access">
-            {quickAccessItems.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                className="quick-access__btn"
-                onClick={() => onNavigate?.(item.key)}
-              >
-                {item.label}
-              </button>
-            ))}
+            {quickAccessItems.map((item) => {
+              const Icon = NAV_ICONS[item.icon];
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  className="quick-access__btn"
+                  onClick={() => onNavigate?.(item.key)}
+                >
+                  {Icon && (
+                    <span className="quick-access__icon" aria-hidden="true">
+                      <Icon />
+                    </span>
+                  )}
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
         </section>
 

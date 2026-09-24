@@ -31,7 +31,7 @@ function TechnicianTasksTab({ tasks, onAdvanceStatus, onAddRemark }) {
           {tasks.map((t) => (
             <div key={t.id} className="glass-panel list-item-block">
               <p className="list-row__title">
-                {t.category} &middot; Room {t.room_number}
+                {t.category} &middot; {t.hostel ? `${t.hostel}, ` : ""}Room {t.room_number ?? "—"}
               </p>
               <p className="list-row__meta">{t.description}</p>
               <p className="list-row__meta">Reported by {t.student_name} &middot; {t.created_at}</p>

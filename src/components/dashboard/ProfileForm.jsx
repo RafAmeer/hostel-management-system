@@ -17,11 +17,14 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
   const isStudent = variant === "student";
   const isSetup = mode === "setup";
 
+  const [title, setTitle] = useState(profile?.title ?? "");
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
+  const [gender, setGender] = useState(profile?.gender ?? "");
   const [studentId, setStudentId] = useState(profile?.student_id ?? "");
   const [age, setAge] = useState(profile?.age ? String(profile.age) : "");
   const [phone, setPhone] = useState(profile?.phone ?? "");
   const [programme, setProgramme] = useState(profile?.programme ?? "");
+  const [semester, setSemester] = useState(profile?.semester ?? "");
   const [inHostel, setInHostel] = useState(
     typeof profile?.in_hostel === "boolean" ? profile.in_hostel : null
   );
@@ -60,11 +63,16 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
   };
 
   const validate = () => {
+    if (!title) return "Select a title (Mr, Ms or Mdm).";
     if (fullName.trim().length < 2) return "Enter your full name.";
     if (isStudent) {
+      if (!gender) return "Select your gender — this decides which hostel rooms you can book.";
       if (!studentId.trim()) return "Enter your student ID.";
       const n = Number(age);
       if (!Number.isInteger(n) || n < 15 || n > 99) return "Enter a valid age (15–99).";
+      if (!programme.trim()) return "Enter your programme.";
+      if (!phone.trim()) return "Enter your phone number.";
+      if (!semester) return "Select your current semester.";
       if (inHostel === null) return "Tell us whether you are currently staying in a hostel.";
     }
     return "";
@@ -83,12 +91,14 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
 
     setSaving(true);
 
-    const fields = { full_name: fullName.trim(), phone: phone.trim() || null };
+    const fields = { title, full_name: fullName.trim(), phone: phone.trim() || null };
     if (isStudent) {
       Object.assign(fields, {
+        gender,
         student_id: studentId.trim(),
         age: Number(age),
         programme: programme.trim() || null,
+        semester: semester || null,
         in_hostel: inHostel,
         room_number: inHostel ? roomNumber.trim() || null : null,
       });
@@ -145,25 +155,36 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
 
   return (
     <form className="profile-form" onSubmit={handleSubmit} noValidate>
-      {!isSetup && (
-        <div className="avatar-upload">
-          <Avatar url={shownAvatar} name={fullName || user?.email} size={84} />
-          <div>
-            <label className="btn-outline btn-outline--neutral avatar-upload__btn">
-              {shownAvatar ? "Change photo" : "Upload photo"}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="visually-hidden"
-              />
-            </label>
-            <p className="avatar-upload__hint">JPG or PNG, up to 2 MB.</p>
-          </div>
+      <div className="avatar-upload">
+        <Avatar url={shownAvatar} name={fullName || user?.email} size={84} />
+        <div>
+          <label className="btn-outline btn-outline--neutral avatar-upload__btn">
+            {shownAvatar ? "Change photo" : "Upload photo (optional)"}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="visually-hidden"
+            />
+          </label>
+          <p className="avatar-upload__hint">JPG or PNG, up to 2 MB. You can skip this and add it later.</p>
         </div>
-      )}
+      </div>
 
       <div className="profile-form__grid">
+        <h4 className="profile-form__section-title">About you</h4>
+        <label className="field">
+          <span className="field__label">Title</span>
+          <select value={title} onChange={(e) => setTitle(e.target.value)} required>
+            <option value="" disabled>
+              Select title
+            </option>
+            <option value="Mr">Mr</option>
+            <option value="Ms">Ms</option>
+            <option value="Mdm">Mdm</option>
+          </select>
+        </label>
+
         <label className="field">
           <span className="field__label">Full name</span>
           <input
@@ -177,7 +198,21 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
         </label>
 
         {isStudent && (
+          <label className="field">
+            <span className="field__label">Gender</span>
+            <select value={gender} onChange={(e) => setGender(e.target.value)} required>
+              <option value="" disabled>
+                Select gender
+              </option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </label>
+        )}
+
+        {isStudent && (
           <>
+            <h4 className="profile-form__section-title">Student details</h4>
             <label className="field">
               <span className="field__label">Student ID</span>
               <input
@@ -204,25 +239,42 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
             </label>
 
             <label className="field">
-              <span className="field__label">Programme (optional)</span>
+              <span className="field__label">Semester</span>
+              <select value={semester} onChange={(e) => setSemester(e.target.value)} required>
+                <option value="" disabled>
+                  Select semester
+                </option>
+                {["S1/2026", "S2/2026", "S3/2026"].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span className="field__label">Programme</span>
               <input
                 type="text"
                 value={programme}
                 onChange={(e) => setProgramme(e.target.value)}
                 placeholder="e.g. Diploma in Software Engineering"
+                required
               />
             </label>
           </>
         )}
 
+        <h4 className="profile-form__section-title">Contact</h4>
         <label className="field">
-          <span className="field__label">Phone (optional)</span>
+          <span className="field__label">Phone</span>
           <input
             type="tel"
             autoComplete="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="e.g. 012-345 6789"
+            required
           />
         </label>
 
@@ -242,6 +294,7 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
 
       {isStudent && (
         <>
+          <h4 className="profile-form__section-title">Hostel status</h4>
           <fieldset className="segmented-field">
             <legend className="field__label">Are you currently staying in a hostel?</legend>
             <div className="segmented" role="group">

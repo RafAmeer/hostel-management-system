@@ -12,6 +12,33 @@ import { assetUrl } from "../lib/assetUrl";
 // exist right now, so they are reused across residences).
 const img = (name) => assetUrl(`/images/${name}`);
 
+// Deterministic mock rooms per floor, purely for browsing/preview until a
+// real `rooms` row exists for that residence+floor (see RoomsTab.jsx:
+// roomsForFloor prefers real Supabase rows and only falls back to these).
+// Warden-added rooms (Warden > Hostels) always win over this mock data.
+function mockRooms(prefix, count, basePrice, genders) {
+  return Array.from({ length: count }, (_, i) => {
+    const n = i + 1;
+    return {
+      room_number: `${prefix}${String(n).padStart(2, "0")}`,
+      capacity: n % 3 === 0 ? 4 : 2,
+      occupied_count: n % 4 === 0 ? (n % 3 === 0 ? 4 : 2) : n % 2,
+      price: basePrice + (n % 3 === 0 ? 40 : 0),
+      gender: genders[i % genders.length],
+      mock: true,
+    };
+  });
+}
+
+function floorsFor(config) {
+  // config: [{ label, prefix, roomCount, price, genders }]
+  return config.map((f, i) => ({
+    id: `floor-${i + 1}`,
+    label: f.label,
+    rooms: mockRooms(f.prefix, f.roomCount, f.price, f.genders),
+  }));
+}
+
 export const RESIDENCES = [
   {
     id: "main-campus",
@@ -26,6 +53,12 @@ export const RESIDENCES = [
       { src: img("hostel-5.png"), caption: "Room interior" },
       { src: img("hostel-6.png"), caption: "Common area" },
     ],
+    mapQuery: "iCATS University College, Kuching",
+    floors: floorsFor([
+      { label: "Ground Floor", prefix: "MC-G", roomCount: 4, price: 420, genders: ["male"] },
+      { label: "1st Floor", prefix: "MC-1", roomCount: 4, price: 420, genders: ["male"] },
+      { label: "2nd Floor", prefix: "MC-2", roomCount: 4, price: 450, genders: ["female"] },
+    ]),
   },
   {
     id: "kts-village",
@@ -40,6 +73,11 @@ export const RESIDENCES = [
       { src: img("hostel-6.png"), caption: "Room interior" },
       { src: img("hostel-3.jpg"), caption: "Common area" },
     ],
+    mapQuery: "KTS Village, Kuching",
+    floors: floorsFor([
+      { label: "Block A", prefix: "KV-A", roomCount: 3, price: 350, genders: ["male", "female"] },
+      { label: "Block B", prefix: "KV-B", roomCount: 3, price: 350, genders: ["female"] },
+    ]),
   },
   {
     id: "tropic-city",
@@ -54,6 +92,13 @@ export const RESIDENCES = [
       { src: img("hostel-5.png"), caption: "Room interior" },
       { src: img("hostel-4.jpg"), caption: "Common area" },
     ],
+    mapQuery: "Tropic City, Kuching",
+    floors: floorsFor([
+      { label: "Level 1", prefix: "TC-1", roomCount: 3, price: 380, genders: ["male"] },
+      { label: "Level 2", prefix: "TC-2", roomCount: 3, price: 380, genders: ["male"] },
+      { label: "Level 3", prefix: "TC-3", roomCount: 3, price: 400, genders: ["female"] },
+      { label: "Level 4", prefix: "TC-4", roomCount: 3, price: 400, genders: ["female"] },
+    ]),
   },
   {
     id: "72-residence",
@@ -68,6 +113,11 @@ export const RESIDENCES = [
       { src: img("hostel-6.png"), caption: "Room interior" },
       { src: img("hostel-2.jpg"), caption: "Common area" },
     ],
+    mapQuery: "72 Residence, Kuching",
+    floors: floorsFor([
+      { label: "Ground Floor", prefix: "SR-G", roomCount: 5, price: 300, genders: ["male", "female"] },
+      { label: "1st Floor", prefix: "SR-1", roomCount: 5, price: 300, genders: ["male", "female"] },
+    ]),
   },
   {
     id: "dbelle-residence",
@@ -82,6 +132,12 @@ export const RESIDENCES = [
       { src: img("hostel-1.jpg"), caption: "Room interior" },
       { src: img("hostel-3.jpg"), caption: "Common area" },
     ],
+    mapQuery: "D'belle Residence, Kuching",
+    floors: floorsFor([
+      { label: "Floor 1", prefix: "DB-1", roomCount: 3, price: 480, genders: ["female"] },
+      { label: "Floor 2", prefix: "DB-2", roomCount: 3, price: 480, genders: ["female"] },
+      { label: "Floor 3", prefix: "DB-3", roomCount: 3, price: 500, genders: ["male"] },
+    ]),
   },
   {
     id: "aspace-residence",
@@ -96,5 +152,13 @@ export const RESIDENCES = [
       { src: img("hostel-2.jpg"), caption: "Room interior" },
       { src: img("hostel-4.jpg"), caption: "Common area" },
     ],
+    mapQuery: "Aspace Residence, Kuching",
+    floors: floorsFor([
+      { label: "Floor 1", prefix: "AS-1", roomCount: 2, price: 460, genders: ["male"] },
+      { label: "Floor 2", prefix: "AS-2", roomCount: 2, price: 460, genders: ["male"] },
+      { label: "Floor 3", prefix: "AS-3", roomCount: 2, price: 460, genders: ["female"] },
+      { label: "Floor 4", prefix: "AS-4", roomCount: 2, price: 460, genders: ["female"] },
+      { label: "Floor 5", prefix: "AS-5", roomCount: 2, price: 490, genders: ["female"] },
+    ]),
   },
 ];

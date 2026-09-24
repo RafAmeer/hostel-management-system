@@ -67,7 +67,8 @@ function WardenComplaintsTab({ complaints, technicians, onAssign, onComplete }) 
                   {c.student_name} &middot; {c.category}
                 </p>
                 <p className="list-row__meta">
-                  {c.room_number} &middot; {c.description}
+                  {[c.hostel, c.room_number].filter(Boolean).join(" · ") || "No location given"} &middot;{" "}
+                  {c.description}
                 </p>
                 {c.assigned_technician && (
                   <p className="list-row__meta">

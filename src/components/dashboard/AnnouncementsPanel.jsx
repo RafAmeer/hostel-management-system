@@ -8,6 +8,14 @@ const CATEGORY_TONE = {
   event: "ok",
 };
 
+const CATEGORY_ICON = {
+  general: "📰",
+  maintenance: "🛠️",
+  payment: "💳",
+  safety: "🚨",
+  event: "🎉",
+};
+
 const COLLAPSED_COUNT = 3;
 
 function formatDate(value) {
@@ -47,6 +55,13 @@ function AnnouncementsPanel({ announcements }) {
                   onClick={() => setOpenId(isOpen ? null : a.id)}
                   aria-expanded={isOpen}
                 >
+                  <span className="announcement__thumb" aria-hidden="true">
+                    {a.image_url ? (
+                      <img src={a.image_url} alt="" />
+                    ) : (
+                      CATEGORY_ICON[a.category] ?? "📰"
+                    )}
+                  </span>
                   <span className="announcement__title">
                     {a.pinned && <span className="announcement__pin">Pinned</span>}
                     {a.title}
@@ -58,7 +73,14 @@ function AnnouncementsPanel({ announcements }) {
                     <time dateTime={a.created_at}>{formatDate(a.created_at)}</time>
                   </span>
                 </button>
-                {isOpen && <p className="announcement__body">{a.body}</p>}
+                {isOpen && (
+                  <>
+                    {a.image_url && (
+                      <img className="announcement__image" src={a.image_url} alt="" />
+                    )}
+                    <p className="announcement__body">{a.body}</p>
+                  </>
+                )}
               </li>
             );
           })}

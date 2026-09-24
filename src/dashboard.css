@@ -36,8 +36,22 @@
 
 .sidebar__logo-wrap {
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 0.6rem;
   margin-bottom: 1.5rem;
+}
+
+.sidebar--expanded .sidebar__logo-wrap {
+  justify-content: flex-start;
+}
+
+.sidebar__brand {
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
 }
 
 .sidebar__logo {
@@ -48,8 +62,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #c97a3a);
-  color: #1a1206;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: #052e2b;
   font-family: "Manrope", sans-serif;
   font-weight: 800;
   font-size: 1.05rem;
@@ -118,7 +132,7 @@
 
 .sidebar__link--active {
   background: var(--accent);
-  color: #1a1206;
+  color: #052e2b;
   font-weight: 700;
 }
 
@@ -534,8 +548,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--accent), #c97a3a);
-  color: #1a1206;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: #052e2b;
   font-family: "Manrope", sans-serif;
   font-weight: 800;
   font-size: 1.6rem;
@@ -562,50 +576,53 @@
   font-weight: 600;
 }
 
-.profile-panel__resident {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--glass-border);
-}
-
-.profile-panel__thumb {
+/* The one bold moment on Home: your room, styled like a physical key
+   tag handed over at check-in — not another glass card. Warm amber is
+   used nowhere else in the app, so it stays tied to this one meaning. */
+.room-tag {
   position: relative;
-  width: 96px;
-  height: 96px;
-  flex-shrink: 0;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 0.75rem;
+  row-gap: 0.15rem;
+  margin-top: 1.25rem;
+  padding: 1.1rem 1.4rem 1rem 2.1rem;
+  border-radius: 4px 16px 16px 4px;
+  background: linear-gradient(135deg, var(--accent-warm), var(--accent-warm-deep));
+  color: #3a2107;
+  box-shadow: 0 10px 24px rgba(201, 122, 58, 0.28);
 }
 
-.profile-panel__thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.profile-panel__thumb span {
+.room-tag__ring {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.62rem;
-  text-align: center;
-  background: rgba(8, 12, 20, 0.62);
-  color: var(--text-primary);
+  top: 50%;
+  left: 0.55rem;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 4px solid rgba(58, 33, 7, 0.55);
 }
 
-.profile-panel__room {
-  font-size: 0.95rem;
-  color: var(--text-muted);
+.room-tag__eyebrow {
+  flex-basis: 100%;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(58, 33, 7, 0.75);
 }
 
-.profile-panel__room strong {
-  color: var(--text-primary);
+.room-tag__number {
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 1.9rem;
+  letter-spacing: -0.01em;
+}
+
+.room-tag__hostel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(58, 33, 7, 0.8);
 }
 
 .quick-access {
@@ -616,6 +633,9 @@
 
 .quick-access__btn {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
   padding: 0.65rem 0.9rem;
   border-radius: 12px;
   border: 1px solid var(--glass-border);
@@ -626,6 +646,19 @@
   text-align: left;
   cursor: pointer;
   transition: background 0.15s ease;
+}
+
+.quick-access__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: rgba(45, 212, 191, 0.16);
+  color: var(--accent);
+  font-size: 1rem;
 }
 
 .quick-access__btn:hover {
@@ -716,6 +749,12 @@
   font-size: 1rem;
 }
 
+.residence-card__meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: -0.4rem;
+}
+
 /* ---------------------------------------------------------------------- */
 /* Placeholder pages (Status, Complaint, Curfew) — same glass background, */
 /* no wireframe yet.                                                      */
@@ -743,13 +782,17 @@
   font-size: 0.9rem;
 }
 
-/* AI Summary panel (Warden Overview) */
+/* AI Summary panel (Warden Overview) — solid-ish glass so the chat text
+   stays readable over the hostel photo background instead of nearly
+   see-through. */
 .ai-summary-panel {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-strong, rgba(20, 22, 28, 0.82));
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 1.1rem 1.25rem;
   margin-bottom: 1.5rem;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .ai-summary-panel__header {
@@ -991,6 +1034,48 @@
   opacity: 1;
 }
 
+/* "Room Booked ✅" confirmation toast (Rooms tab) */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 2rem;
+  transform: translateX(-50%);
+  z-index: 80;
+  padding: 0.85rem 1.4rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  animation: toast-in 0.2s ease;
+}
+
+.toast--success {
+  background: rgba(46, 204, 113, 0.92);
+  color: #0b3320;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.badge--male {
+  background: rgba(93, 156, 236, 0.22);
+  color: #bcdcff;
+}
+
+.badge--female {
+  background: rgba(255, 138, 188, 0.22);
+  color: #ffc9df;
+}
+
 /* Technician task cards — a glass-panel per assigned request, stacked with
    the same list-row title/meta styles the Warden tabs already use */
 .list-item-block {
@@ -1182,6 +1267,75 @@
   margin-bottom: 0.4rem;
 }
 
+.room-card__hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+/* Floor picker (hostel details popup) */
+.floor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.floor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-align: left;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.floor-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--glass-border);
+}
+
+.floor-card__label {
+  font-family: "Manrope", sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.floor-card__meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.hostel-modal__rooms-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.hostel-modal__rooms-header .btn-outline {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.78rem;
+}
+
+.hostel-modal__map {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  height: 220px;
+}
+
+.hostel-modal__map iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 /* ---------------------------------------------------------------------- */
 /* Profile picture (Home panel, Profile tab)                              */
 /* ---------------------------------------------------------------------- */
@@ -1198,17 +1352,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--accent), #c97a3a);
-  color: #1a1206;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: #052e2b;
   font-family: "Manrope", sans-serif;
   font-weight: 800;
 }
 
 .profile-panel__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 0;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
 }
 
 .link-btn {
@@ -1261,6 +1416,93 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+.btn-outline--danger {
+  border-color: rgba(255, 138, 128, 0.4);
+  color: var(--danger);
+}
+
+.btn-outline--danger:hover {
+  background: rgba(255, 138, 128, 0.12);
+}
+
+/* Warden > Hostels & Rooms tab */
+.warden-hostels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.form-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.25rem;
+}
+
+.form-panel .primary-btn {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+.gallery-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: -0.4rem;
+}
+
+.gallery-preview__item {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+}
+
+.gallery-preview__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gallery-preview__remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(8, 12, 20, 0.75);
+  color: #fff;
+  font-size: 0.65rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.room-edit-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.field--compact {
+  min-width: 100px;
+}
+
+.field--compact input,
+.field--compact select {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.82rem;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -1277,6 +1519,25 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0 1.25rem;
+}
+
+.profile-form__section-title {
+  grid-column: 1 / -1;
+  font-family: "Manrope", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin: 1.1rem 0 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+.profile-form__grid > .profile-form__section-title:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .field__static {
@@ -1313,7 +1574,7 @@
 
 .segmented__btn--active {
   background: var(--accent);
-  color: #1a1206;
+  color: #052e2b;
   font-weight: 700;
 }
 
@@ -1376,6 +1637,36 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.announcement__thumb {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.announcement__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.announcement__image {
+  display: block;
+  width: calc(100% - 1.8rem);
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin: 0 0.9rem 0.75rem;
 }
 
 .announcement__pin {
@@ -1384,7 +1675,7 @@
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
   background: var(--accent);
-  color: #1a1206;
+  color: #052e2b;
 }
 
 .announcement__meta {

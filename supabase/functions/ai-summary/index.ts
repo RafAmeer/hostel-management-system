@@ -69,11 +69,19 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        // 120 tokens was too tight for a multi-sentence report and caused
-        // Gemini to cut off mid-sentence. 400 comfortably fits the 3-5
-        // sentence report (report mode) — chat-mode answers are asked to
-        // stay to 1-3 sentences so they fit well inside this budget too.
-        generationConfig: { temperature: 0.4, maxOutputTokens: 400 },
+        // 400 was enough for one question, but a warden asking two
+        // questions in one message needs room for two short answers, and
+        // this model spends some of maxOutputTokens on internal "thinking"
+        // before the visible answer — leaving too little headroom made
+        // Gemini return an empty candidate (finishReason MAX_TOKENS, no
+        // text at all), which is why combined questions fell through to
+        // "No summary could be generated." 800 covers a report plus a
+        // couple of extra sentences, with thinking turned off below.
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 800,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
       }),
     });
 
@@ -85,7 +93,25 @@ Deno.serve(async (req) => {
 
     const geminiData = await geminiRes.json();
     const candidate = geminiData?.candidates?.[0];
-    let summary = candidate?.content?.parts?.[0]?.text?.trim() ?? "No summary could be generated.";
+    const rawText = candidate?.content?.parts?.[0]?.text?.trim();
+
+    if (!rawText) {
+      // No visible text at all — log why so it's debuggable from the
+      // function logs instead of just showing the generic fallback.
+      console.error(
+        "ai-summary: empty candidate",
+        JSON.stringify({ finishReason: candidate?.finishReason, promptFeedback: geminiData?.promptFeedback })
+      );
+      if (candidate?.finishReason === "SAFETY" || geminiData?.promptFeedback?.blockReason) {
+        return jsonResponse({ error: "That question couldn't be answered — try rephrasing it." }, 502);
+      }
+      return jsonResponse(
+        { error: "The AI assistant didn't return an answer — please try asking again." },
+        502
+      );
+    }
+
+    let summary = rawText;
 
     // Safety net: even with a higher token budget, never show the warden a
     // sentence fragment. If Gemini still got cut off, trim back to the last
@@ -131,12 +157,15 @@ function buildQuestionPrompt(question: string, stats: Record<string, unknown>) {
     "occupancy, registered-student counts, category breakdowns, and period-over-period trends. ",
     "Do NOT recompute, round differently, guess, or invent any figure that is not present in the JSON.\n\n",
     "Rules:\n",
-    "1. Answer ONLY the question asked, in 1-3 short sentences of plain prose. No bullet points, no headers, ",
-    "no restating the whole dataset.\n",
-    "2. If the answer requires a number, quote it exactly as it appears in the JSON (or a value directly ",
+    "1. Answer ONLY the question(s) asked, in plain prose. No bullet points, no headers, no restating the whole ",
+    "dataset. If the warden asked a single question, answer in 1-3 short sentences. If the message actually ",
+    "contains two or more separate questions (e.g. joined with \"and\", or a list), answer EACH one in turn, ",
+    "1-2 sentences per question, in the order they were asked — never skip a question or merge them into one ",
+    "vague answer.\n",
+    "2. If an answer requires a number, quote it exactly as it appears in the JSON (or a value directly ",
     "derivable from it, e.g. a simple sum or percentage of two given numbers).\n",
-    "3. If the JSON genuinely does not contain enough information to answer, say so plainly instead of guessing ",
-    "— do not make up a number or claim data you don't have.\n",
+    "3. If the JSON genuinely does not contain enough information to answer part of the question, say so plainly ",
+    "for that part instead of guessing — do not make up a number or claim data you don't have.\n",
     "4. Keep the tone plain and factual, the way a colleague would answer over chat.\n\n",
     `Warden's question: "${question}"\n\n`,
     "Here is the aggregated hostel data as JSON:\n\n",
