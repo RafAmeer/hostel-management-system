@@ -2,8 +2,7 @@
 // decides whether to show that form before the rest of the dashboard).
 export function isStudentProfileComplete(profile) {
   return Boolean(
-    profile?.title &&
-      profile?.full_name?.trim() &&
+    profile?.full_name?.trim() &&
       profile?.gender &&
       profile?.student_id?.trim() &&
       profile?.age &&

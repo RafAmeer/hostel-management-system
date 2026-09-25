@@ -61,8 +61,14 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, onBoo
     setOpenResidenceId(id);
   };
 
-  const handleBook = async (room) => {
-    const occupantGender = roomGenders[room.id];
+  // Mock/placeholder rooms (src/data/residences.js, `room.mock: true`) have
+  // no real `rooms` row yet, so there's no room_id to attach the booking
+  // to. We still let students request them — the request is recorded
+  // against the hostel/floor/room label directly (room_id left null) so
+  // the warden can see it and add the real room later. Real rows (warden-
+  // added, `room.mock` falsy) keep booking against room_id as before.
+  const handleBook = async (room, context = {}) => {
+    const occupantGender = room.mock ? room.gender : roomGenders[room.id];
     if (occupantGender && studentGender && occupantGender !== studentGender) {
       setMessage(
         `Room ${room.room_number} already has ${GENDER_LABEL[occupantGender] ?? occupantGender} students — rooms can't mix genders.`
@@ -70,15 +76,28 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, onBoo
       return;
     }
 
-    setBookingRoomId(room.id);
+    const bookingKey = room.id ?? room.room_number;
+    setBookingRoomId(bookingKey);
     setMessage("");
 
-    const { error } = await supabase.from("bookings").insert({
-      student_id: studentId,
-      room_id: room.id,
-      semester: semester || "S2/2026",
-      status: "pending",
-    });
+    const payload = room.mock
+      ? {
+          student_id: studentId,
+          room_id: null,
+          hostel: context.residence?.name ?? context.residence?.id ?? null,
+          floor: context.floor?.label ?? null,
+          room_number: room.room_number,
+          semester: semester || "S2/2026",
+          status: "pending",
+        }
+      : {
+          student_id: studentId,
+          room_id: room.id,
+          semester: semester || "S2/2026",
+          status: "pending",
+        };
+
+    const { error } = await supabase.from("bookings").insert(payload);
 
     setBookingRoomId(null);
 

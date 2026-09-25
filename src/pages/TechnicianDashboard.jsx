@@ -4,10 +4,12 @@ import { supabase } from "../lib/supabaseClient.js";
 import Sidebar from "../components/dashboard/SideBar.jsx";
 import TechnicianTasksTab from "../components/dashboard/TechnicianTasksTab";
 import TechnicianHistoryTab from "../components/dashboard/TechnicianHistoryTab";
+import ProfileTab from "../components/dashboard/ProfileTab";
 
 const NAV_ITEMS = [
   { key: "tasks", label: "My Tasks", icon: "tasks" },
   { key: "history", label: "History", icon: "history" },
+  { key: "profile", label: "Profile", icon: "profile" },
 ];
 
 const STATUS_FLOW = { pending: "in_progress", in_progress: "completed" };
@@ -19,17 +21,22 @@ const STATUS_FLOW = { pending: "in_progress", in_progress: "completed" };
 function TechnicianDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("tasks");
   const [tasks, setTasks] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("complaints")
-        .select("*")
-        .eq("assigned_technician", user.id)
-        .order("created_at", { ascending: false });
-      if (data) setTasks(data);
+      const [tasksRes, profileRes] = await Promise.all([
+        supabase
+          .from("complaints")
+          .select("*")
+          .eq("assigned_technician", user.id)
+          .order("created_at", { ascending: false }),
+        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+      ]);
+      if (tasksRes.data) setTasks(tasksRes.data);
+      if (profileRes.data) setProfile(profileRes.data);
       setLoading(false);
     };
     if (user?.id) load();
@@ -52,6 +59,7 @@ function TechnicianDashboard({ user, onLogout }) {
 
   const renderTab = () => {
     if (activeTab === "history") return <TechnicianHistoryTab tasks={tasks} />;
+    if (activeTab === "profile") return <ProfileTab user={user} profile={profile} variant="staff" onSaved={setProfile} />;
     return <TechnicianTasksTab tasks={tasks} onAdvanceStatus={handleAdvanceStatus} onAddRemark={handleAddRemark} />;
   };
 
@@ -61,7 +69,7 @@ function TechnicianDashboard({ user, onLogout }) {
         navItems={NAV_ITEMS}
         activeTab={activeTab}
         onSelect={setActiveTab}
-        userName={user?.email ?? "Technician"}
+        userName={profile?.full_name ?? user?.email ?? "Technician"}
         onLogout={onLogout}
       />
       <main className="dashboard__content">

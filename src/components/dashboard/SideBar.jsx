@@ -17,8 +17,8 @@ function Sidebar({ navItems, activeTab, onSelect, userName, onLogout }) {
   return (
     <aside className={"sidebar" + (collapsed ? "" : " sidebar--expanded")}>
       <div className="sidebar__logo-wrap">
-        <div className="sidebar__logo" aria-hidden="true">N</div>
-        {!collapsed && <span className="sidebar__brand">NestLink</span>}
+        <img src="/logo.png" alt="" className="sidebar__logo" aria-hidden="true" />
+        {!collapsed && <span className="sidebar__brand">DormSphere</span>}
       </div>
 
       <nav className="sidebar__nav">

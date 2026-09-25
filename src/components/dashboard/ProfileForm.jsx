@@ -63,7 +63,7 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
   };
 
   const validate = () => {
-    if (!title) return "Select a title (Mr, Ms or Mdm).";
+    if (!isStudent && !title) return "Select a title (Mr, Ms or Mdm).";
     if (fullName.trim().length < 2) return "Enter your full name.";
     if (isStudent) {
       if (!gender) return "Select your gender — this decides which hostel rooms you can book.";
@@ -91,7 +91,8 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
 
     setSaving(true);
 
-    const fields = { title, full_name: fullName.trim(), phone: phone.trim() || null };
+    const fields = { full_name: fullName.trim(), phone: phone.trim() || null };
+    if (!isStudent) fields.title = title;
     if (isStudent) {
       Object.assign(fields, {
         gender,
@@ -173,18 +174,19 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
 
       <div className="profile-form__grid">
         <h4 className="profile-form__section-title">About you</h4>
-        <label className="field">
-          <span className="field__label">Title</span>
-          <select value={title} onChange={(e) => setTitle(e.target.value)} required>
-            <option value="" disabled>
-              Select title
-            </option>
-            <option value="Mr">Mr</option>
-            <option value="Ms">Ms</option>
-            <option value="Mdm">Mdm</option>
-          </select>
-        </label>
-
+        {!isStudent && (
+          <label className="field">
+            <span className="field__label">Title</span>
+            <select value={title} onChange={(e) => setTitle(e.target.value)} required>
+              <option value="" disabled>
+                Select title
+              </option>
+              <option value="Mr">Mr</option>
+              <option value="Ms">Ms</option>
+              <option value="Mdm">Mdm</option>
+            </select>
+          </label>
+        )}
         <label className="field">
           <span className="field__label">Full name</span>
           <input

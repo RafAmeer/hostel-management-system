@@ -1,27 +1,30 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&display=swap");
 
 :root {
-  --scrim: rgba(8, 12, 20, 0.62);
+  --scrim: rgba(6, 13, 26, 0.66);
   /* Raised from 0.10/0.16 — at the old opacity the slideshow photo showed
      through so strongly that panel text and borders were hard to read.
      A stronger blur + a darker, more opaque tint keeps the "glass" look
      but makes the panels themselves legible on top of any photo. */
-  --glass: rgba(18, 22, 31, 0.62);
-  --glass-strong: rgba(18, 22, 31, 0.74);
+  --glass: rgba(12, 26, 44, 0.64);
+  --glass-strong: rgba(12, 26, 44, 0.78);
   --glass-blur: 28px;
-  --glass-border: rgba(255, 255, 255, 0.24);
+  --glass-border: rgba(148, 210, 201, 0.22);
   --text-primary: #f5f3ee;
   --text-muted: #c9cdd3;
-  --accent: #2dd4bf;
-  --accent-hover: #14b8a6;
+  --accent: #14b8a6;
+  --accent-hover: #0d9488;
   /* Reserved for exactly one thing: the student's own room, styled like a
      physical key tag on Home (see .room-tag). Not used anywhere else, so
      it stays meaningful instead of becoming a second generic brand color. */
   --accent-warm: #f2b25c;
   --accent-warm-deep: #c97a3a;
-  --danger: #ff8a80;
+  --danger: #ff6b6b;
   --info: #8fd0c9;
-  --focus-ring: rgba(45, 212, 191, 0.5);
+  --focus-ring: rgba(20, 184, 166, 0.5);
+  --navy-950: #060d1a;
+  --navy-900: #0a1628;
+  --navy-800: #0f2036;
 }
 
 /* Accessibility floor: every interactive element gets a visible keyboard
@@ -40,7 +43,7 @@
 body {
   font-family: "Inter", Arial, Helvetica, sans-serif;
   color: var(--text-primary);
-  background: #12161f;
+  background: var(--navy-950);
 }
 
 .page {
@@ -117,11 +120,11 @@ body {
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   margin: 0 auto 1rem;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  display: block;
+  object-fit: contain;
 }
 
 .brand-name {

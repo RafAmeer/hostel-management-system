@@ -26,14 +26,20 @@ function sortByPriority(bookings) {
 }
 
 function BookingRow({ b, onApprove, onReject }) {
+  // A booking with no room_id came from a placeholder/preview room that
+  // isn't a real `rooms` row yet (see RoomsTab.jsx handleBook) — flag it so
+  // the warden knows to add that room before approving.
+  const isPlaceholderRoom = !b.room_id;
   return (
     <div className="list-row">
       <div>
         <p className="list-row__title">
           {b.student_name} &middot; {b.room_number}
+          {b.hostel ? ` (${b.hostel}${b.floor ? `, ${b.floor}` : ""})` : ""}
         </p>
         <p className="list-row__meta">
           {b.semester} &middot; requested {b.created_at}
+          {isPlaceholderRoom && " · room not yet added to the system"}
         </p>
       </div>
 

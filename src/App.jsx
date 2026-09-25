@@ -281,13 +281,6 @@ function App() {
     setRole(null);
   };
 
-  // Placeholder for campus identity SSO — wire up the real provider once
-  // it's configured in the Supabase dashboard (Settings > Auth > Providers).
-  const handleCampusSSOLogin = async () => {
-    resetMessages();
-    setInfo("Campus SSO sign-in isn't set up yet.");
-  };
-
   const switchMode = (nextMode) => {
     resetMessages();
     setPassword("");
@@ -313,8 +306,8 @@ function App() {
 
       <div className="container">
         <form className="card" onSubmit={handleSubmit}>
-          <div className="avatar" aria-hidden="true" />
-          <p className="brand-name">NestLink</p>
+          <img src="/logo.png" alt="" className="avatar" aria-hidden="true" />
+          <p className="brand-name">DormSphere</p>
           <h1 className="title">
             {mode === "forgot"
               ? "Reset your password"
@@ -394,7 +387,7 @@ function App() {
               <input
                 type="email"
                 autoComplete="email"
-                placeholder={isStaffPortal ? "staff@nestlink.edu.my" : "you@nestlink.edu.my"}
+                placeholder={isStaffPortal ? "staff@dormsphere.edu.my" : "you@dormsphere.edu.my"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -489,18 +482,6 @@ function App() {
                 </>
               )}
             </p>
-          )}
-
-          {!isStaffPortal && mode !== "forgot" && mode !== "reset" && (
-            <>
-              <div className="divider">
-                <span>or</span>
-              </div>
-
-              <button type="button" className="sso-btn" onClick={handleCampusSSOLogin}>
-                Login with Campus SSO
-              </button>
-            </>
           )}
 
           {mode !== "reset" && (

@@ -259,6 +259,7 @@ function HostelDetailModal({
                       const key = room.id ?? room.room_number;
                       const full = (room.occupied_count ?? 0) >= (room.capacity ?? 1);
                       const gender = room.gender ?? roomGenders[room.id];
+                      const isBookingThis = bookingRoomId === key;
                       return (
                         <div key={key} className="room-card room-card--modal">
                           <h5 className="room-card__number">{room.room_number}</h5>
@@ -273,17 +274,18 @@ function HostelDetailModal({
                               {gender === "female" ? "Female room" : "Male room"}
                             </span>
                           )}
-                          {room.mock ? (
-                            <p className="room-card__hint">Not open for booking yet — ask the warden.</p>
-                          ) : (
-                            <button
-                              type="button"
-                              className="primary-btn"
-                              disabled={full || bookingRoomId === room.id}
-                              onClick={() => onBook(room)}
-                            >
-                              {full ? "Full" : bookingRoomId === room.id ? "Booking…" : "Book this room"}
-                            </button>
+                          <button
+                            type="button"
+                            className="primary-btn"
+                            disabled={full || isBookingThis}
+                            onClick={() => onBook(room, { residence, floor: selectedFloor })}
+                          >
+                            {full ? "Full" : isBookingThis ? "Requesting…" : "Request booking"}
+                          </button>
+                          {room.mock && (
+                            <p className="room-card__hint">
+                              Pending warden confirmation — this room isn't in the system yet.
+                            </p>
                           )}
                         </div>
                       );
