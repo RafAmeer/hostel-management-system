@@ -6,6 +6,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import WardenDashboard from "./pages/WardenDashboard";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
+import CurfewScanPage from "./pages/CurfewScanPage";
 
 // Warden, Finance and Technician all share one "Staff" sign-in page now
 // (previously each had — or would have needed — its own login form).
@@ -288,6 +289,14 @@ function App() {
     setMode(nextMode);
   };
 
+  // Public route, reachable without logging in: the entrance QR poster
+  // (or the in-page camera fallback) opens exactly this path. Checked
+  // before the session check below so it doesn't wait on an auth lookup
+  // it never needs.
+  if (window.location.pathname === "/curfew") {
+    return <CurfewScanPage />;
+  }
+
   if (checkingSession) return null;
 
   if (user) {
@@ -492,6 +501,12 @@ function App() {
             >
               {isStaffPortal ? "← Back to student login" : "Staff? Login here"}
             </button>
+          )}
+
+          {!isStaffPortal && mode === "login" && (
+            <a className="portal-switch" href="/curfew">
+              Scan curfew QR instead
+            </a>
           )}
         </form>
       </div>

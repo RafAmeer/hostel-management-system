@@ -58,6 +58,11 @@ function CurfewTab({ curfewLogs, studentId, onScanLogged }) {
             ? "Log Check-Out"
             : "Log Check-In"}
         </button>
+        <p className="tab__subtitle-text">
+          At the entrance, you don't need to open the app or log in — scan
+          the QR poster with your phone's camera instead. It only asks you
+          to log in the very first time on a new phone.
+        </p>
       </div>
 
       <h3 className="panel-heading panel-heading--sub">Scan History</h3>
