@@ -3,17 +3,15 @@ import { supabase } from "../lib/supabaseClient";
 
 // Public route: /curfew?loc=Main%20Entrance
 //
-// This page is reached WITHOUT logging in — either by scanning a poster QR
-// at the entrance with the phone's own camera app (which just opens this
-// URL), or via the in-page camera scanner below for demoing without a
-// printed poster. See supabase/migrations/2026-09-27_curfew_device_binding.sql
-// and supabase/functions/curfew-scan for the server side of this flow.
+// Two ways to land here, both without logging in:
+//   1. Scanning a poster QR at the entrance with the phone's own camera app
+//      — that just opens this exact URL, ?loc= already filled in.
+//   2. Opening /curfew directly (e.g. the "Scan curfew QR instead" link on
+//      the login page) — there's no ?loc= yet, so this page opens its OWN
+//      camera immediately and reads a poster QR itself, no button needed.
+// See supabase/migrations/2026-09-27_curfew_device_binding.sql and
+// supabase/functions/curfew-scan for the server side of this flow.
 const DEVICE_TOKEN_KEY = "dormsphere_curfew_device_token";
-
-function readLocationFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("loc") || "Main Entrance";
-}
 
 async function callCurfewScan(deviceToken, location) {
   const { data, error } = await supabase.functions.invoke("curfew-scan", {
@@ -29,21 +27,20 @@ async function callCurfewScan(deviceToken, location) {
 }
 
 function CurfewScanPage() {
-  const [location, setLocation] = useState(readLocationFromUrl);
-  // "checking" | "binding" | "scanning" | "success" | "error"
+  const [location, setLocation] = useState(null);
+  // "scanner" | "checking" | "binding" | "scanning" | "success" | "error"
   const [phase, setPhase] = useState("checking");
   const [result, setResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
   const ranOnce = useRef(false);
 
-  const runScan = async (deviceToken) => {
+  const runScan = async (deviceToken, loc) => {
     setPhase("scanning");
     try {
-      const data = await callCurfewScan(deviceToken, location);
+      const data = await callCurfewScan(deviceToken, loc);
       setResult(data);
       setPhase("success");
     } catch (err) {
@@ -57,14 +54,28 @@ function CurfewScanPage() {
     }
   };
 
+  const proceedWithLocation = (loc) => {
+    setLocation(loc);
+    // Keeps the URL consistent with a real poster scan, so a refresh on
+    // this same phone re-checks-in/out at the same entrance instead of
+    // re-opening the camera again.
+    window.history.replaceState(null, "", `/curfew?loc=${encodeURIComponent(loc)}`);
+    const savedToken = window.localStorage.getItem(DEVICE_TOKEN_KEY);
+    if (savedToken) runScan(savedToken, loc);
+    else setPhase("binding");
+  };
+
   useEffect(() => {
     if (ranOnce.current) return;
     ranOnce.current = true;
-    const savedToken = window.localStorage.getItem(DEVICE_TOKEN_KEY);
-    if (savedToken) {
-      runScan(savedToken);
+    const params = new URLSearchParams(window.location.search);
+    const locFromUrl = params.get("loc");
+    if (locFromUrl) {
+      proceedWithLocation(locFromUrl);
     } else {
-      setPhase("binding");
+      // No ?loc= yet — this wasn't opened via an actual poster scan, so
+      // open the camera straight away instead of showing a button first.
+      setPhase("scanner");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -105,7 +116,7 @@ function CurfewScanPage() {
 
     window.localStorage.setItem(DEVICE_TOKEN_KEY, deviceToken);
     setSubmitting(false);
-    await runScan(deviceToken);
+    await runScan(deviceToken, location);
   };
 
   const handleUseDifferentAccount = () => {
@@ -115,13 +126,9 @@ function CurfewScanPage() {
     setPhase("binding");
   };
 
-  const handleScannedLocation = (scannedLoc) => {
-    setShowScanner(false);
-    setLocation(scannedLoc);
-    const savedToken = window.localStorage.getItem(DEVICE_TOKEN_KEY);
-    if (savedToken) runScan(savedToken);
-    else setPhase("binding");
-  };
+  if (phase === "scanner") {
+    return <QrCameraScanner onDecoded={proceedWithLocation} />;
+  }
 
   return (
     <div className="page">
@@ -131,7 +138,7 @@ function CurfewScanPage() {
           <img src="/logo.png" alt="" className="avatar" aria-hidden="true" />
           <p className="brand-name">DormSphere</p>
           <h1 className="title">Curfew Check-In</h1>
-          <p className="subtitle">{location}</p>
+          {location && <p className="subtitle">{location}</p>}
 
           {phase === "checking" && <p className="tab__message">Checking this device…</p>}
 
@@ -202,25 +209,17 @@ function CurfewScanPage() {
               Not you? Use a different account
             </button>
           )}
-
-          {phase === "binding" && !showScanner && readLocationFromUrl() === "Main Entrance" && (
-            <button type="button" className="portal-switch" onClick={() => setShowScanner(true)}>
-              Scan the entrance QR instead
-            </button>
-          )}
-
-          {showScanner && <QrCameraScanner onDecoded={handleScannedLocation} onClose={() => setShowScanner(false)} />}
         </div>
       </div>
     </div>
   );
 }
 
-// Camera-based fallback for when this page was opened directly (e.g. typed
-// in, or during a demo) instead of via a scanned poster link — reads a
-// poster QR with the phone's own browser camera using html5-qrcode, the
-// library named in the FYP proposal's tech stack.
-function QrCameraScanner({ onDecoded, onClose }) {
+// Opens the phone's own camera straight away (via html5-qrcode, the
+// library named in the FYP proposal's tech stack) to read an entrance
+// poster QR — used whenever /curfew is opened without a location already
+// known, so scanning starts immediately instead of behind a click.
+function QrCameraScanner({ onDecoded }) {
   const containerId = "curfew-qr-reader";
   const scannerRef = useRef(null);
   const [scanError, setScanError] = useState("");
@@ -236,7 +235,7 @@ function QrCameraScanner({ onDecoded, onClose }) {
       scanner
         .start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: 220 },
+          { fps: 10, qrbox: 240 },
           (decodedText) => {
             let loc = "Main Entrance";
             try {
@@ -252,7 +251,13 @@ function QrCameraScanner({ onDecoded, onClose }) {
             /* per-frame "no QR found yet" — expected, ignore */
           }
         )
-        .catch((err) => setScanError("Couldn't open the camera: " + err));
+        .catch((err) =>
+          setScanError(
+            "Couldn't open the camera. Make sure you allowed camera access, and that you're on https:// or localhost. (" +
+              err +
+              ")"
+          )
+        );
     });
 
     return () => {
@@ -263,16 +268,27 @@ function QrCameraScanner({ onDecoded, onClose }) {
   }, []);
 
   return (
-    <div className="glass-panel" style={{ marginTop: "1rem" }}>
-      {scanError && (
-        <p className="message message--error" role="alert">
-          {scanError}
-        </p>
-      )}
-      <div id={containerId} style={{ width: "100%" }} />
-      <button type="button" className="portal-switch" onClick={onClose}>
-        Cancel
-      </button>
+    <div className="page">
+      <div className="scrim" />
+      <div className="container">
+        <div className="card">
+          <img src="/logo.png" alt="" className="avatar" aria-hidden="true" />
+          <p className="brand-name">DormSphere</p>
+          <h1 className="title">Scan Entrance QR</h1>
+          <p className="tab__subtitle-text">Point your camera at the poster QR by the door.</p>
+
+          {scanError && (
+            <p className="message message--error" role="alert">
+              {scanError}
+            </p>
+          )}
+          <div id={containerId} style={{ width: "100%", borderRadius: "16px", overflow: "hidden" }} />
+
+          <button type="button" className="portal-switch" onClick={() => onDecoded("Main Entrance")}>
+            Skip scanning (Main Entrance)
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
