@@ -11,10 +11,14 @@ import HostelChatbot from "../components/dashboard/HostelChatbot";
 import ProfileTab from "../components/dashboard/ProfileTab";
 import { buildHostelAnalytics } from "../lib/analytics";
 import { mergeResidences } from "../lib/residences";
+import StudentsTab from "../components/dashboard/StudentsTab";
+import Toast from "../components/Toast";
+import { useToast } from "../hooks/useToast";
 
 const NAV_ITEMS = [
   { key: "overview", label: "Overview", icon: "overview" },
   { key: "bookings", label: "Room Bookings", icon: "status" },
+  { key: "students", label: "Students", icon: "students" },
   { key: "hostels", label: "Hostels & Rooms", icon: "rooms" },
   { key: "complaints", label: "Complaints", icon: "complaint" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
@@ -74,6 +78,7 @@ function WardenDashboard({ user, onLogout }) {
   const [profile, setProfile] = useState(null);
   const [hostels, setHostels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { toast, notify, dismiss } = useToast();
   // Stats period lives here (not inside WardenOverviewTab) so the same
   // `analytics` object can also feed the floating AI Assistant widget,
   // which now renders once at the dashboard level, reachable from every tab.
@@ -119,14 +124,66 @@ function WardenDashboard({ user, onLogout }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleApprove = (id) => {
-    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status: "approved" } : b)));
-    supabase.from("bookings").update({ status: "approved" }).eq("id", id);
+  // Every write below is awaited and its error checked. Before, the update
+  // was fire-and-forget: if the database refused it (e.g. no warden UPDATE
+  // policy), the warden's screen still flipped to "approved" while the row
+  // stayed "pending" — so the student never saw the change. Now the screen
+  // only keeps the new status when the database actually accepted it.
+  const decideBooking = async (id, status) => {
+    const previous = bookings.find((b) => b.id === id);
+    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({ status })
+      .eq("id", id)
+      .select()
+      .maybeSingle();
+
+    if (error || !data) {
+      setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status: previous?.status ?? "pending" } : b)));
+      notify(
+        error
+          ? `Couldn't ${status === "approved" ? "approve" : "reject"} the booking: ${error.message}`
+          : "The database didn't accept that change. Run the latest SQL migration (warden booking policy).",
+        "error"
+      );
+      return;
+    }
+
+    // Approved: the student now lives in that room, so keep their profile in
+    // step (this is what fixes "Not in hostel" showing after approval).
+    if (status === "approved") {
+      const patch = { in_hostel: true, room_number: data.room_number ?? previous?.room_number ?? null };
+      const { error: profileError } = await supabase.from("profiles").update(patch).eq("id", data.student_id);
+      if (!profileError) {
+        setStudents((prev) => prev.map((s) => (s.id === data.student_id ? { ...s, ...patch } : s)));
+      }
+    }
+    notify(status === "approved" ? "Booking approved. The student can see it now." : "Booking rejected.", "success");
   };
 
-  const handleReject = (id) => {
-    setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status: "rejected" } : b)));
-    supabase.from("bookings").update({ status: "rejected" }).eq("id", id);
+  const handleApprove = (id) => decideBooking(id, "approved");
+  const handleReject = (id) => decideBooking(id, "rejected");
+
+  // Warden eligibility override (Students tab). `status` is "eligible",
+  // "not_eligible", or null to hand the decision back to the automatic rule.
+  const handleEligibilityChange = async (studentId, status) => {
+    const patch = status
+      ? { eligibility_status: status, eligibility_override: true }
+      : { eligibility_override: false };
+    const { data, error } = await supabase
+      .from("profiles")
+      .update(patch)
+      .eq("id", studentId)
+      .select()
+      .maybeSingle();
+    if (error || !data) {
+      notify(error ? `Couldn't update eligibility: ${error.message}` : "Eligibility change wasn't saved (check the SQL migration).", "error");
+      return;
+    }
+    setStudents((prev) => prev.map((s) => (s.id === studentId ? { ...s, ...data } : s)));
+    notify("Eligibility updated.", "success");
   };
 
   // Assigns a specific technician (picked from the dropdown in
@@ -141,12 +198,27 @@ function WardenDashboard({ user, onLogout }) {
     supabase
       .from("complaints")
       .update({ assigned_technician: technicianId, status: "in_progress" })
-      .eq("id", id);
+      .eq("id", id)
+      .then(({ error }) => {
+        if (error) {
+          notify(`Couldn't assign the technician: ${error.message}`, "error");
+          loadAll();
+        }
+      });
   };
 
   const handleComplete = (id) => {
     setComplaints((prev) => prev.map((c) => (c.id === id ? { ...c, status: "completed" } : c)));
-    supabase.from("complaints").update({ status: "completed" }).eq("id", id);
+    supabase
+      .from("complaints")
+      .update({ status: "completed" })
+      .eq("id", id)
+      .then(({ error }) => {
+        if (error) {
+          notify(`Couldn't mark it completed: ${error.message}`, "error");
+          loadAll();
+        }
+      });
   };
 
   const handleCheckIn = (id) => {
@@ -165,6 +237,14 @@ function WardenDashboard({ user, onLogout }) {
     switch (activeTab) {
       case "bookings":
         return <WardenBookingsTab bookings={bookings} onApprove={handleApprove} onReject={handleReject} />;
+      case "students":
+        return (
+          <StudentsTab
+            students={students}
+            bookings={bookings}
+            onEligibilityChange={handleEligibilityChange}
+          />
+        );
       case "complaints":
         return (
           <WardenComplaintsTab
@@ -208,8 +288,15 @@ function WardenDashboard({ user, onLogout }) {
         onLogout={onLogout}
       />
       <main className="dashboard__content">
-        {loading ? <p className="tab__empty">Loading warden dashboard&hellip;</p> : renderTab()}
+        {loading ? (
+          <p className="tab__empty">Loading warden dashboard&hellip;</p>
+        ) : (
+          <div key={activeTab} className="tab-fade">
+            {renderTab()}
+          </div>
+        )}
       </main>
+      <Toast toast={toast} onDismiss={dismiss} />
 
       {/* AI-assisted analytics per the proposal — a chat bubble the warden
           can open from any tab, rather than a panel fixed to Overview. */}

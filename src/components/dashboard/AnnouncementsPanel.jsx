@@ -62,7 +62,12 @@ function AnnouncementsPanel({ announcements }) {
                       CATEGORY_ICON[a.category] ?? "📰"
                     )}
                   </span>
-                  <span className="announcement__title">
+                  <span
+                    className={
+                      "announcement__title" +
+                      (a.pinned || a.category === "safety" ? " announcement__title--important" : "")
+                    }
+                  >
                     {a.pinned && <span className="announcement__pin">Pinned</span>}
                     {a.title}
                   </span>

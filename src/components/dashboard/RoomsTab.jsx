@@ -17,7 +17,7 @@ function roomsForResidence(rooms, residenceId) {
   return hasResidenceData ? rooms.filter((r) => r.residence === residenceId) : rooms;
 }
 
-function RoomsTab({ rooms, residences, studentId, studentGender, semester, onBookingCreated }) {
+function RoomsTab({ rooms, residences, studentId, studentGender, semester, eligibility, onBookingCreated }) {
   const [openResidenceId, setOpenResidenceId] = useState(null);
   const [bookingRoomId, setBookingRoomId] = useState(null);
   const [message, setMessage] = useState("");
@@ -68,6 +68,10 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, onBoo
   // the warden can see it and add the real room later. Real rows (warden-
   // added, `room.mock` falsy) keep booking against room_id as before.
   const handleBook = async (room, context = {}) => {
+    if (eligibility === "not_eligible") {
+      setMessage("Your eligibility is marked as not eligible, so room requests are turned off. Please contact the warden.");
+      return;
+    }
     const occupantGender = room.mock ? room.gender : roomGenders[room.id];
     if (occupantGender && studentGender && occupantGender !== studentGender) {
       setMessage(

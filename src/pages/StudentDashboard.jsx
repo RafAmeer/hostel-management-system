@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "../dashboard.css";
 import { supabase } from "../lib/supabaseClient.js";
 import HostelSlideshow from "../components/HostelSlideshow.jsx";
@@ -12,6 +12,8 @@ import ProfileTab from "../components/dashboard/ProfileTab";
 import ProfileForm from "../components/dashboard/ProfileForm";
 import { isStudentProfileComplete } from "../lib/studentProfile";
 import { mergeResidences } from "../lib/residences";
+import Toast from "../components/Toast.jsx";
+import { useToast } from "../hooks/useToast";
 
 // NOTE: this assumes tables `profiles`, `rooms`, `bookings`, `complaints`,
 // `curfew_logs` and `announcements` exist in Supabase (the announcements
@@ -46,11 +48,17 @@ function StudentDashboard({ user, onLogout }) {
   const [announcements, setAnnouncements] = useState([]);
   const [residences, setResidences] = useState(mergeResidences([]));
   const [loading, setLoading] = useState(true);
+  const { toast, notify, dismiss } = useToast(5000);
+  // Last status seen for each booking, so a change made by the warden can be
+  // announced ("Your booking was approved") the moment it shows up.
+  const bookingStatuses = useRef(null);
 
   const studentId = user?.id;
 
-  const loadAll = async () => {
-    setLoading(true);
+  // `silent` refreshes in the background (realtime / polling) without
+  // flashing the "Loading…" state over whatever the student is reading.
+  const loadAll = async (silent = false) => {
+    if (!silent) setLoading(true);
 
     const [profileRes, roomsRes, bookingsRes, complaintsRes, curfewRes, announcementsRes, hostelsRes] =
       await Promise.all([
@@ -91,18 +99,64 @@ function StudentDashboard({ user, onLogout }) {
       setProfileError(profileRes.error.message);
     }
     if (roomsRes.data) setRooms(roomsRes.data);
-    if (bookingsRes.data) setBookings(bookingsRes.data);
+    if (bookingsRes.data) {
+      const previous = bookingStatuses.current;
+      if (previous) {
+        bookingsRes.data.forEach((b) => {
+          const before = previous[b.id];
+          if (before && before !== b.status) {
+            const room = b.room_number ? `Room ${b.room_number}` : "Your room";
+            if (b.status === "approved") notify(`${room} booking was approved.`, "success");
+            else if (b.status === "rejected") notify(`${room} booking was rejected.`, "error");
+            else if (b.status === "cancelled") notify(`${room} booking was cancelled.`, "info");
+          }
+        });
+      }
+      bookingStatuses.current = Object.fromEntries(bookingsRes.data.map((b) => [b.id, b.status]));
+      setBookings(bookingsRes.data);
+    }
     if (complaintsRes.data) setComplaints(complaintsRes.data);
     if (curfewRes.data) setCurfewLogs(curfewRes.data);
     if (announcementsRes.data) setAnnouncements(announcementsRes.data);
     setResidences(mergeResidences(hostelsRes.data));
 
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   useEffect(() => {
     if (studentId) loadAll();
     else setLoading(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId]);
+
+  // Keep the student's side in step with what the warden decides. Three
+  // layers so it works even if one is unavailable: a Supabase realtime
+  // subscription to this student's bookings (instant), a refresh whenever
+  // the tab/app comes back into view, and a slow background poll.
+  useEffect(() => {
+    if (!studentId) return undefined;
+    const refresh = () => loadAll(true);
+
+    const channel = supabase
+      .channel(`student-bookings-${studentId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings", filter: `student_id=eq.${studentId}` },
+        refresh
+      )
+      .subscribe();
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const poll = setInterval(refresh, 20000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(poll);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentId]);
 
@@ -116,7 +170,8 @@ function StudentDashboard({ user, onLogout }) {
             studentId={studentId}
             studentGender={profile?.gender}
             semester={profile?.semester}
-            onBookingCreated={loadAll}
+            eligibility={profile?.eligibility_status}
+            onBookingCreated={() => loadAll(true)}
           />
         );
       case "bookings":
@@ -128,7 +183,7 @@ function StudentDashboard({ user, onLogout }) {
             studentId={studentId}
             residences={residences}
             defaultRoomNumber={profile?.room_number}
-            onComplaintCreated={loadAll}
+            onComplaintCreated={() => loadAll(true)}
           />
         );
       case "curfew":
@@ -136,7 +191,7 @@ function StudentDashboard({ user, onLogout }) {
           <CurfewTab
             curfewLogs={curfewLogs}
             studentId={studentId}
-            onScanLogged={loadAll}
+            onScanLogged={() => loadAll(true)}
           />
         );
       case "profile":
@@ -215,16 +270,19 @@ function StudentDashboard({ user, onLogout }) {
             <div className="glass-panel placeholder-panel">
               <div>
                 <p>Couldn't load your profile: {profileError}</p>
-                <button type="button" className="primary-btn primary-btn--wide" onClick={loadAll}>
+                <button type="button" className="primary-btn primary-btn--wide" onClick={() => loadAll()}>
                   Try again
                 </button>
               </div>
             </div>
           ) : (
-            renderTab()
+            <div key={activeTab} className="tab-fade">
+              {renderTab()}
+            </div>
           )}
         </main>
       </div>
+      <Toast toast={toast} onDismiss={dismiss} />
     </div>
   );
 }

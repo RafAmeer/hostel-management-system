@@ -73,7 +73,13 @@ function TechnicianDashboard({ user, onLogout }) {
         onLogout={onLogout}
       />
       <main className="dashboard__content">
-        {loading ? <p className="tab__empty">Loading technician dashboard&hellip;</p> : renderTab()}
+        {loading ? (
+          <p className="tab__empty">Loading technician dashboard&hellip;</p>
+        ) : (
+          <div key={activeTab} className="tab-fade">
+            {renderTab()}
+          </div>
+        )}
       </main>
     </div>
   );

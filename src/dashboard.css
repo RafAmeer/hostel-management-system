@@ -1792,3 +1792,253 @@
 .report-export__item:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
+
+/* ---------------------------------------------------------------------- */
+/* Tab transitions — every tab change fades and slides in                 */
+/* ---------------------------------------------------------------------- */
+
+@keyframes tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.tab-fade {
+  animation: tab-in 0.38s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Cards and rows then settle in one after another. */
+.tab-fade .list > *,
+.tab-fade .residence-grid > *,
+.tab-fade .home-grid__main > *,
+.tab-fade .home-grid__side > *,
+.tab-fade .stat-mini-row > * {
+  animation: rise-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.tab-fade .list > *:nth-child(2),
+.tab-fade .residence-grid > *:nth-child(2),
+.tab-fade .home-grid__main > *:nth-child(2),
+.tab-fade .home-grid__side > *:nth-child(2),
+.tab-fade .stat-mini-row > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+.tab-fade .list > *:nth-child(3),
+.tab-fade .residence-grid > *:nth-child(3),
+.tab-fade .stat-mini-row > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+.tab-fade .list > *:nth-child(4),
+.tab-fade .residence-grid > *:nth-child(4),
+.tab-fade .stat-mini-row > *:nth-child(4) {
+  animation-delay: 180ms;
+}
+.tab-fade .list > *:nth-child(n + 5) {
+  animation-delay: 240ms;
+}
+
+/* Buttons and rows respond smoothly instead of snapping. */
+.sidebar__link,
+.quick-access__btn,
+.primary-btn,
+.btn-outline,
+.list-row {
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-fade,
+  .tab-fade .list > *,
+  .tab-fade .residence-grid > *,
+  .tab-fade .home-grid__main > *,
+  .tab-fade .home-grid__side > *,
+  .tab-fade .stat-mini-row > * {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Not staying in hostel — red room tag + profile badges                  */
+/* ---------------------------------------------------------------------- */
+
+.room-tag--away {
+  background: linear-gradient(135deg, #ff8a80, #e0534f);
+  color: #3b0a0a;
+  box-shadow: 0 10px 24px rgba(224, 83, 79, 0.32);
+}
+
+.room-tag--away .room-tag__ring {
+  border-color: rgba(59, 10, 10, 0.55);
+}
+
+.room-tag--away .room-tag__eyebrow,
+.room-tag--away .room-tag__hostel {
+  color: rgba(59, 10, 10, 0.82);
+}
+
+.room-tag--away .room-tag__number {
+  font-size: 1.45rem;
+}
+
+.profile-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab__title-row .profile-status-badge {
+  margin-bottom: 0;
+}
+
+.tab__title-row .badge {
+  font-size: 0.78rem;
+}
+
+.field--wide {
+  grid-column: 1 / -1;
+}
+
+.announcement__title--important {
+  background: linear-gradient(transparent 62%, rgba(242, 178, 92, 0.32) 62%);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Warden: Students tab                                                   */
+/* ---------------------------------------------------------------------- */
+
+.stat-mini-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+}
+
+.stat-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+.stat-mini strong {
+  font-family: "Manrope", sans-serif;
+  font-size: 1.5rem;
+  color: var(--accent);
+}
+
+.stat-mini span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.students-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.students-toolbar input,
+.students-toolbar select,
+.students-table__select {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(15, 31, 51, 0.7);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.students-toolbar__search {
+  flex: 1 1 260px;
+}
+
+.students-table-wrap {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.students-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.students-table th {
+  padding: 0.8rem 1rem;
+  text-align: left;
+  font-family: "Manrope", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--glass-border);
+  white-space: nowrap;
+}
+
+.students-table td {
+  padding: 0.75rem 1rem;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.students-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.students-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.students-table__person {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.students-table__name {
+  font-weight: 600;
+}
+
+.students-table__sub {
+  margin-top: 0.15rem;
+  font-size: 0.74rem;
+  color: #9aa0ab;
+}
+
+.students-table__cap {
+  text-transform: capitalize;
+}
+
+.students-table__select {
+  display: block;
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.75rem;
+}

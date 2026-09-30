@@ -235,13 +235,17 @@ body {
   top: 50%;
   right: 0.55rem;
   transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.15rem; /* sizes the minimalist eye icon (it is 1em) */
   line-height: 1;
   padding: 0.25rem;
-  opacity: 0.75;
+  color: var(--text-muted);
+  opacity: 0.8;
 }
 
 .password-input__toggle:hover {
@@ -364,6 +368,287 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .slideshow__slide {
+    transition: none;
+  }
+}
+
+
+/* ---------------------------------------------------------------------- */
+/* Motion: page entrance, loading splash, toasts, highlights              */
+/* ---------------------------------------------------------------------- */
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.card--enter {
+  animation: card-enter 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Loading splash (shown while the site opens) */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: radial-gradient(circle at 50% 40%, var(--navy-800), var(--navy-950) 70%);
+  opacity: 1;
+  transition: opacity 0.45s ease, visibility 0.45s ease;
+}
+
+.splash--hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash__loader {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.9rem;
+}
+
+.splash__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(20, 184, 166, 0.18);
+  border-top-color: var(--accent);
+  animation: splash-spin 0.9s linear infinite;
+}
+
+.splash__logo {
+  width: 58px;
+  height: 58px;
+  padding: 7px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: var(--text-primary);
+  animation: splash-pulse 1.6s ease-in-out infinite;
+}
+
+.splash__name {
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: 0.02em;
+}
+
+.splash__hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+@keyframes splash-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes splash-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+/* Toast notifications (sign in, sign up, booking updates) */
+.app-toast {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 1rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: min(92vw, 440px);
+  padding: 0.75rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: rgba(10, 22, 40, 0.94);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.35;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  animation: app-toast-in 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.app-toast__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 1rem;
+}
+
+.app-toast--success {
+  border-color: rgba(20, 184, 166, 0.55);
+}
+.app-toast--success .app-toast__icon {
+  background: rgba(20, 184, 166, 0.2);
+  color: var(--accent);
+}
+
+.app-toast--error {
+  border-color: rgba(255, 107, 107, 0.55);
+}
+.app-toast--error .app-toast__icon {
+  background: rgba(255, 107, 107, 0.18);
+  color: var(--danger);
+}
+
+.app-toast--info .app-toast__icon {
+  background: rgba(143, 208, 201, 0.16);
+  color: var(--info);
+}
+
+@keyframes app-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -14px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* "Scan Curfew" quick action at the top of the login card (like the
+   quick actions on a banking app's login screen). */
+.scan-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  margin-bottom: 1.1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(20, 184, 166, 0.5);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.22), rgba(20, 184, 166, 0.08));
+  color: var(--text-primary);
+  text-align: left;
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.scan-tile:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+.scan-tile__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--navy-950);
+  font-size: 1.5rem;
+}
+
+.scan-tile__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.scan-tile__text strong {
+  font-family: "Manrope", sans-serif;
+  font-size: 1rem;
+}
+
+.scan-tile__text small {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.install-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 0.9rem;
+  padding: 0.65rem 1rem;
+  border-radius: 12px;
+  border: 1px dashed var(--glass-border);
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.install-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.install-hint {
+  margin-top: 0.9rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Highlight for important words (statuses, room numbers, counts) */
+.hl {
+  padding: 0 0.22em;
+  border-radius: 4px;
+  background: rgba(242, 178, 92, 0.22);
+  color: #ffd99a;
+  font-weight: 700;
+}
+
+.hl--ok {
+  background: rgba(20, 184, 166, 0.2);
+  color: #7ff0e0;
+}
+
+.hl--danger {
+  background: rgba(255, 107, 107, 0.2);
+  color: #ffb0b0;
+}
+
+.message strong {
+  color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card--enter,
+  .splash__ring,
+  .splash__logo,
+  .app-toast {
+    animation: none;
+  }
+  .splash {
     transition: none;
   }
 }

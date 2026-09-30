@@ -1,6 +1,7 @@
 import Avatar from "./Avatar";
 import AnnouncementsPanel from "./AnnouncementsPanel";
 import { NAV_ICONS } from "./icons";
+import { formatDateTime, ELIGIBILITY_LABELS, eligibilityTone } from "../../lib/formatters";
 
 function getGreetingTime() {
   const hour = new Date().getHours();
@@ -12,7 +13,12 @@ function getGreetingTime() {
 // Matches the "Home" wireframe: a combined greeting + profile card and news
 // & announcements on the left, Quick Access + Notifications on the right.
 function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements = [], onNavigate }) {
-  const activeBooking = bookings.find((b) => b.status !== "cancelled");
+  // "Your room" only counts once the warden has approved it. A pending
+  // request is shown as a request, not as the student's room.
+  const approvedBooking = bookings.find((b) => b.status === "approved");
+  const pendingBooking = bookings.find((b) => b.status === "pending");
+  const notInHostel = profile?.in_hostel === false;
+  const roomLabel = approvedBooking?.room_number ?? profile?.room_number ?? "Not assigned";
   const openComplaints = complaints.filter(
     (c) => c.status !== "completed"
   ).length;
@@ -26,13 +32,38 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
     { key: "curfew", label: "Curfew", icon: "curfew" },
   ];
 
+  // Important words are wrapped in <mark className="hl"> so they stand out.
   const notifications = [];
+  if (approvedBooking) {
+    notifications.push(
+      <>
+        Booking for Room {approvedBooking.room_number} was <mark className="hl hl--ok">approved</mark>
+      </>
+    );
+  }
+  if (pendingBooking) {
+    notifications.push(
+      <>
+        Room {pendingBooking.room_number ?? ""} request is <mark className="hl">pending</mark> warden approval
+      </>
+    );
+  }
   if (openComplaints > 0) {
-    notifications.push(`${openComplaints} complaint${openComplaints > 1 ? "s" : ""} still open`);
+    notifications.push(
+      <>
+        <mark className="hl">
+          {openComplaints} complaint{openComplaints > 1 ? "s" : ""}
+        </mark>{" "}
+        still open
+      </>
+    );
   }
   if (lastScan) {
     notifications.push(
-      `Last curfew scan: ${lastScan.scan_type.replace("_", " ")} · ${lastScan.timestamp}`
+      <>
+        Last curfew scan: <mark className="hl">{lastScan.scan_type.replace("_", " ")}</mark> ·{" "}
+        {formatDateTime(lastScan.timestamp)}
+      </>
     );
   }
 
@@ -66,19 +97,33 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
               </div>
               <div>
                 <dt>Semester</dt>
-                <dd>{activeBooking?.semester ?? profile?.semester ?? "—"}</dd>
+                <dd>{approvedBooking?.semester ?? profile?.semester ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>Eligibility</dt>
+                <dd>
+                  <span className={"badge badge--" + eligibilityTone(profile?.eligibility_status)}>
+                    {ELIGIBILITY_LABELS[profile?.eligibility_status] ?? "Pending"}
+                  </span>
+                </dd>
               </div>
             </dl>
           </div>
 
-          <div className="room-tag">
+          <div className={"room-tag" + (notInHostel ? " room-tag--away" : "")}>
             <span className="room-tag__ring" aria-hidden="true" />
-            <span className="room-tag__eyebrow">Your room</span>
+            <span className="room-tag__eyebrow">{notInHostel ? "Hostel status" : "Your room"}</span>
             <span className="room-tag__number">
-              {activeBooking ? activeBooking.room_number : profile?.room_number ?? "Not assigned"}
+              {notInHostel ? "Not staying in hostel" : roomLabel}
             </span>
             <span className="room-tag__hostel">
-              {profile?.in_hostel === false ? "Not staying in hostel" : "Current resident"}
+              {pendingBooking
+                ? `Request for Room ${pendingBooking.room_number ?? ""} is pending`
+                : notInHostel
+                ? "Book a room under Rooms to move in"
+                : approvedBooking || profile?.room_number
+                ? "Current resident"
+                : "No room booked yet"}
             </span>
           </div>
         </section>

@@ -7,6 +7,11 @@ import WardenDashboard from "./pages/WardenDashboard";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import CurfewScanPage from "./pages/CurfewScanPage";
+import Toast from "./components/Toast";
+import SplashScreen from "./components/SplashScreen";
+import { useToast } from "./hooks/useToast";
+import { usePwaInstall } from "./hooks/usePwaInstall";
+import { EyeIcon, EyeOffIcon, ScanIcon, DownloadIcon } from "./components/dashboard/icons";
 
 // Warden, Finance and Technician all share one "Staff" sign-in page now
 // (previously each had — or would have needed — its own login form).
@@ -33,6 +38,29 @@ async function fetchRole(userId) {
   return data?.role ?? "student";
 }
 
+// Supabase's built-in email sender only allows a handful of emails per hour
+// (sign-up confirmations and password resets share that quota), so hitting
+// "email rate limit exceeded" is common while testing. Turn the raw error
+// into something a person can act on.
+const EMAIL_COOLDOWN_SECONDS = 60;
+
+function friendlyAuthError(error) {
+  const msg = error?.message ?? "Something went wrong. Please try again.";
+  if (error?.code === "over_email_send_rate_limit" || /rate limit/i.test(msg)) {
+    return "Too many emails were requested. Please wait a few minutes and try again — and check your inbox (and spam folder) for an email we already sent.";
+  }
+  if (error?.code === "invalid_credentials" || /invalid login credentials/i.test(msg)) {
+    return "Incorrect email or password.";
+  }
+  if (/email not confirmed/i.test(msg)) {
+    return "Please confirm your email first — open the confirmation link we sent you.";
+  }
+  if (/already registered/i.test(msg)) {
+    return "An account with this email already exists. Try signing in instead.";
+  }
+  return msg;
+}
+
 function App() {
   // Which login screen is showing when signed out — no longer a dashboard
   // toggle, just which form the person sees before they've authenticated.
@@ -52,6 +80,31 @@ function App() {
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const { toast, notify, dismiss } = useToast();
+  const { canInstall, showIosHint, install } = usePwaInstall();
+  const [splashMinDone, setSplashMinDone] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+  const cooldownLeft = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
+
+  // Keep the splash up for a beat even when the session check is instant,
+  // so it reads as a deliberate loading screen instead of a flicker.
+  useEffect(() => {
+    const t = setTimeout(() => setSplashMinDone(true), 1100);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Ticks once a second only while an email cooldown is running.
+  useEffect(() => {
+    if (cooldownUntil <= Date.now()) return undefined;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [cooldownUntil]);
+
+  const startEmailCooldown = () => {
+    setNow(Date.now());
+    setCooldownUntil(Date.now() + EMAIL_COOLDOWN_SECONDS * 1000);
+  };
 
   // Load a remembered email on first render
   useEffect(() => {
@@ -130,7 +183,9 @@ function App() {
 
     if (error) {
       setLoading(false);
-      return setError(error.message);
+      const message = friendlyAuthError(error);
+      notify(message, "error");
+      return setError(message);
     }
 
     let actualRole = await fetchRole(data.user.id);
@@ -157,6 +212,7 @@ function App() {
       setLoading(false);
       setUser(null);
       setRole(null);
+      notify("This account doesn't have staff access.", "error");
       return setError("This account doesn't have staff access.");
     }
     if (expectedPortal === "student" && actualIsStaff) {
@@ -164,6 +220,7 @@ function App() {
       setLoading(false);
       setUser(null);
       setRole(null);
+      notify("Staff accounts must use the Staff Login.", "error");
       return setError("Staff accounts must use the Staff Login.");
     }
 
@@ -176,6 +233,7 @@ function App() {
     setUser(data.user);
     setRole(actualRole);
     setLoading(false);
+    notify("Signed in successfully. Welcome back!", "success");
   };
 
   // Shared signup for both portals. Student signups keep the existing
@@ -204,12 +262,21 @@ function App() {
 
     if (error) {
       setLoading(false);
-      return setError(error.message);
+      // Both a rate-limit hit and a successful send use up email quota, so
+      // pause the button either way to stop repeat clicks burning it.
+      if (error.code === "over_email_send_rate_limit" || /rate limit/i.test(error.message)) {
+        startEmailCooldown();
+      }
+      const message = friendlyAuthError(error);
+      notify(message, "error");
+      return setError(message);
     }
 
     // If email confirmation is required, Supabase returns a user but no session yet.
     if (data.user && !data.session) {
       setLoading(false);
+      startEmailCooldown();
+      notify("Account created. Check your email to confirm it.", "success");
       setInfo(
         isStaffSignup
           ? `Staff account created as ${STAFF_ROLE_LABELS[staffRole]}. Check your email to confirm, then sign in above.`
@@ -233,6 +300,7 @@ function App() {
     setLoading(false);
     setUser(data.user ?? null);
     setRole(isStaffSignup ? staffRole : "student");
+    notify("Account created. Welcome to DormSphere!", "success");
   };
 
   const handleForgotPassword = async (e) => {
@@ -243,7 +311,16 @@ function App() {
       redirectTo: window.location.origin,
     });
     setLoading(false);
-    if (error) return setError(error.message);
+    if (error) {
+      if (error.code === "over_email_send_rate_limit" || /rate limit/i.test(error.message)) {
+        startEmailCooldown();
+      }
+      const message = friendlyAuthError(error);
+      notify(message, "error");
+      return setError(message);
+    }
+    startEmailCooldown();
+    notify("Reset link sent. Check your email.", "success");
     setInfo("Check your email for a link to reset your password.");
   };
 
@@ -256,8 +333,12 @@ function App() {
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setLoading(false);
-    if (error) return setError(error.message);
+    if (error) {
+      notify(error.message, "error");
+      return setError(error.message);
+    }
     setNewPassword("");
+    notify("Password updated.", "success");
     setInfo("Password updated. Signing you in…");
     // The recovery session is already a real session, so onAuthStateChange
     // will pick it up and route to the right dashboard on its own.
@@ -280,6 +361,7 @@ function App() {
     if (error) return setError(error.message);
     setUser(null);
     setRole(null);
+    notify("You've been signed out.", "info");
   };
 
   const switchMode = (nextMode) => {
@@ -293,28 +375,54 @@ function App() {
   // (or the in-page camera fallback) opens exactly this path. Checked
   // before the session check below so it doesn't wait on an auth lookup
   // it never needs.
+  // Toast + splash sit on top of every screen (login, dashboards, scan page).
+  const overlays = (
+    <>
+      <Toast toast={toast} onDismiss={dismiss} />
+      <SplashScreen done={splashMinDone && !checkingSession} />
+    </>
+  );
+
   if (window.location.pathname === "/curfew") {
-    return <CurfewScanPage />;
+    return (
+      <>
+        <CurfewScanPage />
+        {overlays}
+      </>
+    );
   }
 
-  if (checkingSession) return null;
+  if (checkingSession) return overlays;
 
   if (user) {
-    if (role === "warden") return <WardenDashboard user={user} onLogout={handleLogOut} />;
-    if (role === "finance") return <FinanceDashboard user={user} onLogout={handleLogOut} />;
-    if (role === "technician") return <TechnicianDashboard user={user} onLogout={handleLogOut} />;
-    return <StudentDashboard user={user} onLogout={handleLogOut} />;
+    const dashboard =
+      role === "warden" ? (
+        <WardenDashboard user={user} onLogout={handleLogOut} />
+      ) : role === "finance" ? (
+        <FinanceDashboard user={user} onLogout={handleLogOut} />
+      ) : role === "technician" ? (
+        <TechnicianDashboard user={user} onLogout={handleLogOut} />
+      ) : (
+        <StudentDashboard user={user} onLogout={handleLogOut} />
+      );
+    return (
+      <>
+        {dashboard}
+        {overlays}
+      </>
+    );
   }
 
   const isStaffPortal = portal === "staff";
 
   return (
+    <>
     <div className="page">
       <HostelSlideshow />
       <div className="scrim" />
 
       <div className="container">
-        <form className="card" onSubmit={handleSubmit}>
+        <form className="card card--enter" onSubmit={handleSubmit}>
           <img src="/logo.png" alt="" className="avatar" aria-hidden="true" />
           <p className="brand-name">DormSphere</p>
           <h1 className="title">
@@ -341,6 +449,18 @@ function App() {
               ? "Sign in to your hostel account"
               : "Create your hostel account"}
           </p>
+
+          {!isStaffPortal && mode === "login" && (
+            <a className="scan-tile" href="/curfew">
+              <span className="scan-tile__icon" aria-hidden="true">
+                <ScanIcon />
+              </span>
+              <span className="scan-tile__text">
+                <strong>Scan Curfew</strong>
+                <small>Check in or out — no login needed</small>
+              </span>
+            </a>
+          )}
 
           {error && (
             <p className="message message--error" role="alert">
@@ -424,7 +544,7 @@ function App() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   tabIndex={-1}
                 >
-                  {showPassword ? "🙈" : "👁️"}
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
               </div>
             </label>
@@ -453,11 +573,14 @@ function App() {
             disabled={
               loading ||
               (mode === "forgot" ? !email : mode === "reset" ? !newPassword : !email || !password) ||
-              (isStaffPortal && mode === "signup" && (!fullName || !staffTitle))
+              (isStaffPortal && mode === "signup" && (!fullName || !staffTitle)) ||
+              ((mode === "signup" || mode === "forgot") && cooldownLeft > 0)
             }
           >
             {loading
               ? "Please wait…"
+              : (mode === "signup" || mode === "forgot") && cooldownLeft > 0
+              ? `Try again in ${cooldownLeft}s`
               : mode === "forgot"
               ? "Send reset link"
               : mode === "reset"
@@ -503,14 +626,21 @@ function App() {
             </button>
           )}
 
-          {!isStaffPortal && mode === "login" && (
-            <a className="portal-switch" href="/curfew">
-              Scan curfew QR instead
-            </a>
+          {mode === "login" && canInstall && (
+            <button type="button" className="install-btn" onClick={install}>
+              <DownloadIcon aria-hidden="true" /> Install DormSphere app
+            </button>
+          )}
+          {mode === "login" && showIosHint && (
+            <p className="install-hint">
+              To install on iPhone: tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.
+            </p>
           )}
         </form>
       </div>
     </div>
+    {overlays}
+    </>
   );
 }
 

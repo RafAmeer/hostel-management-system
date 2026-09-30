@@ -1,3 +1,5 @@
+import { formatDateTime } from "../../lib/formatters";
+
 const STATUS_LABELS = {
   pending: "Pending",
   approved: "Approved",
@@ -27,9 +29,12 @@ function BookingsTab({ bookings }) {
           {bookings.map((b) => (
             <div key={b.id} className="list-row">
               <div>
-                <p className="list-row__title">Room {b.room_number ?? b.room_id}</p>
+                <p className="list-row__title">
+                  Room <mark className="hl">{b.room_number ?? b.room_id}</mark>
+                  {b.hostel ? ` · ${b.hostel}` : ""}
+                </p>
                 <p className="list-row__meta">
-                  {b.semester} &middot; requested {b.created_at}
+                  {b.semester} &middot; requested {formatDateTime(b.created_at)}
                 </p>
               </div>
               <span className={"badge badge--" + statusTone(b.status)}>

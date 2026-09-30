@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import Avatar from "./Avatar";
+import { PROGRAMME_GROUPS, OTHER_PROGRAMME, isKnownProgramme } from "../../data/programmes";
 
 const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
 
@@ -23,7 +24,17 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
   const [studentId, setStudentId] = useState(profile?.student_id ?? "");
   const [age, setAge] = useState(profile?.age ? String(profile.age) : "");
   const [phone, setPhone] = useState(profile?.phone ?? "");
-  const [programme, setProgramme] = useState(profile?.programme ?? "");
+  // The dropdown value is either a listed programme or OTHER_PROGRAMME (then
+  // `otherProgramme` holds what they typed). A saved value that isn't in
+  // the list opens as "Other" so older hand-typed entries aren't lost.
+  const savedProgramme = profile?.programme ?? "";
+  const [programmeChoice, setProgrammeChoice] = useState(
+    !savedProgramme ? "" : isKnownProgramme(savedProgramme) ? savedProgramme : OTHER_PROGRAMME
+  );
+  const [otherProgramme, setOtherProgramme] = useState(
+    savedProgramme && !isKnownProgramme(savedProgramme) ? savedProgramme : ""
+  );
+  const programme = programmeChoice === OTHER_PROGRAMME ? otherProgramme.trim() : programmeChoice;
   const [semester, setSemester] = useState(profile?.semester ?? "");
   const [inHostel, setInHostel] = useState(
     typeof profile?.in_hostel === "boolean" ? profile.in_hostel : null
@@ -70,7 +81,8 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
       if (!studentId.trim()) return "Enter your student ID.";
       const n = Number(age);
       if (!Number.isInteger(n) || n < 15 || n > 99) return "Enter a valid age (15–99).";
-      if (!programme.trim()) return "Enter your programme.";
+      if (!programmeChoice) return "Select your programme.";
+      if (programmeChoice === OTHER_PROGRAMME && !otherProgramme.trim()) return "Type your programme name.";
       if (!phone.trim()) return "Enter your phone number.";
       if (!semester) return "Select your current semester.";
       if (inHostel === null) return "Tell us whether you are currently staying in a hostel.";
@@ -98,7 +110,7 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
         gender,
         student_id: studentId.trim(),
         age: Number(age),
-        programme: programme.trim() || null,
+        programme: programme || null,
         semester: semester || null,
         in_hostel: inHostel,
         room_number: inHostel ? roomNumber.trim() || null : null,
@@ -254,16 +266,41 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
               </select>
             </label>
 
-            <label className="field">
+            <label className="field field--wide">
               <span className="field__label">Programme</span>
-              <input
-                type="text"
-                value={programme}
-                onChange={(e) => setProgramme(e.target.value)}
-                placeholder="e.g. Diploma in Software Engineering"
+              <select
+                value={programmeChoice}
+                onChange={(e) => setProgrammeChoice(e.target.value)}
                 required
-              />
+              >
+                <option value="" disabled>
+                  Select your programme
+                </option>
+                {PROGRAMME_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.programmes.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+                <option value={OTHER_PROGRAMME}>Other (not listed)</option>
+              </select>
             </label>
+
+            {programmeChoice === OTHER_PROGRAMME && (
+              <label className="field field--wide">
+                <span className="field__label">Programme name</span>
+                <input
+                  type="text"
+                  value={otherProgramme}
+                  onChange={(e) => setOtherProgramme(e.target.value)}
+                  placeholder="Type your programme"
+                  required
+                />
+              </label>
+            )}
           </>
         )}
 
