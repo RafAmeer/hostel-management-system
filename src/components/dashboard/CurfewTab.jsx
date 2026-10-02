@@ -1,36 +1,13 @@
-import { useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
+import CurfewScanCard from "./CurfewScanCard";
+import { formatDateTime } from "../../lib/formatters";
 
-// Manual Check-In/Check-Out button stands in for the actual QR scan step
-// from the proposal (html5-qrcode isn't wired up yet) — swap handleScan's
-// insert for a real scanned-code read once that library is added.
-function CurfewTab({ curfewLogs, studentId, onScanLogged }) {
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
-
+// Student Curfew tab: current status, the Scan Curfew entry point (phone
+// only) and scan history. Check-in/out itself happens on the /curfew page
+// (camera + GPS check) — there is no manual button any more, so a scan
+// can't be logged from a desktop or from outside the hostel.
+function CurfewTab({ curfewLogs }) {
   const lastLog = curfewLogs[0];
   const isOut = lastLog?.scan_type === "check_out";
-  const nextType = isOut ? "check_in" : "check_out";
-
-  const handleScan = async () => {
-    setSubmitting(true);
-    setMessage("");
-
-    const { error } = await supabase.from("curfew_logs").insert({
-      student_id: studentId,
-      scan_type: nextType,
-      timestamp: new Date().toISOString(),
-    });
-
-    setSubmitting(false);
-
-    if (error) {
-      setMessage(`Couldn't log scan: ${error.message}`);
-      return;
-    }
-
-    onScanLogged?.();
-  };
 
   return (
     <div className="tab">
@@ -44,26 +21,11 @@ function CurfewTab({ curfewLogs, studentId, onScanLogged }) {
               {isOut ? "Out of Hostel" : "In Hostel"}
             </span>
           </p>
+          {lastLog && <p className="list-row__meta">Last scan: {formatDateTime(lastLog.timestamp)}</p>}
         </div>
-        {message && <p className="tab__message">{message}</p>}
-        <button
-          type="button"
-          className="primary-btn primary-btn--wide"
-          disabled={submitting}
-          onClick={handleScan}
-        >
-          {submitting
-            ? "Logging…"
-            : nextType === "check_out"
-            ? "Log Check-Out"
-            : "Log Check-In"}
-        </button>
-        <p className="tab__subtitle-text">
-          At the entrance, you don't need to open the app or log in — scan
-          the QR poster with your phone's camera instead. It only asks you
-          to log in the very first time on a new phone.
-        </p>
       </div>
+
+      <CurfewScanCard />
 
       <h3 className="panel-heading panel-heading--sub">Scan History</h3>
       {curfewLogs.length === 0 ? (
@@ -72,10 +34,11 @@ function CurfewTab({ curfewLogs, studentId, onScanLogged }) {
         <div className="list">
           {curfewLogs.map((log) => (
             <div key={log.id} className="list-row">
-              <p className="list-row__title">
-                {log.scan_type === "check_out" ? "Check Out" : "Check In"}
-              </p>
-              <p className="list-row__meta">{log.timestamp}</p>
+              <div>
+                <p className="list-row__title">{log.scan_type === "check_out" ? "Check Out" : "Check In"}</p>
+                {log.location && <p className="list-row__meta">{log.location}</p>}
+              </div>
+              <p className="list-row__meta">{formatDateTime(log.timestamp)}</p>
             </div>
           ))}
         </div>

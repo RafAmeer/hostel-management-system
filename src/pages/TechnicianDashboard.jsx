@@ -70,6 +70,8 @@ function TechnicianDashboard({ user, onLogout }) {
         activeTab={activeTab}
         onSelect={setActiveTab}
         userName={profile?.full_name ?? user?.email ?? "Technician"}
+        roleLabel="Technician"
+        avatarUrl={profile?.avatar_url}
         onLogout={onLogout}
       />
       <main className="dashboard__content">

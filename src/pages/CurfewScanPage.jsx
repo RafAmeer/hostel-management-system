@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { isPhoneDevice } from "../lib/device";
+import { getCurrentPosition } from "../lib/geo";
 
 // Public route: /curfew?loc=Main%20Entrance
 //
@@ -13,9 +15,21 @@ import { supabase } from "../lib/supabaseClient";
 // supabase/functions/curfew-scan for the server side of this flow.
 const DEVICE_TOKEN_KEY = "dormsphere_curfew_device_token";
 
-async function callCurfewScan(deviceToken, location) {
+const RETURN_TO_LOGIN_MS = 3500;
+
+function goToLogin() {
+  window.location.assign("/");
+}
+
+async function callCurfewScan(deviceToken, location, coords) {
   const { data, error } = await supabase.functions.invoke("curfew-scan", {
-    body: { device_token: deviceToken, location },
+    body: {
+      device_token: deviceToken,
+      location,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      accuracy: coords.accuracy,
+    },
   });
   // supabase-js only rejects on network failure — a 4xx/5xx from the
   // function still resolves here with `error` set from the response body.
@@ -38,21 +52,43 @@ function CurfewScanPage() {
   const ranOnce = useRef(false);
 
   const runScan = async (deviceToken, loc) => {
+    // Location first: a check-in/out only counts when the phone is at the
+    // hostel, so the GPS read happens before anything is logged.
+    setPhase("locating");
+    let coords;
+    try {
+      coords = await getCurrentPosition();
+    } catch (err) {
+      setErrorMessage(err.message);
+      setPhase("error");
+      return;
+    }
+
     setPhase("scanning");
     try {
-      const data = await callCurfewScan(deviceToken, loc);
+      const data = await callCurfewScan(deviceToken, loc, coords);
       setResult(data);
       setPhase("success");
     } catch (err) {
       if (err.message === "device_not_recognized") {
         window.localStorage.removeItem(DEVICE_TOKEN_KEY);
         setPhase("binding");
+      } else if (err.message === "outside_hostel_area") {
+        setErrorMessage("You're not at the hostel. Move to the entrance and scan again.");
+        setPhase("error");
       } else {
         setErrorMessage(err.message);
         setPhase("error");
       }
     }
   };
+
+  // After a successful scan, send the phone back to the login page.
+  useEffect(() => {
+    if (phase !== "success") return undefined;
+    const t = setTimeout(goToLogin, RETURN_TO_LOGIN_MS);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   const proceedWithLocation = (loc) => {
     setLocation(loc);
@@ -126,6 +162,29 @@ function CurfewScanPage() {
     setPhase("binding");
   };
 
+  // Scanning is phone-only (camera + GPS at the entrance).
+  if (!isPhoneDevice()) {
+    return (
+      <div className="page">
+        <div className="scrim" />
+        <div className="container">
+          <div className="card">
+            <img src="/logo.png" alt="" className="avatar" aria-hidden="true" />
+            <p className="brand-name">DormSphere</p>
+            <h1 className="title">Phone only</h1>
+            <p className="tab__subtitle-text">
+              Curfew scanning is only available on a phone. Open DormSphere on your phone at the
+              hostel entrance.
+            </p>
+            <button type="button" className="primary-btn primary-btn--wide" onClick={goToLogin}>
+              Back to login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (phase === "scanner") {
     return <QrCameraScanner onDecoded={proceedWithLocation} />;
   }
@@ -141,6 +200,8 @@ function CurfewScanPage() {
           {location && <p className="subtitle">{location}</p>}
 
           {phase === "checking" && <p className="tab__message">Checking this device…</p>}
+
+          {phase === "locating" && <p className="tab__message">Checking your location…</p>}
 
           {phase === "scanning" && <p className="tab__message">Logging your scan…</p>}
 
@@ -158,6 +219,7 @@ function CurfewScanPage() {
                   minute: "2-digit",
                 })}
               </p>
+              <p className="list-row__meta">Returning to login…</p>
             </div>
           )}
 
@@ -202,6 +264,26 @@ function CurfewScanPage() {
                 {submitting ? "Please wait…" : "Verify & Check In/Out"}
               </button>
             </form>
+          )}
+
+          {phase === "error" && (
+            <button
+              type="button"
+              className="primary-btn primary-btn--wide"
+              onClick={() => {
+                const t = window.localStorage.getItem(DEVICE_TOKEN_KEY);
+                if (t && location) runScan(t, location);
+                else goToLogin();
+              }}
+            >
+              Try again
+            </button>
+          )}
+
+          {(phase === "success" || phase === "error") && (
+            <button type="button" className="portal-switch" onClick={goToLogin}>
+              Back to login
+            </button>
           )}
 
           {(phase === "success" || phase === "error") && (
@@ -286,6 +368,9 @@ function QrCameraScanner({ onDecoded }) {
 
           <button type="button" className="portal-switch" onClick={() => onDecoded("Main Entrance")}>
             Skip scanning (Main Entrance)
+          </button>
+          <button type="button" className="portal-switch" onClick={goToLogin}>
+            Back to login
           </button>
         </div>
       </div>

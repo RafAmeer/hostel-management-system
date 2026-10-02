@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { LogoutIcon, NAV_ICONS } from "./icons.jsx";
+import Avatar from "./Avatar.jsx";
+import ThemeToggle from "../ThemeToggle.jsx";
 
 // navItems is passed in by each dashboard (Student/Warden) instead of being
 // hardcoded here, so this one Sidebar works for both roles. Each item can
@@ -9,16 +11,25 @@ import { LogoutIcon, NAV_ICONS } from "./icons.jsx";
 // narrow screens does it start as the icon rail, so it doesn't cover the page.
 const NARROW_SCREEN_PX = 720;
 
-function Sidebar({ navItems, activeTab, onSelect, userName, onLogout }) {
+function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl, onLogout }) {
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== "undefined" && window.innerWidth < NARROW_SCREEN_PX
   );
 
   return (
     <aside className={"sidebar" + (collapsed ? "" : " sidebar--expanded")}>
-      <div className="sidebar__logo-wrap">
-        <img src="/logo.png" alt="" className="sidebar__logo" aria-hidden="true" />
-        {!collapsed && <span className="sidebar__brand">DormSphere</span>}
+      {/* Who is signed in, e.g. "Hostel Resident / Ash". The logo that used
+          to sit here (a white disc) was removed. */}
+      <div className="sidebar__who">
+        <Avatar url={avatarUrl} name={userName} size={collapsed ? 40 : 44} />
+        {!collapsed && (
+          <div className="sidebar__who-text">
+            {roleLabel && <p className="sidebar__role">{roleLabel}</p>}
+            <p className="sidebar__name" title={userName}>
+              {userName}
+            </p>
+          </div>
+        )}
       </div>
 
       <nav className="sidebar__nav">
@@ -43,7 +54,7 @@ function Sidebar({ navItems, activeTab, onSelect, userName, onLogout }) {
       </nav>
 
       <div className="sidebar__footer">
-        {!collapsed && <p className="sidebar__student">{userName}</p>}
+        <ThemeToggle />
 
         <button
           type="button"

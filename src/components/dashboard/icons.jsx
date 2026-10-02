@@ -198,6 +198,41 @@ export function UsersIcon(props) {
   );
 }
 
+export function SunIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" />
+    </svg>
+  );
+}
+
+export function MoonIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
+    </svg>
+  );
+}
+
+export function NewsIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 5h11a1 1 0 0 1 1 1v13H6a2 2 0 0 1-2-2V6a1 1 0 0 1 1-1Z" />
+      <path d="M17 9h2a1 1 0 0 1 1 1v7a2 2 0 0 1-2 2h-1M8 9h5M8 12.5h5M8 16h3" />
+    </svg>
+  );
+}
+
+export function MapPinIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
+
 export const NAV_ICONS = {
   home: HomeIcon,
   rooms: BedIcon,
@@ -210,4 +245,5 @@ export const NAV_ICONS = {
   profile: UserIcon,
   overview: BarsIcon,
   students: UsersIcon,
+  news: NewsIcon,
 };

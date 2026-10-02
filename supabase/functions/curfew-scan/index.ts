@@ -17,6 +17,21 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+// Hostel location check. Set these as function secrets:
+//   supabase secrets set HOSTEL_LAT=3.0xxx HOSTEL_LNG=101.xxx HOSTEL_RADIUS_M=150
+// If HOSTEL_LAT/HOSTEL_LNG are not set the check is skipped (so the flow
+// still works before you've configured it), but the coordinates are still
+// stored with each scan.
+function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -28,9 +43,32 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { device_token, location } = await req.json();
+    const { device_token, location, latitude, longitude, accuracy } = await req.json();
     if (!device_token || typeof device_token !== "string") {
       return jsonResponse({ error: "Missing device_token" }, 400);
+    }
+
+    // Phone-only: block obvious desktop browsers server-side too. (The UI
+    // already hides the scan on desktop; this stops a hand-made request.)
+    const ua = req.headers.get("user-agent") ?? "";
+    if (!/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) {
+      return jsonResponse({ error: "phone_only" }, 403);
+    }
+
+    if (typeof latitude !== "number" || typeof longitude !== "number") {
+      return jsonResponse({ error: "location_required" }, 400);
+    }
+
+    const hostelLat = Number(Deno.env.get("HOSTEL_LAT"));
+    const hostelLng = Number(Deno.env.get("HOSTEL_LNG"));
+    const radius = Number(Deno.env.get("HOSTEL_RADIUS_M") ?? 150) || 150;
+    if (Deno.env.get("HOSTEL_LAT") && Deno.env.get("HOSTEL_LNG")) {
+      const dist = distanceMeters(latitude, longitude, hostelLat, hostelLng);
+      // Allow for GPS error: a poor fix (large accuracy) widens the circle a bit.
+      const slack = Math.min(Number(accuracy) || 0, 100);
+      if (dist > radius + slack) {
+        return jsonResponse({ error: "outside_hostel_area" }, 403);
+      }
     }
 
     const supabaseAdmin = createClient(
@@ -79,6 +117,8 @@ Deno.serve(async (req) => {
       scan_type: nextType,
       timestamp,
       location: location || "Main Entrance",
+      latitude,
+      longitude,
     });
 
     if (insertError) {

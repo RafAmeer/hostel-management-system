@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "../dashboard.css";
 import { supabase } from "../lib/supabaseClient.js";
-import HostelSlideshow from "../components/HostelSlideshow.jsx";
 import Sidebar from "../components/dashboard/SideBar.jsx";
 import OverviewTab from "../components/dashboard/OverviewTab";
 import RoomsTab from "../components/dashboard/RoomsTab";
@@ -188,11 +187,7 @@ function StudentDashboard({ user, onLogout }) {
         );
       case "curfew":
         return (
-          <CurfewTab
-            curfewLogs={curfewLogs}
-            studentId={studentId}
-            onScanLogged={() => loadAll(true)}
-          />
+          <CurfewTab curfewLogs={curfewLogs} />
         );
       case "profile":
         return (
@@ -223,9 +218,7 @@ function StudentDashboard({ user, onLogout }) {
 
   if (needsProfileSetup) {
     return (
-      <div className="page">
-        <HostelSlideshow />
-        <div className="scrim" />
+      <div className="page page--app">
         <div className="container">
           <section className="card setup-card" aria-labelledby="setup-title">
             <h1 id="setup-title" className="title">
@@ -250,17 +243,18 @@ function StudentDashboard({ user, onLogout }) {
     );
   }
 
+  // After sign-in the dashboard sits on a plain white/black background
+  // (by theme) — the photo slideshow is only for the sign-in/sign-up pages.
   return (
-    <div className="page">
-      <HostelSlideshow />
-      <div className="scrim" />
-
+    <div className="page page--app">
       <div className="dashboard">
         <Sidebar
           navItems={NAV_ITEMS}
           activeTab={activeTab}
           onSelect={setActiveTab}
           userName={profile?.full_name ?? user?.email}
+          roleLabel="Hostel Resident"
+          avatarUrl={profile?.avatar_url}
           onLogout={onLogout}
         />
         <main className="dashboard__content">

@@ -11,6 +11,7 @@ import HostelChatbot from "../components/dashboard/HostelChatbot";
 import ProfileTab from "../components/dashboard/ProfileTab";
 import { buildHostelAnalytics } from "../lib/analytics";
 import { mergeResidences } from "../lib/residences";
+import WardenAnnouncementsTab from "../components/dashboard/WardenAnnouncementsTab";
 import StudentsTab from "../components/dashboard/StudentsTab";
 import Toast from "../components/Toast";
 import { useToast } from "../hooks/useToast";
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { key: "bookings", label: "Room Bookings", icon: "status" },
   { key: "students", label: "Students", icon: "students" },
   { key: "hostels", label: "Hostels & Rooms", icon: "rooms" },
+  { key: "news", label: "News", icon: "news" },
   { key: "complaints", label: "Complaints", icon: "complaint" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
   { key: "profile", label: "Profile", icon: "profile" },
@@ -77,6 +79,7 @@ function WardenDashboard({ user, onLogout }) {
   const [technicians, setTechnicians] = useState([]);
   const [profile, setProfile] = useState(null);
   const [hostels, setHostels] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast, notify, dismiss } = useToast();
   // Stats period lives here (not inside WardenOverviewTab) so the same
@@ -89,6 +92,15 @@ function WardenDashboard({ user, onLogout }) {
     () => buildHostelAnalytics({ bookings, complaints, curfewStatuses, rooms, students, periodDays }),
     [bookings, complaints, curfewStatuses, rooms, students, periodDays]
   );
+
+  const loadAnnouncements = async () => {
+    const { data } = await supabase
+      .from("announcements")
+      .select("*")
+      .order("pinned", { ascending: false })
+      .order("created_at", { ascending: false });
+    setAnnouncements(data ?? []);
+  };
 
   const loadAll = async () => {
     setLoading(true);
@@ -115,6 +127,7 @@ function WardenDashboard({ user, onLogout }) {
     if (techniciansRes.data) setTechnicians(techniciansRes.data);
     if (profileRes.data) setProfile(profileRes.data);
     setHostels(hostelsRes.data ?? []);
+    await loadAnnouncements();
 
     setLoading(false);
   };
@@ -264,6 +277,14 @@ function WardenDashboard({ user, onLogout }) {
             onChanged={loadAll}
           />
         );
+      case "news":
+        return (
+          <WardenAnnouncementsTab
+            announcements={announcements}
+            onChanged={loadAnnouncements}
+            notify={notify}
+          />
+        );
       case "profile":
         return <ProfileTab user={user} profile={profile} variant="staff" onSaved={setProfile} />;
       default:
@@ -285,6 +306,8 @@ function WardenDashboard({ user, onLogout }) {
         activeTab={activeTab}
         onSelect={setActiveTab}
         userName={profile?.full_name ?? user?.email ?? "Warden"}
+        roleLabel="Warden"
+        avatarUrl={profile?.avatar_url}
         onLogout={onLogout}
       />
       <main className="dashboard__content">

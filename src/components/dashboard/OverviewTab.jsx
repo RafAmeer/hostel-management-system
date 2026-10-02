@@ -1,5 +1,6 @@
 import Avatar from "./Avatar";
 import AnnouncementsPanel from "./AnnouncementsPanel";
+import CurfewScanCard from "./CurfewScanCard";
 import { NAV_ICONS } from "./icons";
 import { formatDateTime, ELIGIBILITY_LABELS, eligibilityTone } from "../../lib/formatters";
 
@@ -70,6 +71,10 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
   return (
     <div className="tab home-grid">
       <div className="home-grid__main">
+        <AnnouncementsPanel announcements={announcements} />
+
+        <CurfewScanCard compact />
+
         <section className="glass-panel profile-panel">
           <div className="profile-panel__head">
             <div>
@@ -127,8 +132,6 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
             </span>
           </div>
         </section>
-
-        <AnnouncementsPanel announcements={announcements} />
       </div>
 
       <div className="home-grid__side">

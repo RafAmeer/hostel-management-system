@@ -11,6 +11,14 @@
     <meta name="apple-mobile-web-app-title" content="DormSphere" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script>
+      // Apply the saved white/black mode before first paint (no flash).
+      try {
+        var t = localStorage.getItem("dormsphere_theme");
+        if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
     <title>DormSphere — Hostel Management</title>
   </head>
   <body>

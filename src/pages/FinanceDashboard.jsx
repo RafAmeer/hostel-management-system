@@ -53,6 +53,8 @@ function FinanceDashboard({ user, onLogout }) {
         activeTab={activeTab}
         onSelect={setActiveTab}
         userName={profile?.full_name ?? user?.email ?? "Finance"}
+        roleLabel="Finance"
+        avatarUrl={profile?.avatar_url}
         onLogout={onLogout}
       />
       <main className="dashboard__content">

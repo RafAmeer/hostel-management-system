@@ -9,6 +9,9 @@ import TechnicianDashboard from "./pages/TechnicianDashboard";
 import CurfewScanPage from "./pages/CurfewScanPage";
 import Toast from "./components/Toast";
 import SplashScreen from "./components/SplashScreen";
+import SessionTimeoutModal from "./components/SessionTimeoutModal";
+import { useIdleTimeout } from "./hooks/useIdleTimeout";
+import "./hooks/useTheme";
 import { useToast } from "./hooks/useToast";
 import { usePwaInstall } from "./hooks/usePwaInstall";
 import { EyeIcon, EyeOffIcon, ScanIcon, DownloadIcon } from "./components/dashboard/icons";
@@ -21,6 +24,11 @@ const STAFF_ROLES = ["warden", "finance", "technician"];
 const STAFF_ROLE_LABELS = { warden: "Warden", finance: "Finance", technician: "Technician" };
 
 const REMEMBERED_EMAIL_KEY = "hostel_remembered_email";
+
+// Session timeout: after 15 minutes with no activity a 60-second warning
+// appears; if nobody responds, the user is signed out.
+const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+const IDLE_WARNING_MS = 60 * 1000;
 
 // Reads the signed-in user's role from `profiles`. Assumes a `role` text
 // column on `profiles` with values "student" | "warden" | "finance" |
@@ -364,6 +372,20 @@ function App() {
     notify("You've been signed out.", "info");
   };
 
+  const handleIdleTimeout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setRole(null);
+    notify("You were signed out because of inactivity.", "info");
+  };
+
+  const { secondsLeft, stayActive } = useIdleTimeout({
+    enabled: Boolean(user),
+    idleMs: IDLE_TIMEOUT_MS,
+    warnMs: IDLE_WARNING_MS,
+    onTimeout: handleIdleTimeout,
+  });
+
   const switchMode = (nextMode) => {
     resetMessages();
     setPassword("");
@@ -408,6 +430,7 @@ function App() {
     return (
       <>
         {dashboard}
+        <SessionTimeoutModal secondsLeft={secondsLeft} onStay={stayActive} onLogout={handleLogOut} />
         {overlays}
       </>
     );
