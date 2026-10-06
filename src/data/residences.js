@@ -55,9 +55,10 @@ export const RESIDENCES = [
     ],
     mapQuery: "iCATS University College, Kuching",
     floors: floorsFor([
-      { label: "Ground Floor", prefix: "MC-G", roomCount: 4, price: 420, genders: ["male"] },
-      { label: "1st Floor", prefix: "MC-1", roomCount: 4, price: 420, genders: ["male"] },
-      { label: "2nd Floor", prefix: "MC-2", roomCount: 4, price: 450, genders: ["female"] },
+      { label: "Ground Floor", prefix: "MC-G", roomCount: 8, price: 420, genders: ["male"] },
+      { label: "1st Floor", prefix: "MC-1", roomCount: 8, price: 420, genders: ["male"] },
+      { label: "2nd Floor", prefix: "MC-2", roomCount: 8, price: 450, genders: ["female"] },
+      { label: "3rd Floor", prefix: "MC-3", roomCount: 8, price: 450, genders: ["female"] },
     ]),
   },
   {
@@ -75,8 +76,9 @@ export const RESIDENCES = [
     ],
     mapQuery: "KTS Village, Kuching",
     floors: floorsFor([
-      { label: "Block A", prefix: "KV-A", roomCount: 3, price: 350, genders: ["male", "female"] },
-      { label: "Block B", prefix: "KV-B", roomCount: 3, price: 350, genders: ["female"] },
+      { label: "Block A", prefix: "KV-A", roomCount: 6, price: 350, genders: ["male"] },
+      { label: "Block B", prefix: "KV-B", roomCount: 6, price: 350, genders: ["female"] },
+      { label: "Block C", prefix: "KV-C", roomCount: 6, price: 370, genders: ["male", "female"] },
     ]),
   },
   {
@@ -94,10 +96,10 @@ export const RESIDENCES = [
     ],
     mapQuery: "Tropic City, Kuching",
     floors: floorsFor([
-      { label: "Level 1", prefix: "TC-1", roomCount: 3, price: 380, genders: ["male"] },
-      { label: "Level 2", prefix: "TC-2", roomCount: 3, price: 380, genders: ["male"] },
-      { label: "Level 3", prefix: "TC-3", roomCount: 3, price: 400, genders: ["female"] },
-      { label: "Level 4", prefix: "TC-4", roomCount: 3, price: 400, genders: ["female"] },
+      { label: "Level 1", prefix: "TC-1", roomCount: 6, price: 380, genders: ["male"] },
+      { label: "Level 2", prefix: "TC-2", roomCount: 6, price: 380, genders: ["male"] },
+      { label: "Level 3", prefix: "TC-3", roomCount: 6, price: 400, genders: ["female"] },
+      { label: "Level 4", prefix: "TC-4", roomCount: 6, price: 400, genders: ["female"] },
     ]),
   },
   {
@@ -115,8 +117,9 @@ export const RESIDENCES = [
     ],
     mapQuery: "72 Residence, Kuching",
     floors: floorsFor([
-      { label: "Ground Floor", prefix: "SR-G", roomCount: 5, price: 300, genders: ["male", "female"] },
-      { label: "1st Floor", prefix: "SR-1", roomCount: 5, price: 300, genders: ["male", "female"] },
+      { label: "Ground Floor", prefix: "SR-G", roomCount: 8, price: 300, genders: ["male", "female"] },
+      { label: "1st Floor", prefix: "SR-1", roomCount: 8, price: 300, genders: ["male", "female"] },
+      { label: "2nd Floor", prefix: "SR-2", roomCount: 8, price: 320, genders: ["male", "female"] },
     ]),
   },
   {
@@ -134,9 +137,10 @@ export const RESIDENCES = [
     ],
     mapQuery: "D'belle Residence, Kuching",
     floors: floorsFor([
-      { label: "Floor 1", prefix: "DB-1", roomCount: 3, price: 480, genders: ["female"] },
-      { label: "Floor 2", prefix: "DB-2", roomCount: 3, price: 480, genders: ["female"] },
-      { label: "Floor 3", prefix: "DB-3", roomCount: 3, price: 500, genders: ["male"] },
+      { label: "Floor 1", prefix: "DB-1", roomCount: 6, price: 480, genders: ["female"] },
+      { label: "Floor 2", prefix: "DB-2", roomCount: 6, price: 480, genders: ["female"] },
+      { label: "Floor 3", prefix: "DB-3", roomCount: 6, price: 500, genders: ["male"] },
+      { label: "Floor 4", prefix: "DB-4", roomCount: 6, price: 500, genders: ["male"] },
     ]),
   },
   {
@@ -154,11 +158,11 @@ export const RESIDENCES = [
     ],
     mapQuery: "Aspace Residence, Kuching",
     floors: floorsFor([
-      { label: "Floor 1", prefix: "AS-1", roomCount: 2, price: 460, genders: ["male"] },
-      { label: "Floor 2", prefix: "AS-2", roomCount: 2, price: 460, genders: ["male"] },
-      { label: "Floor 3", prefix: "AS-3", roomCount: 2, price: 460, genders: ["female"] },
-      { label: "Floor 4", prefix: "AS-4", roomCount: 2, price: 460, genders: ["female"] },
-      { label: "Floor 5", prefix: "AS-5", roomCount: 2, price: 490, genders: ["female"] },
+      { label: "Floor 1", prefix: "AS-1", roomCount: 6, price: 460, genders: ["male"] },
+      { label: "Floor 2", prefix: "AS-2", roomCount: 6, price: 460, genders: ["male"] },
+      { label: "Floor 3", prefix: "AS-3", roomCount: 6, price: 460, genders: ["female"] },
+      { label: "Floor 4", prefix: "AS-4", roomCount: 6, price: 460, genders: ["female"] },
+      { label: "Floor 5", prefix: "AS-5", roomCount: 6, price: 490, genders: ["female"] },
     ]),
   },
 ];

@@ -24,7 +24,6 @@ const NAV_ITEMS = [
   { key: "news", label: "News", icon: "news" },
   { key: "complaints", label: "Complaints", icon: "complaint" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
-  { key: "profile", label: "Profile", icon: "profile" },
 ];
 
 // NOTE: this assumes tables `bookings` and `complaints` exist in Supabase
@@ -268,7 +267,13 @@ function WardenDashboard({ user, onLogout }) {
           />
         );
       case "curfew":
-        return <WardenCurfewTab curfewStatuses={curfewStatuses} onCheckIn={handleCheckIn} />;
+        return (
+          <WardenCurfewTab
+            curfewStatuses={curfewStatuses}
+            onCheckIn={handleCheckIn}
+            residences={mergeResidences(hostels)}
+          />
+        );
       case "hostels":
         return (
           <WardenHostelsTab

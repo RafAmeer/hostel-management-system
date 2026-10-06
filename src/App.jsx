@@ -11,6 +11,8 @@ import Toast from "./components/Toast";
 import SplashScreen from "./components/SplashScreen";
 import SessionTimeoutModal from "./components/SessionTimeoutModal";
 import { useIdleTimeout } from "./hooks/useIdleTimeout";
+import { useAwayLogout } from "./hooks/useAwayLogout";
+import { ensureDeviceBinding } from "./lib/deviceBinding";
 import "./hooks/useTheme";
 import { useToast } from "./hooks/useToast";
 import { usePwaInstall } from "./hooks/usePwaInstall";
@@ -25,10 +27,15 @@ const STAFF_ROLE_LABELS = { warden: "Warden", finance: "Finance", technician: "T
 
 const REMEMBERED_EMAIL_KEY = "hostel_remembered_email";
 
-// Session timeout: after 15 minutes with no activity a 60-second warning
-// appears; if nobody responds, the user is signed out.
-const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+// Session timeout: 5 minutes in total. After 4 minutes with no activity a
+// 60-second warning appears; if nobody responds, the user is signed out.
+const IDLE_TIMEOUT_MS = 4 * 60 * 1000;
 const IDLE_WARNING_MS = 60 * 1000;
+
+// Leaving the site (another tab/app, locked screen) for this long signs the
+// user out. Closing the tab or browser signs out immediately because the
+// session is kept in sessionStorage (see lib/supabaseClient.js).
+const AWAY_LOGOUT_MS = 60 * 1000;
 
 // Reads the signed-in user's role from `profiles`. Assumes a `role` text
 // column on `profiles` with values "student" | "warden" | "finance" |
@@ -63,7 +70,7 @@ function friendlyAuthError(error) {
   if (/email not confirmed/i.test(msg)) {
     return "Please confirm your email first — open the confirmation link we sent you.";
   }
-  if (/already registered/i.test(msg)) {
+  if (error?.code === "user_already_exists" || /already (registered|exists)/i.test(msg)) {
     return "An account with this email already exists. Try signing in instead.";
   }
   return msg;
@@ -280,6 +287,18 @@ function App() {
       return setError(message);
     }
 
+    // Supabase doesn't return an error when the email already has an
+    // account (so attackers can't probe for emails). It returns a fake user
+    // with an empty `identities` list instead — that's our signal.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      setLoading(false);
+      const message = "Account already created with this email. Please sign in instead.";
+      notify(message, "error");
+      setMode("login");
+      setPassword("");
+      return setError(message);
+    }
+
     // If email confirmation is required, Supabase returns a user but no session yet.
     if (data.user && !data.session) {
       setLoading(false);
@@ -386,6 +405,19 @@ function App() {
     onTimeout: handleIdleTimeout,
   });
 
+  // Leaving the site for a minute or more also signs the user out.
+  useAwayLogout({
+    enabled: Boolean(user),
+    awayMs: AWAY_LOGOUT_MS,
+    onTimeout: handleIdleTimeout,
+  });
+
+  // Students: remember this phone so the curfew QR can identify them
+  // without another login. Only a real login/session creates the binding.
+  useEffect(() => {
+    if (user && role === "student") ensureDeviceBinding(user.id);
+  }, [user, role]);
+
   const switchMode = (nextMode) => {
     resetMessages();
     setPassword("");
@@ -480,7 +512,7 @@ function App() {
               </span>
               <span className="scan-tile__text">
                 <strong>Scan Curfew</strong>
-                <small>Check in or out — no login needed</small>
+                <small>Check in or out at the hostel entrance</small>
               </span>
             </a>
           )}

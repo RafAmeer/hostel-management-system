@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import LikeBurst from "../LikeBurst";
 
 const CATEGORIES = ["Plumbing", "Electrical", "Furniture", "Cleanliness", "Other"];
 
@@ -27,6 +28,7 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
   const [photo, setPhoto] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [likeShow, setLikeShow] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,6 +73,7 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
     setDescription("");
     setPhoto(null);
     setMessage("Complaint submitted.");
+    setLikeShow(true);
     onComplaintCreated?.();
   };
 
@@ -143,6 +146,8 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
           {submitting ? "Submitting…" : "Submit Complaint"}
         </button>
       </form>
+
+      <LikeBurst show={likeShow} label="Complaint submitted!" onDone={() => setLikeShow(false)} />
 
       <h3 className="panel-heading panel-heading--sub">Your Complaints</h3>
       {complaints.length === 0 ? (

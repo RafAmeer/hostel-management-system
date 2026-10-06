@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import HostelDetailModal from "./HostelDetailModal";
+import LikeBurst from "../LikeBurst";
 
 const GENDER_LABEL = { male: "male", female: "female" };
 
@@ -23,6 +24,7 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, eligi
   const [message, setMessage] = useState("");
   const [roomGenders, setRoomGenders] = useState({});
   const [bookedRoom, setBookedRoom] = useState(null);
+  const [likeShow, setLikeShow] = useState(false);
 
   const openResidence = residences.find((r) => r.id === openResidenceId) ?? null;
 
@@ -112,6 +114,7 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, eligi
 
     setMessage(`Booking request sent for room ${room.room_number}. Track it under Status.`);
     setBookedRoom(room);
+    setLikeShow(true);
     onBookingCreated?.();
   };
 
@@ -162,6 +165,8 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, eligi
           onClose={() => setOpenResidenceId(null)}
         />
       )}
+
+      <LikeBurst show={likeShow} label="Room booked!" onDone={() => setLikeShow(false)} />
 
       {bookedRoom && (
         <div className="toast toast--success" role="status" onClick={() => setBookedRoom(null)}>

@@ -24,7 +24,6 @@ import { useToast } from "../hooks/useToast";
 // Labels/keys match the "Home" wireframe's sidebar + Quick Access section.
 // `icon` looks up a matching glyph in components/dashboard/icons.jsx.
 const NAV_ITEMS = [
-  { key: "profile", label: "Profile", icon: "profile" },
   { key: "overview", label: "Home", icon: "home" },
   { key: "rooms", label: "Rooms", icon: "rooms" },
   { key: "bookings", label: "Status", icon: "status" },
@@ -253,9 +252,9 @@ function StudentDashboard({ user, onLogout }) {
           activeTab={activeTab}
           onSelect={setActiveTab}
           userName={profile?.full_name ?? user?.email}
-          roleLabel="Hostel Resident"
           avatarUrl={profile?.avatar_url}
           onLogout={onLogout}
+          onProfile={() => setActiveTab("profile")}
         />
         <main className="dashboard__content">
           {loading ? (

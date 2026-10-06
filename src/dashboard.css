@@ -125,7 +125,7 @@
 
 .sidebar__link--active {
   background: var(--accent);
-  color: #052e2b;
+  color: var(--on-accent);
   font-weight: 700;
 }
 
@@ -154,7 +154,7 @@
 }
 
 .sidebar__logout:hover {
-  background: rgba(255, 138, 128, 0.16);
+  background: rgb(var(--danger-rgb) / 0.16);
   color: var(--danger);
 }
 
@@ -303,7 +303,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  background: rgba(12, 26, 44, 0.68);
+  background: var(--glass-strong);
   border: 1px solid rgb(var(--ink) / 0.12);
   border-radius: 12px;
   padding: 0.8rem 1rem;
@@ -338,17 +338,17 @@
 }
 
 .badge--ok {
-  background: rgba(143, 208, 201, 0.16);
-  color: var(--info);
+  background: rgb(var(--success-rgb) / 0.16);
+  color: var(--success);
 }
 
 .badge--warn {
-  background: rgba(242, 166, 90, 0.16);
+  background: rgb(var(--warn-rgb) / 0.16);
   color: var(--warn-text);
 }
 
 .badge--danger {
-  background: rgba(255, 138, 128, 0.16);
+  background: rgb(var(--danger-rgb) / 0.16);
   color: var(--danger);
 }
 
@@ -359,7 +359,7 @@
 
 /* Complaint form */
 .panel-form {
-  background: rgba(15, 31, 51, 0.55);
+  background: var(--glass-strong);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgb(var(--ink) / 0.1);
@@ -412,7 +412,7 @@
   width: auto;
   padding: 0.4rem 0.9rem;
   border-radius: 10px;
-  border: 1px solid rgba(255, 138, 128, 0.4);
+  border: 1px solid rgb(var(--danger-rgb) / 0.4);
   background: transparent;
   color: var(--danger);
   font-family: inherit;
@@ -423,7 +423,7 @@
 }
 
 .btn-outline:hover {
-  background: rgba(255, 138, 128, 0.12);
+  background: rgb(var(--danger-rgb) / 0.12);
 }
 
 /* Bar chart (CSS-only, no charting library needed) */
@@ -474,8 +474,8 @@
   transition: height 0.3s ease;
 }
 
-.chart__bar--ok { background: var(--info); }
-.chart__bar--warn { background: var(--warn-text); }
+.chart__bar--ok { background: var(--success); }
+.chart__bar--warn { background: var(--warn); }
 .chart__bar--danger { background: var(--danger); }
 .chart__bar--neutral { background: rgb(var(--ink) / 0.25); }
 
@@ -544,7 +544,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-  color: #052e2b;
+  color: var(--on-accent);
   font-family: "Manrope", sans-serif;
   font-weight: 800;
   font-size: 1.6rem;
@@ -586,7 +586,7 @@
   border-radius: 4px 16px 16px 4px;
   background: linear-gradient(135deg, var(--accent-warm), var(--accent-warm-deep));
   color: #3a2107;
-  box-shadow: 0 10px 24px rgba(201, 122, 58, 0.28);
+  box-shadow: 0 10px 24px rgb(var(--accent-warm-rgb) / 0.28);
 }
 
 .room-tag__ring {
@@ -651,7 +651,7 @@
   height: 28px;
   flex-shrink: 0;
   border-radius: 8px;
-  background: rgba(45, 212, 191, 0.16);
+  background: rgb(var(--accent-rgb) / 0.16);
   color: var(--accent);
   font-size: 1rem;
 }
@@ -732,7 +732,7 @@
   font-weight: 600;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  background: rgba(12, 26, 44, 0.65);
+  background: rgb(var(--glass-rgb) / 0.65);
   color: var(--text-primary);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -933,7 +933,7 @@
 
 .ai-chat__bubble--error {
   color: var(--danger);
-  border-color: rgba(255, 138, 128, 0.4);
+  border-color: rgb(var(--danger-rgb) / 0.4);
 }
 
 .ai-chat__form {
@@ -1046,8 +1046,8 @@
 }
 
 .toast--success {
-  background: rgba(46, 204, 113, 0.92);
-  color: #0b3320;
+  background: rgb(var(--success-rgb) / 0.95);
+  color: var(--on-accent);
 }
 
 @keyframes toast-in {
@@ -1062,13 +1062,13 @@
 }
 
 .badge--male {
-  background: rgba(93, 156, 236, 0.22);
-  color: #bcdcff;
+  background: rgb(var(--accent-rgb) / 0.2);
+  color: var(--info);
 }
 
 .badge--female {
-  background: rgba(255, 138, 188, 0.22);
-  color: #ffc9df;
+  background: rgb(var(--danger-rgb) / 0.18);
+  color: var(--danger);
 }
 
 /* Technician task cards — a glass-panel per assigned request, stacked with
@@ -1348,7 +1348,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-  color: #052e2b;
+  color: var(--on-accent);
   font-family: "Manrope", sans-serif;
   font-weight: 800;
 }
@@ -1387,11 +1387,11 @@
 }
 
 .profile-card--in-hostel {
-  border-color: rgba(45, 212, 191, 0.45);
+  border-color: rgb(var(--accent-rgb) / 0.45);
 }
 
 .profile-card--not-in-hostel {
-  border-color: rgba(255, 107, 107, 0.45);
+  border-color: rgb(var(--danger-rgb) / 0.45);
 }
 
 .profile-status-badge {
@@ -1402,13 +1402,13 @@
 }
 
 .profile-status-badge--in {
-  background: rgba(45, 212, 191, 0.16);
+  background: rgb(var(--accent-rgb) / 0.16);
   color: var(--accent);
 }
 
 .profile-status-badge--out {
-  background: rgba(255, 107, 107, 0.16);
-  color: #ff6b6b;
+  background: rgb(var(--danger-rgb) / 0.16);
+  color: var(--danger);
 }
 
 .avatar-upload {
@@ -1439,12 +1439,12 @@
 }
 
 .btn-outline--danger {
-  border-color: rgba(255, 138, 128, 0.4);
+  border-color: rgb(var(--danger-rgb) / 0.4);
   color: var(--danger);
 }
 
 .btn-outline--danger:hover {
-  background: rgba(255, 138, 128, 0.12);
+  background: rgb(var(--danger-rgb) / 0.12);
 }
 
 /* Warden > Hostels & Rooms tab */
@@ -1596,7 +1596,7 @@
 
 .segmented__btn--active {
   background: var(--accent);
-  color: #052e2b;
+  color: var(--on-accent);
   font-weight: 700;
 }
 
@@ -1697,7 +1697,7 @@
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
   background: var(--accent);
-  color: #052e2b;
+  color: var(--on-accent);
 }
 
 .announcement__meta {
@@ -1737,7 +1737,7 @@
 }
 
 .assign-row__select option {
-  background: #1a1a1a;
+  background: var(--glass-strong);
   color: var(--text-primary);
 }
 
@@ -1771,7 +1771,7 @@
   min-width: 210px;
   border-radius: 12px;
   border: 1px solid var(--glass-border);
-  background: rgba(10, 22, 38, 0.92);
+  background: rgb(var(--glass-rgb) / 0.92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
@@ -1880,9 +1880,9 @@
 /* ---------------------------------------------------------------------- */
 
 .room-tag--away {
-  background: linear-gradient(135deg, #ff8a80, #e0534f);
+  background: linear-gradient(135deg, #ee9094, #d9575c);
   color: #3b0a0a;
-  box-shadow: 0 10px 24px rgba(224, 83, 79, 0.32);
+  box-shadow: 0 10px 24px rgba(217, 87, 92, 0.32);
 }
 
 .room-tag--away .room-tag__ring {
@@ -1918,7 +1918,7 @@
 }
 
 .announcement__title--important {
-  background: linear-gradient(transparent 62%, rgba(242, 178, 92, 0.32) 62%);
+  background: linear-gradient(transparent 62%, rgb(var(--accent-warm-rgb) / 0.32) 62%);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1968,7 +1968,7 @@
   padding: 0.6rem 0.8rem;
   border-radius: 10px;
   border: 1px solid rgb(var(--ink) / 0.16);
-  background: rgba(15, 31, 51, 0.7);
+  background: var(--glass-strong);
   color: var(--text-primary);
   font-family: inherit;
   font-size: 0.85rem;
@@ -2054,32 +2054,68 @@
 .timeout-backdrop,
 .app-toast {
   --ink: 255 255 255;
-  --app-bg: #07090c;
-  --glass: #12161c;
-  --glass-strong: #181d25;
+  --app-bg: #14191e;
+  --glass: #1c232a;
+  --glass-strong: #252e36;
+  --glass-rgb: 28 35 42;
   --glass-border: rgba(255, 255, 255, 0.1);
-  --text-primary: #f3f5f7;
-  --text-muted: #a3acb8;
-  --info: #8fd0c9;
-  --warn-text: #f2a65a;
-  --panel-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --text-primary: #ecebe6;
+  --text-muted: #93a0a9;
+  --accent: #5baac8;
+  --accent-rgb: 91 170 200;
+  --accent-hover: #8cc3d8;
+  --on-accent: #0e1a22;
+  --accent-warm: #ec8340;
+  --accent-warm-rgb: 232 116 44;
+  --danger: #e0686b;
+  --danger-rgb: 224 104 107;
+  --success: #74c9a1;
+  --success-rgb: 116 201 161;
+  --warn: #edc15a;
+  --warn-rgb: 237 193 90;
+  --warn-text: #edc15a;
+  --info: #8cc3d8;
+  --info-rgb: 140 195 216;
+  --hl-warm: #ffd2ad;
+  --hl-ok: #b6ead3;
+  --hl-danger: #ffc0c2;
+  --panel-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
+/* White mode: a soft paper tone instead of pure white. The page, panels and
+   raised fields are three close-but-distinct warm greys so nothing glares,
+   and every text/accent colour is kept at WCAG AA contrast on the panels. */
 :root[data-theme="light"] .dashboard,
 :root[data-theme="light"] .page--app,
 :root[data-theme="light"] .timeout-backdrop,
 :root[data-theme="light"] .app-toast {
-  --ink: 17 24 39;
-  --app-bg: #f3f5f8;
-  --glass: #ffffff;
-  --glass-strong: #ffffff;
-  --glass-border: rgba(17, 24, 39, 0.12);
-  --text-primary: #111827;
-  --text-muted: #566070;
-  --info: #0f766e;
-  --warn-text: #b45309;
-  --accent-hover: #0f766e;
-  --panel-shadow: 0 4px 16px rgba(17, 24, 39, 0.08);
+  --ink: 31 42 51;
+  --app-bg: #dedcd3;
+  --glass: #eae8e0;
+  --glass-strong: #f1efe9;
+  --glass-rgb: 234 232 224;
+  --glass-border: rgba(31, 42, 51, 0.18);
+  --text-primary: #1f2a33;
+  --text-muted: #4f5c66;
+  --accent: #1f5f80;
+  --accent-rgb: 31 95 128;
+  --accent-hover: #194f6b;
+  --on-accent: #ffffff;
+  --accent-warm: #ec8340;
+  --accent-warm-rgb: 232 116 44;
+  --danger: #9c2a28;
+  --danger-rgb: 156 42 40;
+  --success: #17613f;
+  --success-rgb: 23 97 63;
+  --warn: #a46a0c;
+  --warn-rgb: 164 106 12;
+  --warn-text: #7a4f08;
+  --info: #1f5a75;
+  --info-rgb: 31 90 117;
+  --hl-warm: #8a3f0e;
+  --hl-ok: #1d6a49;
+  --hl-danger: #8f262a;
+  --panel-shadow: 0 2px 10px rgba(31, 42, 51, 0.1);
 }
 
 .page--app {
@@ -2218,7 +2254,7 @@
   height: 48px;
   flex-shrink: 0;
   border-radius: 14px;
-  background: rgb(20 184 166 / 0.14);
+  background: rgb(var(--accent-rgb) / 0.14);
   color: var(--accent);
   font-size: 1.4rem;
 }
@@ -2470,4 +2506,466 @@
     flex-wrap: wrap;
   }
 
+}
+
+/* ====================================================================== */
+/* Round 2 (Oct 6): flat sidebar, profile button, mobile shell, like      */
+/* animation, per-hostel QR cards, colour-blind-safe status marks         */
+/* ====================================================================== */
+
+/* Sidebar icons are flat — no filled white discs behind them. */
+.sidebar__link {
+  background: transparent;
+}
+
+.sidebar__link:hover {
+  background: rgb(var(--ink) / 0.1);
+}
+
+.sidebar__link--active,
+.sidebar__link--active:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.sidebar:not(.sidebar--expanded) .sidebar__label {
+  display: none;
+}
+
+/* The name at the top of the sidebar opens Profile settings. */
+.sidebar__who {
+  width: 100%;
+  margin-bottom: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.sidebar:not(.sidebar--expanded) .sidebar__who {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 1.15rem;
+}
+
+.sidebar__who:hover {
+  background: rgb(var(--ink) / 0.08);
+}
+
+.sidebar__who--active {
+  background: rgb(var(--accent-rgb) / 0.16);
+}
+
+.sidebar__who-hint {
+  margin-top: 0.1rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Phone top bar (hidden on larger screens). */
+.mobile-topbar {
+  display: none;
+}
+
+/* ---- Like animation ------------------------------------------------- */
+.like-burst {
+  position: fixed;
+  inset: 0;
+  z-index: 300; /* above the hostel popup (100) and toasts (80) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: rgb(0 0 0 / 0.28);
+  animation: like-fade 2s ease both;
+  cursor: pointer;
+}
+
+.like-burst__stage {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.like-burst__thumb {
+  position: relative;
+  z-index: 2;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 2.8rem;
+  box-shadow: 0 10px 30px rgb(var(--accent-rgb) / 0.5);
+  animation: like-pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.like-burst__thumb svg {
+  animation: like-wave 0.7s 0.15s ease both;
+  transform-origin: 30% 80%;
+}
+
+.like-burst__ring {
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  opacity: 0;
+  animation: like-ring 1s 0.12s ease-out both;
+}
+
+.like-burst__ring--late {
+  border-color: var(--accent-warm);
+  animation-delay: 0.3s;
+}
+
+.like-burst__spark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: var(--accent-warm);
+  opacity: 0;
+  animation: like-spark 0.9s var(--delay) ease-out both;
+}
+
+.like-burst__spark:nth-child(3n + 1) {
+  background: var(--accent);
+}
+
+.like-burst__label {
+  color: #fff;
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  font-size: 1.2rem;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.5);
+  animation: like-label 0.5s 0.25s ease both;
+}
+
+@keyframes like-fade {
+  0%,
+  78% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes like-pop {
+  0% {
+    transform: scale(0) rotate(-25deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes like-wave {
+  0% {
+    transform: rotate(0);
+  }
+  35% {
+    transform: rotate(-22deg);
+  }
+  70% {
+    transform: rotate(8deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+
+@keyframes like-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes like-spark {
+  0% {
+    transform: rotate(var(--angle)) translateY(-40px) scale(0.4);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--angle)) translateY(-86px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes like-label {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .like-burst,
+  .like-burst__thumb,
+  .like-burst__thumb svg,
+  .like-burst__label {
+    animation: none;
+  }
+  .like-burst__ring,
+  .like-burst__spark {
+    display: none;
+  }
+}
+
+/* ---- Per-hostel curfew QR cards ------------------------------------- */
+.qr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.qr-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.qr-card .badge {
+  align-self: flex-start;
+}
+
+.qr-card__img {
+  width: 100%;
+  max-width: 200px;
+  align-self: center;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.qr-card .field {
+  width: 100%;
+}
+
+/* ---- Status marks that don't depend on colour alone ----------------- */
+/* Each status badge gets a small shape/symbol as well as its colour, so
+   red/green (or any other) colour-vision differences don't hide the meaning. */
+.badge--ok::before {
+  content: "\2713\00a0"; /* check */
+}
+
+.badge--warn::before {
+  content: "\25B2\00a0"; /* triangle */
+  font-size: 0.8em;
+}
+
+.badge--danger::before {
+  content: "\2715\00a0"; /* cross */
+}
+
+.profile-status-badge--in::before {
+  content: "\2713\00a0";
+}
+
+.profile-status-badge--out::before {
+  content: "\2715\00a0";
+}
+
+.badge--neutral::before {
+  content: "\25CF\00a0"; /* dot */
+  font-size: 0.7em;
+}
+
+/* Tinted badge backgrounds are a touch lighter in white mode so the text
+   keeps AA contrast on them. */
+:root[data-theme="light"] .badge--ok,
+:root[data-theme="light"] .badge--warn,
+:root[data-theme="light"] .badge--danger,
+:root[data-theme="light"] .profile-status-badge--in,
+:root[data-theme="light"] .profile-status-badge--out {
+  background-image: none;
+}
+
+:root[data-theme="light"] .dashboard .badge--ok {
+  background: rgb(var(--success-rgb) / 0.11);
+}
+:root[data-theme="light"] .dashboard .badge--warn {
+  background: rgb(var(--warn-rgb) / 0.13);
+}
+:root[data-theme="light"] .dashboard .badge--danger {
+  background: rgb(var(--danger-rgb) / 0.1);
+}
+
+/* ---- Phone layout ---------------------------------------------------- */
+@media (max-width: 720px) {
+  .mobile-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: calc(0.4rem + env(safe-area-inset-top, 0px)) 0.9rem 0.4rem;
+    background: var(--app-bg);
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  .mobile-topbar__user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 0.7rem 0 0.5rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.92rem;
+    cursor: pointer;
+  }
+
+  .mobile-topbar__user--active {
+    background: rgb(var(--accent-rgb) / 0.16);
+  }
+
+  .mobile-topbar__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 52vw;
+  }
+
+  .mobile-topbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  .mobile-topbar__actions .theme-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  /* Bottom tab bar: icon over a small label, tabs share the width. */
+  .sidebar,
+  .sidebar--expanded {
+    justify-content: stretch;
+    gap: 0;
+    padding: 0.3rem 0.25rem calc(0.3rem + env(safe-area-inset-bottom, 0px));
+    border-radius: 0;
+    border-width: 1px 0 0;
+    overflow: visible;
+  }
+
+  .sidebar__nav {
+    flex: 1;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.1rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .sidebar__nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar .sidebar__link,
+  .sidebar--expanded .sidebar__link {
+    flex: 1 0 62px;
+    flex-direction: column;
+    gap: 0.15rem;
+    width: auto;
+    min-width: 62px;
+    height: 54px;
+    border-radius: 12px;
+    font-size: 0.64rem;
+    font-weight: 600;
+  }
+
+  .sidebar:not(.sidebar--expanded) .sidebar__label,
+  .sidebar--expanded .sidebar__label {
+    display: block;
+    max-width: 100%;
+  }
+
+  .sidebar__footer {
+    display: none;
+  }
+
+  .dashboard__content {
+    padding: 0.9rem 0.9rem calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Comfortable tap targets and no cramped buttons. */
+  .primary-btn,
+  .btn-outline,
+  .link-btn {
+    min-height: 44px;
+  }
+
+  .residence-grid,
+  .qr-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tab__title-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Hostel popup becomes a full-height sheet. */
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal,
+  .hostel-modal {
+    max-width: none;
+    max-height: 94vh;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .toast,
+  .app-toast {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100vw - 2rem);
+  }
+
+  .list-row__title,
+  .list-row__meta {
+    overflow-wrap: anywhere;
+  }
 }

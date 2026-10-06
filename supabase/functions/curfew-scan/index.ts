@@ -17,11 +17,15 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-// Hostel location check. Set these as function secrets:
-//   supabase secrets set HOSTEL_LAT=3.0xxx HOSTEL_LNG=101.xxx HOSTEL_RADIUS_M=150
-// If HOSTEL_LAT/HOSTEL_LNG are not set the check is skipped (so the flow
-// still works before you've configured it), but the coordinates are still
-// stored with each scan.
+// Hostel location check, per hostel. Each hostel has its own row in the
+// `hostel_locations` table (latitude, longitude, radius_m) which the warden
+// fills in from Warden > Curfew ("Set location"). A scan only counts when
+// the phone is inside the circle of the hostel whose QR was scanned.
+//
+// Fallbacks, in order: (1) the hostel's own row, (2) the optional function
+// secrets HOSTEL_LAT / HOSTEL_LNG / HOSTEL_RADIUS_M (one shared location),
+// (3) no check at all (so the flow still works before anything is set up);
+// the coordinates are stored with every scan either way.
 function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371000;
   const toRad = (d: number) => (d * Math.PI) / 180;
@@ -43,7 +47,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { device_token, location, latitude, longitude, accuracy } = await req.json();
+    const { device_token, location, hostel_id, latitude, longitude, accuracy } = await req.json();
     if (!device_token || typeof device_token !== "string") {
       return jsonResponse({ error: "Missing device_token" }, 400);
     }
@@ -59,22 +63,40 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "location_required" }, 400);
     }
 
-    const hostelLat = Number(Deno.env.get("HOSTEL_LAT"));
-    const hostelLng = Number(Deno.env.get("HOSTEL_LNG"));
-    const radius = Number(Deno.env.get("HOSTEL_RADIUS_M") ?? 150) || 150;
-    if (Deno.env.get("HOSTEL_LAT") && Deno.env.get("HOSTEL_LNG")) {
-      const dist = distanceMeters(latitude, longitude, hostelLat, hostelLng);
-      // Allow for GPS error: a poor fix (large accuracy) widens the circle a bit.
-      const slack = Math.min(Number(accuracy) || 0, 100);
-      if (dist > radius + slack) {
-        return jsonResponse({ error: "outside_hostel_area" }, 403);
-      }
-    }
-
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
+
+    // Work out which circle this phone must be inside.
+    let target: { lat: number; lng: number; radius: number } | null = null;
+
+    if (hostel_id || location) {
+      let q = supabaseAdmin.from("hostel_locations").select("latitude, longitude, radius_m");
+      q = hostel_id ? q.eq("hostel_id", String(hostel_id)) : q.ilike("name", String(location));
+      const { data: loc, error: locError } = await q.limit(1).maybeSingle();
+      if (locError) console.error("curfew-scan: hostel_locations lookup failed", locError);
+      if (loc && typeof loc.latitude === "number" && typeof loc.longitude === "number") {
+        target = { lat: loc.latitude, lng: loc.longitude, radius: Number(loc.radius_m) || 150 };
+      }
+    }
+
+    if (!target && Deno.env.get("HOSTEL_LAT") && Deno.env.get("HOSTEL_LNG")) {
+      target = {
+        lat: Number(Deno.env.get("HOSTEL_LAT")),
+        lng: Number(Deno.env.get("HOSTEL_LNG")),
+        radius: Number(Deno.env.get("HOSTEL_RADIUS_M") ?? 150) || 150,
+      };
+    }
+
+    if (target) {
+      const dist = distanceMeters(latitude, longitude, target.lat, target.lng);
+      // Allow for GPS error: a poor fix (large accuracy) widens the circle a bit.
+      const slack = Math.min(Number(accuracy) || 0, 100);
+      if (dist > target.radius + slack) {
+        return jsonResponse({ error: "outside_hostel_area" }, 403);
+      }
+    }
 
     // An unrecognized token (new phone, cleared browser storage, a
     // revoked device) isn't really an "error" the visitor caused — it just
@@ -116,7 +138,7 @@ Deno.serve(async (req) => {
       student_id: studentId,
       scan_type: nextType,
       timestamp,
-      location: location || "Main Entrance",
+      location: location || hostel_id || "Hostel entrance",
       latitude,
       longitude,
     });

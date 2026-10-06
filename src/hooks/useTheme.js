@@ -29,7 +29,7 @@ function set(next) {
     /* ignore */
   }
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", next === "light" ? "#f4f6f8" : "#05070a");
+  if (meta) meta.setAttribute("content", next === "light" ? "#dedcd3" : "#14191e");
   listeners.forEach((l) => l());
 }
 

@@ -9,7 +9,6 @@ import ProfileTab from "../components/dashboard/ProfileTab";
 const NAV_ITEMS = [
   { key: "tasks", label: "My Tasks", icon: "tasks" },
   { key: "history", label: "History", icon: "history" },
-  { key: "profile", label: "Profile", icon: "profile" },
 ];
 
 const STATUS_FLOW = { pending: "in_progress", in_progress: "completed" };

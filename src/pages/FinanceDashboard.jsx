@@ -9,7 +9,6 @@ import ProfileTab from "../components/dashboard/ProfileTab";
 const NAV_ITEMS = [
   { key: "overview", label: "Overview", icon: "home" },
   { key: "payments", label: "Payments", icon: "payments" },
-  { key: "profile", label: "Profile", icon: "profile" },
 ];
 
 // Finance Module per the proposal (view/record/update payment status,

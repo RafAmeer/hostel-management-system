@@ -64,7 +64,7 @@ export function exportReportAsPdf(report) {
         head: [section.rows[0]],
         body: section.rows.slice(1),
         styles: { fontSize: 9 },
-        headStyles: { fillColor: [242, 166, 90], textColor: 20 },
+        headStyles: { fillColor: [47, 127, 163], textColor: 255 },
         margin: { left: 14, right: 14 },
       });
       y = doc.lastAutoTable.finalY + 10;

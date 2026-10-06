@@ -233,6 +233,16 @@ export function MapPinIcon(props) {
   );
 }
 
+// Filled thumbs-up used by the "like" success animation.
+export function ThumbsUpIcon(props) {
+  return (
+    <svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M2 10.5A1.5 1.5 0 0 1 3.5 9H7v12H3.5A1.5 1.5 0 0 1 2 19.5v-9Z" />
+      <path d="M9 9.2 12.2 3a1.9 1.9 0 0 1 1.7-1c1.1 0 2 .9 2 2v4.2h4.3a2 2 0 0 1 2 2.4l-1.4 8.4A2.5 2.5 0 0 1 18.3 21H9V9.2Z" />
+    </svg>
+  );
+}
+
 export const NAV_ICONS = {
   home: HomeIcon,
   rooms: BedIcon,
