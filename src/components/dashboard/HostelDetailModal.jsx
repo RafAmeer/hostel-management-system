@@ -25,6 +25,7 @@ function HostelDetailModal({
   rooms,
   roomGenders = {},
   bookingRoomId,
+  bookingLocked = false,
   message,
   onBook,
   onClose,
@@ -277,10 +278,10 @@ function HostelDetailModal({
                           <button
                             type="button"
                             className="primary-btn"
-                            disabled={full || isBookingThis}
+                            disabled={full || isBookingThis || bookingLocked}
                             onClick={() => onBook(room, { residence, floor: selectedFloor })}
                           >
-                            {full ? "Full" : isBookingThis ? "Requesting…" : "Request booking"}
+                            {full ? "Full" : isBookingThis ? "Requesting…" : bookingLocked ? "Already booked" : "Request booking"}
                           </button>
                           {room.mock && (
                             <p className="room-card__hint">

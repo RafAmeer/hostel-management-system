@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { isTestingTab } from "../lib/testing";
 
 // Signs the user out when they leave the site: if the tab/app stays hidden
 // (switched to another app or tab, screen locked) for longer than `awayMs`,
@@ -13,7 +14,7 @@ export function useAwayLogout({ enabled, awayMs, onTimeout }) {
   }, [onTimeout]);
 
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (!enabled || isTestingTab()) return undefined;
     hiddenAt.current = null;
 
     const onChange = () => {

@@ -30,8 +30,10 @@ async function callCurfewScan(deviceToken, target, coords) {
   const { data, error } = await supabase.functions.invoke("curfew-scan", {
     body: {
       device_token: deviceToken,
-      location: target.name,
-      hostel_id: target.id ?? null,
+      // From a poster scan these are already filled in. With neither, the
+      // server finds the hostel the phone is standing in from its GPS.
+      location: target.auto ? null : target.name ?? null,
+      hostel_id: target.auto ? null : target.id ?? null,
       latitude: coords.latitude,
       longitude: coords.longitude,
       accuracy: coords.accuracy,
@@ -96,7 +98,10 @@ function CurfewScanPage() {
         }
         setPhase("needs_login");
       } else if (err.message === "outside_hostel_area") {
-        setErrorMessage(`You're not at ${hostel.name}. Move to the entrance of that hostel and scan again.`);
+        setErrorMessage(`You're not at ${hostel.name ?? "that hostel"}. Move to the entrance of that hostel and scan again.`);
+        setPhase("error");
+      } else if (err.message === "no_hostel_nearby") {
+        setErrorMessage("You don't seem to be at any hostel entrance. Go to the entrance and try again, or scan its QR poster.");
         setPhase("error");
       } else if (err.message === "unknown_hostel") {
         setErrorMessage("This QR code isn't linked to a hostel. Ask the warden for a new poster.");
@@ -119,10 +124,12 @@ function CurfewScanPage() {
     setTarget(hostel);
     // Keeps the URL consistent with a real poster scan, so a refresh on
     // this same phone re-checks at the same hostel instead of re-opening
-    // the camera.
-    const q = new URLSearchParams({ loc: hostel.name });
-    if (hostel.id) q.set("h", hostel.id);
-    window.history.replaceState(null, "", `/curfew?${q.toString()}`);
+    // the camera. (Auto-detected scans have no hostel to remember.)
+    if (!hostel.auto && hostel.name) {
+      const q = new URLSearchParams({ loc: hostel.name });
+      if (hostel.id) q.set("h", hostel.id);
+      window.history.replaceState(null, "", `/curfew?${q.toString()}`);
+    }
     runScan(hostel);
   };
 
@@ -164,7 +171,7 @@ function CurfewScanPage() {
   }
 
   return (
-    <Shell title="Curfew Check-In" subtitle={target?.name}>
+    <Shell title="Curfew Check-In" subtitle={result?.hostel_name || (target?.auto ? "Detecting your hostel…" : target?.name)}>
       {phase === "checking" && <p className="tab__message">Checking this device…</p>}
       {phase === "locating" && <p className="tab__message">Checking your location…</p>}
       {phase === "scanning" && <p className="tab__message">Logging your scan…</p>}
@@ -189,6 +196,7 @@ function CurfewScanPage() {
             </span>
           </p>
           {result.student_name && <p className="list-row__meta">{result.student_name}</p>}
+          {result.hostel_name && <p className="list-row__meta">{result.hostel_name}</p>}
           <p className="list-row__meta">
             {new Date(result.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </p>
@@ -238,14 +246,13 @@ function Shell({ title, subtitle, children }) {
 }
 
 // Opens the phone's own camera straight away (html5-qrcode) to read a
-// hostel's poster QR. If the camera can't be used the student can pick the
-// hostel from a list instead — the server still checks their GPS position
-// against that hostel, so this isn't a way around the location check.
+// hostel's poster QR. If the camera can't be used, the student's hostel
+// is detected from their GPS position instead (done on the server,
+// which only accepts a phone standing inside a hostel's circle).
 function QrCameraScanner({ onDecoded }) {
   const containerId = "curfew-qr-reader";
   const scannerRef = useRef(null);
   const [scanError, setScanError] = useState("");
-  const [pickId, setPickId] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -278,7 +285,7 @@ function QrCameraScanner({ onDecoded }) {
         )
         .catch((err) =>
           setScanError(
-            "Couldn't open the camera. Allow camera access (and use https://), or pick your hostel below. (" +
+            "Couldn't open the camera. Allow camera access (and use https://), or detect your hostel from your location below. (" +
               err +
               ")"
           )
@@ -292,11 +299,6 @@ function QrCameraScanner({ onDecoded }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const pick = () => {
-    const r = RESIDENCES.find((x) => x.id === pickId);
-    if (r) onDecoded({ name: r.name, id: r.id });
-  };
-
   return (
     <Shell title="Scan Hostel QR">
       <p className="tab__subtitle-text">Point your camera at the QR poster at your hostel entrance.</p>
@@ -308,19 +310,16 @@ function QrCameraScanner({ onDecoded }) {
       )}
       <div id={containerId} style={{ width: "100%", borderRadius: "16px", overflow: "hidden" }} />
 
-      <label className="field" style={{ marginTop: "1rem" }}>
-        <span className="field__label">Can't scan? Pick your hostel</span>
-        <select value={pickId} onChange={(e) => setPickId(e.target.value)}>
-          <option value="">Select hostel</option>
-          {RESIDENCES.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button type="button" className="primary-btn primary-btn--wide" disabled={!pickId} onClick={pick}>
-        Check in/out here
+      <p className="tab__subtitle-text" style={{ marginTop: "1rem" }}>
+        The hostel is picked for you from the QR poster — there is nothing to select.
+      </p>
+      <button
+        type="button"
+        className="btn-outline btn-outline--neutral"
+        style={{ width: "100%" }}
+        onClick={() => onDecoded({ name: null, id: null, auto: true })}
+      >
+        Camera not working? Detect my hostel from my location
       </button>
       <button type="button" className="portal-switch" onClick={goToLogin}>
         Back to login

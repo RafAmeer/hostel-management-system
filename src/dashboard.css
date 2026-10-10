@@ -2969,3 +2969,120 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* ---------------------------------------------------------------------- */
+/* Warden Analytics (Chart.js), Transport, semester picker                */
+/* ---------------------------------------------------------------------- */
+.chart-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.chart-card {
+  padding: 1.1rem 1.25rem 1.25rem;
+  min-width: 0;
+}
+
+.chart-card--wide {
+  grid-column: 1 / -1;
+}
+
+.chart-card .chart__title {
+  margin-bottom: 0.75rem;
+}
+
+.chart-card__hint {
+  margin: -0.4rem 0 0.75rem;
+}
+
+.chart-card__empty {
+  padding: 1.5rem 0;
+}
+
+.chart-canvas {
+  position: relative;
+  width: 100%;
+}
+
+.route-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.route-card {
+  padding: 1rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.route-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.route-card__name {
+  font-family: "Manrope", sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.route-card .primary-btn {
+  margin-top: 0.5rem;
+}
+
+.transport-section {
+  margin-bottom: 1.5rem;
+}
+
+.semester-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.semester-picker__title {
+  font-family: "Manrope", sans-serif;
+  font-weight: 700;
+  margin: 0;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.segmented__btn {
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.segmented__btn--active {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.device-card {
+  margin-bottom: 1rem;
+}

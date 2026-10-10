@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import "../dashboard.css";
 import { supabase } from "../lib/supabaseClient.js";
 import Sidebar from "../components/dashboard/SideBar.jsx";
@@ -13,14 +13,20 @@ import { buildHostelAnalytics } from "../lib/analytics";
 import { mergeResidences } from "../lib/residences";
 import WardenAnnouncementsTab from "../components/dashboard/WardenAnnouncementsTab";
 import StudentsTab from "../components/dashboard/StudentsTab";
+import WardenTransportTab from "../components/dashboard/WardenTransportTab";
 import Toast from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 
+// Charts (Chart.js) load only when the warden opens Analytics.
+const WardenAnalyticsTab = lazy(() => import("../components/dashboard/WardenAnalyticsTab"));
+
 const NAV_ITEMS = [
   { key: "overview", label: "Overview", icon: "overview" },
+  { key: "analytics", label: "Analytics", icon: "analytics" },
   { key: "bookings", label: "Room Bookings", icon: "status" },
   { key: "students", label: "Students", icon: "students" },
   { key: "hostels", label: "Hostels & Rooms", icon: "rooms" },
+  { key: "transport", label: "Transport", icon: "transport" },
   { key: "news", label: "News", icon: "news" },
   { key: "complaints", label: "Complaints", icon: "complaint" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
@@ -79,6 +85,11 @@ function WardenDashboard({ user, onLogout }) {
   const [profile, setProfile] = useState(null);
   const [hostels, setHostels] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
+  const [curfewLogs, setCurfewLogs] = useState([]);
+  const [transportRoutes, setTransportRoutes] = useState([]);
+  const [transportRequests, setTransportRequests] = useState([]);
+  const [transportLoads, setTransportLoads] = useState([]);
+  const [transportError, setTransportError] = useState("");
   const [loading, setLoading] = useState(true);
   const { toast, notify, dismiss } = useToast();
   // Stats period lives here (not inside WardenOverviewTab) so the same
@@ -101,10 +112,40 @@ function WardenDashboard({ user, onLogout }) {
     setAnnouncements(data ?? []);
   };
 
+  // Transport changes only need these three tables refreshed, not the
+  // whole dashboard (which would blank the screen and reset open forms).
+  const loadTransport = async () => {
+    const [routesRes, requestsRes, loadsRes] = await Promise.all([
+      supabase.from("transport_routes").select("*").order("name"),
+      supabase.from("transport_requests").select("*").order("created_at", { ascending: false }),
+      supabase.from("transport_route_load").select("*"),
+    ]);
+    if (routesRes.error) {
+      setTransportError(routesRes.error.message);
+      return;
+    }
+    setTransportError("");
+    setTransportRoutes(routesRes.data ?? []);
+    setTransportRequests(requestsRes.data ?? []);
+    setTransportLoads(loadsRes.data ?? []);
+  };
+
   const loadAll = async () => {
     setLoading(true);
 
-    const [bookingsRes, complaintsRes, roomsRes, studentsRes, curfewRes, techniciansRes, profileRes, hostelsRes] =
+    const [
+      bookingsRes,
+      complaintsRes,
+      roomsRes,
+      studentsRes,
+      curfewRes,
+      techniciansRes,
+      profileRes,
+      hostelsRes,
+      routesRes,
+      requestsRes,
+      loadsRes,
+    ] =
       await Promise.all([
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
         supabase.from("complaints").select("*").order("created_at", { ascending: false }),
@@ -114,12 +155,24 @@ function WardenDashboard({ user, onLogout }) {
         supabase.from("profiles").select("id, full_name").eq("role", "technician"),
         supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
         supabase.from("hostels").select("*"),
+        supabase.from("transport_routes").select("*").order("name"),
+        supabase.from("transport_requests").select("*").order("created_at", { ascending: false }),
+        supabase.from("transport_route_load").select("*"),
       ]);
 
     if (bookingsRes.data) setBookings(bookingsRes.data);
     if (complaintsRes.data) setComplaints(complaintsRes.data);
     if (roomsRes.data) setRooms(roomsRes.data);
     if (studentsRes.data) setStudents(studentsRes.data);
+    if (curfewRes.data) setCurfewLogs(curfewRes.data);
+    if (routesRes.error) {
+      setTransportError(routesRes.error.message);
+    } else {
+      setTransportError("");
+      setTransportRoutes(routesRes.data ?? []);
+      setTransportRequests(requestsRes.data ?? []);
+      setTransportLoads(loadsRes.data ?? []);
+    }
     if (curfewRes.data && studentsRes.data) {
       setCurfewStatuses(curfewStatusesFromLogs(curfewRes.data, studentsRes.data));
     }
@@ -272,6 +325,36 @@ function WardenDashboard({ user, onLogout }) {
             curfewStatuses={curfewStatuses}
             onCheckIn={handleCheckIn}
             residences={mergeResidences(hostels)}
+          />
+        );
+      case "analytics":
+        return (
+          <Suspense fallback={<p className="tab__empty">Loading charts…</p>}>
+            <WardenAnalyticsTab
+              period={period}
+              onPeriodChange={setPeriod}
+              bookings={bookings}
+              complaints={complaints}
+              rooms={rooms}
+              students={students}
+              curfewLogs={curfewLogs}
+              transportRoutes={transportRoutes}
+              transportRequests={transportRequests}
+              residences={mergeResidences(hostels)}
+            />
+          </Suspense>
+        );
+      case "transport":
+        return (
+          <WardenTransportTab
+            routes={transportRoutes}
+            requests={transportRequests}
+            loads={transportLoads}
+            students={students}
+            residences={mergeResidences(hostels)}
+            loadError={transportError}
+            onChanged={loadTransport}
+            notify={notify}
           />
         );
       case "hostels":

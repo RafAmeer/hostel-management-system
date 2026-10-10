@@ -243,6 +243,27 @@ export function ThumbsUpIcon(props) {
   );
 }
 
+export function BusIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="4" y="3.5" width="16" height="13" rx="2.5" />
+      <path d="M4 10.5h16M4 14h16" />
+      <circle cx="8" cy="19" r="1.6" />
+      <circle cx="16" cy="19" r="1.6" />
+      <path d="M6.5 16.5V19M17.5 16.5V19" />
+    </svg>
+  );
+}
+
+export function ChartIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 4v16h16" />
+      <path d="m7.5 14 3.5-4 3 2.5 4.5-6" />
+    </svg>
+  );
+}
+
 export const NAV_ICONS = {
   home: HomeIcon,
   rooms: BedIcon,
@@ -256,4 +277,6 @@ export const NAV_ICONS = {
   overview: BarsIcon,
   students: UsersIcon,
   news: NewsIcon,
+  transport: BusIcon,
+  analytics: ChartIcon,
 };

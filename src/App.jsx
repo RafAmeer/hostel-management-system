@@ -415,7 +415,16 @@ function App() {
   // Students: remember this phone so the curfew QR can identify them
   // without another login. Only a real login/session creates the binding.
   useEffect(() => {
-    if (user && role === "student") ensureDeviceBinding(user.id);
+    if (!user || role !== "student") return;
+    ensureDeviceBinding(user.id).then((res) => {
+      if (res.status === "owned_by_other") {
+        notify(
+          "This phone is already registered to another student for curfew scans, so it can't scan for you.",
+          "info"
+        );
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, role]);
 
   const switchMode = (nextMode) => {

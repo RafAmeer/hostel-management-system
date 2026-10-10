@@ -68,17 +68,52 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Work out which circle this phone must be inside.
+    // Work out which hostel (and so which circle) this scan is for.
+    //  - QR scan: the poster's URL carries the hostel id/name, so the
+    //    student never picks anything.
+    //  - No hostel given (camera couldn't read the poster): the phone's GPS
+    //    position is matched against every hostel's circle and the hostel
+    //    the phone is standing in is selected automatically.
     let target: { lat: number; lng: number; radius: number } | null = null;
+    let hostelName: string | null = location ? String(location) : null;
+    let hostelKey: string | null = hostel_id ? String(hostel_id) : null;
+    const slack = Math.min(Number(accuracy) || 0, 100);
 
     if (hostel_id || location) {
-      let q = supabaseAdmin.from("hostel_locations").select("latitude, longitude, radius_m");
+      let q = supabaseAdmin
+        .from("hostel_locations")
+        .select("hostel_id, name, latitude, longitude, radius_m");
       q = hostel_id ? q.eq("hostel_id", String(hostel_id)) : q.ilike("name", String(location));
       const { data: loc, error: locError } = await q.limit(1).maybeSingle();
       if (locError) console.error("curfew-scan: hostel_locations lookup failed", locError);
       if (loc && typeof loc.latitude === "number" && typeof loc.longitude === "number") {
         target = { lat: loc.latitude, lng: loc.longitude, radius: Number(loc.radius_m) || 150 };
+        hostelName = loc.name ?? hostelName;
+        hostelKey = loc.hostel_id ?? hostelKey;
       }
+    } else {
+      const { data: all, error: allError } = await supabaseAdmin
+        .from("hostel_locations")
+        .select("hostel_id, name, latitude, longitude, radius_m");
+      if (allError) console.error("curfew-scan: hostel_locations list failed", allError);
+
+      let best: { row: Record<string, unknown>; dist: number; radius: number } | null = null;
+      for (const row of all ?? []) {
+        if (typeof row.latitude !== "number" || typeof row.longitude !== "number") continue;
+        const radius = Number(row.radius_m) || 150;
+        const dist = distanceMeters(latitude, longitude, row.latitude, row.longitude);
+        if (dist <= radius + slack && (!best || dist < best.dist)) best = { row, dist, radius };
+      }
+      if (!best) {
+        // Nothing set up yet, or the phone isn't at any hostel.
+        return jsonResponse(
+          { error: (all ?? []).length ? "no_hostel_nearby" : "unknown_hostel" },
+          (all ?? []).length ? 403 : 400
+        );
+      }
+      target = { lat: best.row.latitude as number, lng: best.row.longitude as number, radius: best.radius };
+      hostelName = (best.row.name as string) ?? null;
+      hostelKey = (best.row.hostel_id as string) ?? null;
     }
 
     if (!target && Deno.env.get("HOSTEL_LAT") && Deno.env.get("HOSTEL_LNG")) {
@@ -92,7 +127,6 @@ Deno.serve(async (req) => {
     if (target) {
       const dist = distanceMeters(latitude, longitude, target.lat, target.lng);
       // Allow for GPS error: a poor fix (large accuracy) widens the circle a bit.
-      const slack = Math.min(Number(accuracy) || 0, 100);
       if (dist > target.radius + slack) {
         return jsonResponse({ error: "outside_hostel_area" }, 403);
       }
@@ -138,7 +172,7 @@ Deno.serve(async (req) => {
       student_id: studentId,
       scan_type: nextType,
       timestamp,
-      location: location || hostel_id || "Hostel entrance",
+      location: hostelName || hostelKey || "Hostel entrance",
       latitude,
       longitude,
     });
@@ -160,6 +194,8 @@ Deno.serve(async (req) => {
       success: true,
       scan_type: nextType,
       student_name: profile?.full_name ?? null,
+      hostel_name: hostelName,
+      hostel_id: hostelKey,
       timestamp,
     });
   } catch (err) {

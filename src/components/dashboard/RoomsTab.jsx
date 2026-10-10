@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import HostelDetailModal from "./HostelDetailModal";
 import LikeBurst from "../LikeBurst";
+import { FALLBACK_SEMESTER, activeBookingFor, nextSemester } from "../../lib/semesters";
 
 const GENDER_LABEL = { male: "male", female: "female" };
 
@@ -18,13 +19,27 @@ function roomsForResidence(rooms, residenceId) {
   return hasResidenceData ? rooms.filter((r) => r.residence === residenceId) : rooms;
 }
 
-function RoomsTab({ rooms, residences, studentId, studentGender, semester, eligibility, onBookingCreated }) {
+function RoomsTab({ rooms, residences, bookings = [], studentId, studentGender, semester, eligibility, onBookingCreated }) {
   const [openResidenceId, setOpenResidenceId] = useState(null);
   const [bookingRoomId, setBookingRoomId] = useState(null);
   const [message, setMessage] = useState("");
   const [roomGenders, setRoomGenders] = useState({});
   const [bookedRoom, setBookedRoom] = useState(null);
   const [likeShow, setLikeShow] = useState(false);
+
+  // A student can apply to ONE hostel per semester. Once that booking is
+  // approved they can still book for the NEXT semester, so the page lets
+  // them choose which semester they are booking for.
+  const currentSemester = semester || FALLBACK_SEMESTER;
+  const upcomingSemester = nextSemester(currentSemester);
+  const [bookingSemester, setBookingSemester] = useState(currentSemester);
+  const liveBooking = activeBookingFor(bookings, bookingSemester);
+  const liveBookingText = liveBooking
+    ? `You already have a ${liveBooking.status} booking for ${bookingSemester}` +
+      `${liveBooking.hostel ? ` (${liveBooking.hostel}` : ""}${liveBooking.room_number ? `${liveBooking.hostel ? ", " : " ("}room ${liveBooking.room_number}` : ""}${liveBooking.hostel || liveBooking.room_number ? ")" : ""}. ` +
+      `A student can only apply to one hostel per semester.` +
+      (bookingSemester === currentSemester ? ` You can still book for ${upcomingSemester}.` : "")
+    : "";
 
   const openResidence = residences.find((r) => r.id === openResidenceId) ?? null;
 
@@ -74,6 +89,10 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, eligi
       setMessage("Your eligibility is marked as not eligible, so room requests are turned off. Please contact the warden.");
       return;
     }
+    if (liveBooking) {
+      setMessage(liveBookingText);
+      return;
+    }
     const occupantGender = room.mock ? room.gender : roomGenders[room.id];
     if (occupantGender && studentGender && occupantGender !== studentGender) {
       setMessage(
@@ -93,13 +112,13 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, eligi
           hostel: context.residence?.name ?? context.residence?.id ?? null,
           floor: context.floor?.label ?? null,
           room_number: room.room_number,
-          semester: semester || "S2/2026",
+          semester: bookingSemester,
           status: "pending",
         }
       : {
           student_id: studentId,
           room_id: room.id,
-          semester: semester || "S2/2026",
+          semester: bookingSemester,
           status: "pending",
         };
 
@@ -108,11 +127,16 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, eligi
     setBookingRoomId(null);
 
     if (error) {
-      setMessage(`Couldn't submit booking: ${error.message}`);
+      // 23505 = the database's one-live-booking-per-semester rule.
+      setMessage(
+        error.code === "23505"
+          ? `You already have a booking for ${bookingSemester}. A student can only apply to one hostel per semester.`
+          : `Couldn't submit booking: ${error.message}`
+      );
       return;
     }
 
-    setMessage(`Booking request sent for room ${room.room_number}. Track it under Status.`);
+    setMessage(`Booking request sent for room ${room.room_number} (${bookingSemester}). Track it under Status.`);
     setBookedRoom(room);
     setLikeShow(true);
     onBookingCreated?.();
@@ -121,6 +145,37 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, eligi
   return (
     <div className="tab">
       <h2 className="tab__title">Room Booking</h2>
+
+      <section className="glass-panel semester-picker" aria-label="Booking semester">
+        <div>
+          <p className="semester-picker__title">Booking for</p>
+          <p className="list-row__meta">One hostel per semester. Book the next semester any time.</p>
+        </div>
+        <div className="segmented" role="group" aria-label="Choose semester">
+          {[currentSemester, upcomingSemester].map((sem) => (
+            <button
+              key={sem}
+              type="button"
+              className={"segmented__btn" + (bookingSemester === sem ? " segmented__btn--active" : "")}
+              aria-pressed={bookingSemester === sem}
+              onClick={() => {
+                setBookingSemester(sem);
+                setMessage("");
+              }}
+            >
+              {sem}
+              {sem === currentSemester ? " (current)" : " (next)"}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {liveBooking && (
+        <p className="message message--info" role="status">
+          {liveBookingText}
+        </p>
+      )}
+
       <h3 className="panel-heading panel-heading--sub">Residents</h3>
 
       <div className="residence-grid">
@@ -160,6 +215,7 @@ function RoomsTab({ rooms, residences, studentId, studentGender, semester, eligi
           rooms={roomsForResidence(rooms, openResidence.id)}
           roomGenders={roomGenders}
           bookingRoomId={bookingRoomId}
+          bookingLocked={Boolean(liveBooking)}
           message={message}
           onBook={handleBook}
           onClose={() => setOpenResidenceId(null)}

@@ -7,6 +7,7 @@ import RoomsTab from "../components/dashboard/RoomsTab";
 import BookingsTab from "../components/dashboard/BookingsTab";
 import ComplaintsTab from "../components/dashboard/ComplaintsTab";
 import CurfewTab from "../components/dashboard/CurfewTab";
+import TransportTab from "../components/dashboard/TransportTab";
 import ProfileTab from "../components/dashboard/ProfileTab";
 import ProfileForm from "../components/dashboard/ProfileForm";
 import { isStudentProfileComplete } from "../lib/studentProfile";
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { key: "rooms", label: "Rooms", icon: "rooms" },
   { key: "bookings", label: "Status", icon: "status" },
   { key: "complaints", label: "Complaint", icon: "complaint" },
+  { key: "transport", label: "Transport", icon: "transport" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
 ];
 
@@ -45,6 +47,10 @@ function StudentDashboard({ user, onLogout }) {
   const [curfewLogs, setCurfewLogs] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [residences, setResidences] = useState(mergeResidences([]));
+  const [transportRoutes, setTransportRoutes] = useState([]);
+  const [transportRequests, setTransportRequests] = useState([]);
+  const [transportLoads, setTransportLoads] = useState([]);
+  const [transportError, setTransportError] = useState("");
   const [loading, setLoading] = useState(true);
   const { toast, notify, dismiss } = useToast(5000);
   // Last status seen for each booking, so a change made by the warden can be
@@ -58,7 +64,18 @@ function StudentDashboard({ user, onLogout }) {
   const loadAll = async (silent = false) => {
     if (!silent) setLoading(true);
 
-    const [profileRes, roomsRes, bookingsRes, complaintsRes, curfewRes, announcementsRes, hostelsRes] =
+    const [
+      profileRes,
+      roomsRes,
+      bookingsRes,
+      complaintsRes,
+      curfewRes,
+      announcementsRes,
+      hostelsRes,
+      routesRes,
+      requestsRes,
+      loadsRes,
+    ] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", studentId).single(),
         supabase.from("rooms").select("*").order("room_number"),
@@ -88,6 +105,15 @@ function StudentDashboard({ user, onLogout }) {
         // (mergeResidences) — a missing/empty table just means "no
         // warden-added hostels yet", not an error.
         supabase.from("hostels").select("*"),
+        // Transport (campus shuttle for off-campus hostels). A missing
+        // table just means the migration hasn't been run yet.
+        supabase.from("transport_routes").select("*").order("name"),
+        supabase
+          .from("transport_requests")
+          .select("*")
+          .eq("student_id", studentId)
+          .order("created_at", { ascending: false }),
+        supabase.from("transport_route_load").select("*"),
       ]);
 
     if (profileRes.data) {
@@ -117,6 +143,14 @@ function StudentDashboard({ user, onLogout }) {
     if (curfewRes.data) setCurfewLogs(curfewRes.data);
     if (announcementsRes.data) setAnnouncements(announcementsRes.data);
     setResidences(mergeResidences(hostelsRes.data));
+    if (routesRes.error) {
+      setTransportError(routesRes.error.message);
+    } else {
+      setTransportError("");
+      setTransportRoutes(routesRes.data ?? []);
+      setTransportRequests(requestsRes.data ?? []);
+      setTransportLoads(loadsRes.data ?? []);
+    }
 
     if (!silent) setLoading(false);
   };
@@ -165,6 +199,7 @@ function StudentDashboard({ user, onLogout }) {
           <RoomsTab
             rooms={rooms}
             residences={residences}
+            bookings={bookings}
             studentId={studentId}
             studentGender={profile?.gender}
             semester={profile?.semester}
@@ -184,9 +219,23 @@ function StudentDashboard({ user, onLogout }) {
             onComplaintCreated={() => loadAll(true)}
           />
         );
+      case "transport":
+        return (
+          <TransportTab
+            routes={transportRoutes}
+            requests={transportRequests}
+            loads={transportLoads}
+            bookings={bookings}
+            rooms={rooms}
+            residences={residences}
+            studentId={studentId}
+            loadError={transportError}
+            onChanged={() => loadAll(true)}
+          />
+        );
       case "curfew":
         return (
-          <CurfewTab curfewLogs={curfewLogs} />
+          <CurfewTab curfewLogs={curfewLogs} userId={studentId} />
         );
       case "profile":
         return (
