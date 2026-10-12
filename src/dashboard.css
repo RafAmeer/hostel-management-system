@@ -3086,3 +3086,45 @@
 .device-card {
   margin-bottom: 1rem;
 }
+
+/* ---- Transport timetable, Help Center, biometric, merged overview ---- */
+.side-panel__head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.mini-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.mini-table th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); padding: 0.2rem 0.4rem 0.4rem 0; }
+.mini-table td { padding: 0.45rem 0.4rem 0.45rem 0; border-top: 1px solid var(--glass-border); vertical-align: top; }
+.mini-table__time { white-space: nowrap; font-weight: 700; }
+.mini-table__route { display: block; font-weight: 600; }
+.mini-table__meta { display: block; font-size: 0.74rem; color: var(--text-muted); }
+.mini-table__next td { background: rgb(var(--accent-rgb) / 0.12); }
+
+.day-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.75rem 0; }
+.day-tabs__btn { display: inline-flex; flex-direction: column; align-items: center; min-width: 3.1rem; padding: 0.4rem 0.7rem; border-radius: 999px; border: 1px solid var(--glass-border); background: var(--glass-strong); color: inherit; font: inherit; font-size: 0.82rem; cursor: pointer; }
+.day-tabs__btn--active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.day-tabs__today { font-size: 0.62rem; opacity: 0.85; }
+.chip--next { border-color: var(--accent); background: rgb(var(--accent-rgb) / 0.2); font-weight: 700; }
+.time-list { border: 0; padding: 0; }
+.time-list__row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem; }
+
+.help-thread { display: flex; flex-direction: column; gap: 0.6rem; padding: 1rem; max-height: 50vh; overflow-y: auto; margin: 0.75rem 0; }
+.help-msg { align-self: flex-start; max-width: 85%; padding: 0.55rem 0.8rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--glass-strong); }
+.help-msg--mine { align-self: flex-end; background: rgb(var(--accent-rgb) / 0.18); }
+.help-msg__who { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.15rem; }
+.help-msg__body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.help-reply { display: flex; flex-direction: column; gap: 0.5rem; }
+.help-reply textarea { width: 100%; }
+.list-row--button { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.faq { display: grid; gap: 0.5rem; }
+.faq__item { padding: 0.7rem 1rem; }
+.faq__item summary { cursor: pointer; font-weight: 600; }
+.faq__item p { margin-top: 0.5rem; color: var(--text-muted); font-size: 0.88rem; }
+
+.sidebar__badge { margin-left: auto; min-width: 1.25rem; padding: 0 0.4rem; border-radius: 999px; background: var(--danger, #c0392b); color: #fff; font-size: 0.72rem; font-weight: 700; text-align: center; }
+
+.biometric-card { margin-top: 1rem; padding: 1.1rem 1.25rem; display: grid; gap: 0.6rem; }
+.biometric-list { list-style: none; display: grid; gap: 0.4rem; }
+.biometric-list li { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.biometric-list small { color: var(--text-muted); margin-left: 0.4rem; }
+
+.period-split { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 1.5rem; align-items: start; }
+.period-split .receipt { max-width: none; }
+@media (max-width: 760px) { .period-split { grid-template-columns: 1fr; } }

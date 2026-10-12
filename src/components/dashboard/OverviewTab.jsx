@@ -1,7 +1,9 @@
 import Avatar from "./Avatar";
 import AnnouncementsPanel from "./AnnouncementsPanel";
 import CurfewScanCard from "./CurfewScanCard";
+import TransportToday from "./TransportToday";
 import { NAV_ICONS } from "./icons";
+import { scopeSchedule, studentTransportScope } from "../../lib/transport";
 import { formatDateTime, ELIGIBILITY_LABELS, eligibilityTone } from "../../lib/formatters";
 
 function getGreetingTime() {
@@ -13,7 +15,19 @@ function getGreetingTime() {
 
 // Matches the "Home" wireframe: a combined greeting + profile card and news
 // & announcements on the left, Quick Access + Notifications on the right.
-function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements = [], onNavigate }) {
+function OverviewTab({
+  profile,
+  bookings,
+  complaints,
+  curfewLogs,
+  announcements = [],
+  helpTickets = [],
+  rooms = [],
+  residences = [],
+  schedule = [],
+  transportError = "",
+  onNavigate,
+}) {
   // "Your room" only counts once the warden has approved it. A pending
   // request is shown as a request, not as the student's room.
   const approvedBooking = bookings.find((b) => b.status === "approved");
@@ -24,6 +38,9 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
     (c) => c.status !== "completed"
   ).length;
   const lastScan = curfewLogs[0];
+  const transportScope = studentTransportScope(bookings, rooms, residences);
+  const myTrips = scopeSchedule(schedule, transportScope);
+  const answeredHelp = helpTickets.filter((t) => t.status === "answered").length;
   const firstName = (profile?.full_name ?? "Student").split(" ")[0];
 
   const quickAccessItems = [
@@ -31,6 +48,7 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
     { key: "bookings", label: "Status Tracking", icon: "status" },
     { key: "complaints", label: "Complaint", icon: "complaint" },
     { key: "curfew", label: "Curfew", icon: "curfew" },
+    { key: "help", label: "Help Center", icon: "help" },
   ];
 
   // Important words are wrapped in <mark className="hl"> so they stand out.
@@ -56,6 +74,13 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
           {openComplaints} complaint{openComplaints > 1 ? "s" : ""}
         </mark>{" "}
         still open
+      </>
+    );
+  }
+  if (answeredHelp > 0) {
+    notifications.push(
+      <>
+        The warden <mark className="hl hl--ok">replied</mark> to {answeredHelp} help request{answeredHelp > 1 ? "s" : ""}
       </>
     );
   }
@@ -158,6 +183,15 @@ function OverviewTab({ profile, bookings, complaints, curfewLogs, announcements 
             })}
           </div>
         </section>
+
+        {!transportError && (
+          <TransportToday
+            schedule={myTrips}
+            scope={transportScope}
+            residences={residences}
+            onOpen={() => onNavigate?.("transport")}
+          />
+        )}
 
         <section className="glass-panel side-panel">
           <h3 className="panel-heading">Notification / Reminders</h3>

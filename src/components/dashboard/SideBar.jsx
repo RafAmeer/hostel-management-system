@@ -86,6 +86,11 @@ function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl
                 {Icon ? <Icon /> : <span className="sidebar__dot" />}
               </span>
               <span className="sidebar__label">{item.label}</span>
+              {item.badge > 0 && (
+                <span className="sidebar__badge" aria-label={`${item.badge} waiting`}>
+                  {item.badge}
+                </span>
+              )}
             </button>
           );
         })}

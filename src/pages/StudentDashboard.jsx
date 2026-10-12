@@ -8,6 +8,7 @@ import BookingsTab from "../components/dashboard/BookingsTab";
 import ComplaintsTab from "../components/dashboard/ComplaintsTab";
 import CurfewTab from "../components/dashboard/CurfewTab";
 import TransportTab from "../components/dashboard/TransportTab";
+import HelpTab from "../components/dashboard/HelpTab";
 import ProfileTab from "../components/dashboard/ProfileTab";
 import ProfileForm from "../components/dashboard/ProfileForm";
 import { isStudentProfileComplete } from "../lib/studentProfile";
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { key: "complaints", label: "Complaint", icon: "complaint" },
   { key: "transport", label: "Transport", icon: "transport" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
+  { key: "help", label: "Help", icon: "help" },
 ];
 
 // PostgREST's "no rows" code — a brand-new account whose profile row hasn't
@@ -47,15 +49,15 @@ function StudentDashboard({ user, onLogout }) {
   const [curfewLogs, setCurfewLogs] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [residences, setResidences] = useState(mergeResidences([]));
-  const [transportRoutes, setTransportRoutes] = useState([]);
-  const [transportRequests, setTransportRequests] = useState([]);
-  const [transportLoads, setTransportLoads] = useState([]);
+  const [schedule, setSchedule] = useState([]);
   const [transportError, setTransportError] = useState("");
+  const [helpTickets, setHelpTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast, notify, dismiss } = useToast(5000);
   // Last status seen for each booking, so a change made by the warden can be
   // announced ("Your booking was approved") the moment it shows up.
   const bookingStatuses = useRef(null);
+  const helpStatuses = useRef(null);
 
   const studentId = user?.id;
 
@@ -72,9 +74,8 @@ function StudentDashboard({ user, onLogout }) {
       curfewRes,
       announcementsRes,
       hostelsRes,
-      routesRes,
-      requestsRes,
-      loadsRes,
+      scheduleRes,
+      helpRes,
     ] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", studentId).single(),
@@ -105,15 +106,15 @@ function StudentDashboard({ user, onLogout }) {
         // (mergeResidences) — a missing/empty table just means "no
         // warden-added hostels yet", not an error.
         supabase.from("hostels").select("*"),
-        // Transport (campus shuttle for off-campus hostels). A missing
-        // table just means the migration hasn't been run yet.
-        supabase.from("transport_routes").select("*").order("name"),
+        // Fixed shuttle timetable the warden maintains. A missing table
+        // just means the migration hasn't been run yet.
+        supabase.from("transport_schedule").select("*").eq("active", true).order("departure_time"),
+        // This student's help requests to the warden.
         supabase
-          .from("transport_requests")
+          .from("help_tickets")
           .select("*")
           .eq("student_id", studentId)
-          .order("created_at", { ascending: false }),
-        supabase.from("transport_route_load").select("*"),
+          .order("updated_at", { ascending: false }),
       ]);
 
     if (profileRes.data) {
@@ -143,13 +144,23 @@ function StudentDashboard({ user, onLogout }) {
     if (curfewRes.data) setCurfewLogs(curfewRes.data);
     if (announcementsRes.data) setAnnouncements(announcementsRes.data);
     setResidences(mergeResidences(hostelsRes.data));
-    if (routesRes.error) {
-      setTransportError(routesRes.error.message);
+    if (scheduleRes.error) {
+      setTransportError(scheduleRes.error.message);
     } else {
       setTransportError("");
-      setTransportRoutes(routesRes.data ?? []);
-      setTransportRequests(requestsRes.data ?? []);
-      setTransportLoads(loadsRes.data ?? []);
+      setSchedule(scheduleRes.data ?? []);
+    }
+    if (helpRes.data) {
+      const previous = helpStatuses.current;
+      if (previous) {
+        helpRes.data.forEach((t) => {
+          if (previous[t.id] && previous[t.id] !== "answered" && t.status === "answered") {
+            notify(`The warden replied to "${t.subject}".`, "info");
+          }
+        });
+      }
+      helpStatuses.current = Object.fromEntries(helpRes.data.map((t) => [t.id, t.status]));
+      setHelpTickets(helpRes.data);
     }
 
     if (!silent) setLoading(false);
@@ -222,17 +233,15 @@ function StudentDashboard({ user, onLogout }) {
       case "transport":
         return (
           <TransportTab
-            routes={transportRoutes}
-            requests={transportRequests}
-            loads={transportLoads}
+            schedule={schedule}
             bookings={bookings}
             rooms={rooms}
             residences={residences}
-            studentId={studentId}
             loadError={transportError}
-            onChanged={() => loadAll(true)}
           />
         );
+      case "help":
+        return <HelpTab tickets={helpTickets} studentId={studentId} onChanged={() => loadAll(true)} />;
       case "curfew":
         return (
           <CurfewTab curfewLogs={curfewLogs} userId={studentId} />
@@ -254,6 +263,11 @@ function StudentDashboard({ user, onLogout }) {
             complaints={complaints}
             curfewLogs={curfewLogs}
             announcements={announcements}
+            helpTickets={helpTickets}
+            rooms={rooms}
+            residences={residences}
+            schedule={schedule}
+            transportError={transportError}
             onNavigate={setActiveTab}
           />
         );

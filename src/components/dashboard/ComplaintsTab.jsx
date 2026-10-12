@@ -163,6 +163,9 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
                   {(c.hostel || c.room_number) && " — "}
                   {c.description}
                 </p>
+                {Array.isArray(c.remarks) && c.remarks.length > 0 && (
+                  <p className="list-row__meta">Technician update: {c.remarks[c.remarks.length - 1]}</p>
+                )}
               </div>
               <span className={"badge badge--" + statusTone(c.status)}>
                 {STATUS_LABELS[c.status] ?? c.status}

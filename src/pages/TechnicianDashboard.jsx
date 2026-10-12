@@ -5,6 +5,8 @@ import Sidebar from "../components/dashboard/SideBar.jsx";
 import TechnicianTasksTab from "../components/dashboard/TechnicianTasksTab";
 import TechnicianHistoryTab from "../components/dashboard/TechnicianHistoryTab";
 import ProfileTab from "../components/dashboard/ProfileTab";
+import Toast from "../components/Toast";
+import { useToast } from "../hooks/useToast";
 
 const NAV_ITEMS = [
   { key: "tasks", label: "My Tasks", icon: "tasks" },
@@ -22,6 +24,7 @@ function TechnicianDashboard({ user, onLogout }) {
   const [tasks, setTasks] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { toast, notify, dismiss } = useToast();
 
   useEffect(() => {
     const load = async () => {
@@ -42,18 +45,49 @@ function TechnicianDashboard({ user, onLogout }) {
     else setLoading(false);
   }, [user?.id]);
 
-  const handleAdvanceStatus = (id) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id && STATUS_FLOW[t.status] ? { ...t, status: STATUS_FLOW[t.status] } : t))
-    );
-    const next = tasks.find((t) => t.id === id) && STATUS_FLOW[tasks.find((t) => t.id === id).status];
-    if (next) supabase.from("complaints").update({ status: next }).eq("id", id);
+  // Both writes below are awaited and checked. Before, the remark was only
+  // added to on-screen state and never sent to Supabase, so it vanished on
+  // refresh (and the status update ignored failures). Now the screen keeps a
+  // change only when the database accepted it; otherwise it rolls back and
+  // says why.
+  const handleAdvanceStatus = async (id) => {
+    const task = tasks.find((t) => t.id === id);
+    const next = task && STATUS_FLOW[task.status];
+    if (!next) return;
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: next } : t)));
+    const { data, error } = await supabase
+      .from("complaints")
+      .update({ status: next })
+      .eq("id", id)
+      .select()
+      .maybeSingle();
+    if (error || !data) {
+      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: task.status } : t)));
+      notify(error ? `Couldn't update the status: ${error.message}` : "The database didn't accept that change. Run the latest SQL migration.", "error");
+      return;
+    }
+    notify(next === "completed" ? "Marked as completed." : "Work started.", "success");
   };
 
-  const handleAddRemark = (id, text) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, remarks: [...(t.remarks ?? []), text] } : t))
-    );
+  const handleAddRemark = async (id, text) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return false;
+    const stamp = new Date().toLocaleString("en-MY", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+    const previous = Array.isArray(task.remarks) ? task.remarks : [];
+    const remarks = [...previous, `${stamp} · ${text}`];
+    const { data, error } = await supabase
+      .from("complaints")
+      .update({ remarks })
+      .eq("id", id)
+      .select()
+      .maybeSingle();
+    if (error || !data) {
+      notify(error ? `Couldn't save the remark: ${error.message}` : "The remark wasn't saved. Run the latest SQL migration.", "error");
+      return false;
+    }
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, remarks: data.remarks ?? remarks } : t)));
+    notify("Remark saved.", "success");
+    return true;
   };
 
   const renderTab = () => {
@@ -82,6 +116,7 @@ function TechnicianDashboard({ user, onLogout }) {
           </div>
         )}
       </main>
+      <Toast toast={toast} onDismiss={dismiss} />
     </div>
   );
 }

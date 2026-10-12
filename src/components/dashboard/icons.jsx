@@ -264,7 +264,27 @@ export function ChartIcon(props) {
   );
 }
 
+export function HelpIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5v-9Z" />
+      <path d="M9.6 8.8a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.2.8-1.2 1.6M12 14.4v.1" />
+    </svg>
+  );
+}
+
+export function FingerprintIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6.5 6.5A8 8 0 0 1 20 11c0 2 0 4-.7 6" />
+      <path d="M4 11a8 8 0 0 1 .6-3M8 20c.8-1.6 1-3.3 1-5a3 3 0 0 1 6 0c0 2.4-.4 4.4-1.4 6" />
+      <path d="M12 11v3.5c0 1.8-.3 3.4-1 5M4.5 15c.3-1.3.5-2.7.5-4" />
+    </svg>
+  );
+}
+
 export const NAV_ICONS = {
+  help: HelpIcon,
   home: HomeIcon,
   rooms: BedIcon,
   status: ClipboardIcon,

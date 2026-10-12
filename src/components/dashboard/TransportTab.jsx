@@ -1,241 +1,127 @@
 import { useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
-import { ACTIVE_BOOKING_STATUSES } from "../../lib/semesters";
-import { isOffCampus, residenceForBooking } from "../../lib/hostelOf";
-import { formatDateTime } from "../../lib/formatters";
+import {
+  DAY_LONG,
+  DAY_SHORT,
+  DIRECTIONS,
+  describeDays,
+  formatTime,
+  nextTrip,
+  scopeSchedule,
+  studentTransportScope,
+  tripsForDay,
+} from "../../lib/transport";
 
-const REQUEST_LABELS = {
-  pending: "Pending",
-  approved: "Approved",
-  rejected: "Rejected",
-  cancelled: "Cancelled",
-};
-
-function requestTone(status) {
-  if (status === "approved") return "ok";
-  if (status === "rejected" || status === "cancelled") return "danger";
-  return "warn";
-}
-
-function loadFor(loads, routeId, semester) {
-  return loads.find((l) => l.route_id === routeId && l.semester === semester) ?? { approved: 0, pending: 0 };
-}
-
-function RouteCard({ route, semester, loads, children }) {
-  const load = loadFor(loads, route.id, semester);
-  const seatsLeft = Math.max(0, (route.seats ?? 0) - (load.approved ?? 0));
-  return (
-    <div className="glass-panel route-card">
-      <div className="route-card__head">
-        <h4 className="route-card__name">{route.name}</h4>
-        <span className={"badge badge--" + (seatsLeft === 0 ? "danger" : "ok")}>
-          {seatsLeft === 0 ? "Full" : `${seatsLeft} seats left`}
-        </span>
-      </div>
-      <p className="list-row__meta">
-        {route.pickup_point || "Pick-up at the hostel"} → {route.destination}
-      </p>
-      <p className="list-row__meta">
-        {route.days}
-        {Number(route.fee) > 0 ? ` · RM ${route.fee}/semester` : " · Free for hostel students"}
-      </p>
-      {route.departure_times?.length > 0 && (
-        <ul className="chip-list" aria-label="Departure times">
-          {route.departure_times.map((t) => (
-            <li key={t} className="chip">
-              {t}
-            </li>
-          ))}
-        </ul>
-      )}
-      {route.notes && <p className="list-row__meta">{route.notes}</p>}
-      {children}
-    </div>
-  );
-}
-
-// Student view of the campus shuttle. The campus provides transport for
-// students whose hostel is outside the main campus, so seat requests are
-// tied to a live (pending/approved) booking at an off-campus hostel — one
-// request per semester, the same way a student books one hostel per
-// semester.
-function TransportTab({
-  routes,
-  requests,
-  loads,
-  bookings,
-  rooms,
-  residences,
-  studentId,
-  loadError,
-  onChanged,
-}) {
-  const [busyKey, setBusyKey] = useState(null);
-  const [message, setMessage] = useState("");
-
-  const activeRoutes = routes.filter((r) => r.active !== false);
-  const liveBookings = bookings.filter((b) => ACTIVE_BOOKING_STATUSES.includes(b.status));
-  const offCampusBookings = liveBookings
-    .map((b) => ({ booking: b, residence: residenceForBooking(b, rooms, residences) }))
-    .filter((x) => isOffCampus(x.residence));
-  const onCampusOnly = liveBookings.length > 0 && offCampusBookings.length === 0;
-
-  const liveRequestFor = (semester) =>
-    requests.find((r) => r.semester === semester && ACTIVE_BOOKING_STATUSES.includes(r.status)) ?? null;
-
-  const requestSeat = async (route, semester) => {
-    setMessage("");
-    setBusyKey(route.id + semester);
-    const { error } = await supabase
-      .from("transport_requests")
-      .insert({ student_id: studentId, route_id: route.id, semester, status: "pending" });
-    setBusyKey(null);
-    if (error) {
-      setMessage(
-        error.code === "23505"
-          ? `You already have a transport request for ${semester}. Cancel it first to pick another route.`
-          : `Couldn't send the request: ${error.message}`
-      );
-      return;
-    }
-    setMessage(`Seat requested on ${route.name} for ${semester}. The warden will confirm it.`);
-    onChanged?.();
-  };
-
-  const cancelRequest = async (req) => {
-    setMessage("");
-    setBusyKey(req.id);
-    const { error } = await supabase
-      .from("transport_requests")
-      .update({ status: "cancelled" })
-      .eq("id", req.id)
-      .eq("student_id", studentId);
-    setBusyKey(null);
-    if (error) {
-      setMessage(`Couldn't cancel: ${error.message}`);
-      return;
-    }
-    onChanged?.();
-  };
+// Student view of the campus shuttle: a fixed timetable the warden maintains.
+// Nothing to book or request — pick a day to see every trip, with pick-up
+// point, destination and notes.
+function TransportTab({ schedule, bookings, rooms, residences, loadError }) {
+  const [day, setDay] = useState(() => new Date().getDay());
 
   if (loadError) {
     return (
       <div className="tab">
         <h2 className="tab__title">Transport</h2>
         <p className="message message--info" role="status">
-          Transport isn't set up yet. Ask the warden to run
-          supabase/migrations/2026-10-08_transport_booking_rules_device.sql. ({loadError})
+          The shuttle timetable isn't set up yet. Ask the warden to run
+          supabase/migrations/2026-10-10_remarks_help_transport_passkeys.sql. ({loadError})
         </p>
       </div>
     );
   }
 
-  const routeById = new Map(routes.map((r) => [r.id, r]));
+  const today = new Date().getDay();
+  const scope = studentTransportScope(bookings, rooms, residences);
+  const mine = scopeSchedule(schedule.filter((t) => t.active !== false), scope);
+  const hostelName = (id) => residences.find((r) => r.id === id)?.name ?? id;
+  const trips = tripsForDay(mine, day);
+  const upcoming = day === today ? nextTrip(trips) : null;
+
+  // Group the chosen day's trips by hostel + route so each route reads as
+  // one card with its departure times.
+  const groups = new Map();
+  for (const t of trips) {
+    const key = `${t.hostel_id}|${t.route_name}|${t.direction}`;
+    if (!groups.has(key)) groups.set(key, { ...t, times: [] });
+    groups.get(key).times.push(t);
+  }
 
   return (
     <div className="tab">
       <h2 className="tab__title">Transport</h2>
       <p className="tab__subtitle-text">
-        The campus runs a shuttle for students who live in hostels outside the main campus. Request one
-        seat per semester for the hostel you booked.
+        The campus shuttle runs on a fixed timetable for hostels outside the main campus. No booking
+        needed — just be at the pick-up point.
       </p>
 
-      {message && (
-        <p className="tab__message" role="status">
-          {message}
-        </p>
-      )}
-
-      {offCampusBookings.length === 0 ? (
+      {scope.mode === "none" ? (
         <div className="glass-panel placeholder-panel">
-          <p>
-            {onCampusOnly
-              ? "Your hostel is on the main campus, so you can walk to class — no shuttle needed."
-              : "Book an off-campus hostel under Rooms first. Shuttle seats open up once you have a booking."}
+          <p>Your hostel is on the main campus, so you can walk to class — no shuttle needed.</p>
+        </div>
+      ) : (
+        <>
+          <p className="list-row__meta">
+            {scope.mode === "hostels"
+              ? `Showing trips for ${scope.hostelIds.map(hostelName).join(", ")}.`
+              : "Showing every hostel's trips. Book a hostel under Rooms to see just yours."}
           </p>
-        </div>
-      ) : (
-        offCampusBookings.map(({ booking, residence }) => {
-          const semester = booking.semester;
-          const live = liveRequestFor(semester);
-          const hostelRoutes = activeRoutes.filter((r) => r.hostel_id === residence.id);
-          return (
-            <section key={booking.id} className="transport-section">
-              <h3 className="panel-heading panel-heading--sub">
-                {residence.name} · {semester}
-              </h3>
-              <p className="list-row__meta">
-                Your hostel booking is {booking.status}.
-                {live ? " You already have a seat request for this semester." : ""}
-              </p>
 
-              {hostelRoutes.length === 0 ? (
-                <p className="tab__empty">No shuttle route is listed for this hostel yet. Ask the warden.</p>
-              ) : (
-                <div className="route-grid">
-                  {hostelRoutes.map((route) => {
-                    const load = loadFor(loads, route.id, semester);
-                    const full = (load.approved ?? 0) >= (route.seats ?? 0);
-                    const mine = live?.route_id === route.id;
-                    return (
-                      <RouteCard key={route.id} route={route} semester={semester} loads={loads}>
-                        <button
-                          type="button"
-                          className="primary-btn"
-                          disabled={Boolean(live) || full || busyKey === route.id + semester}
-                          onClick={() => requestSeat(route, semester)}
-                        >
-                          {mine
-                            ? `Requested (${REQUEST_LABELS[live.status]})`
-                            : live
-                              ? "Already requested"
-                              : full
-                                ? "Full"
-                                : busyKey === route.id + semester
-                                  ? "Sending…"
-                                  : "Request a seat"}
-                        </button>
-                      </RouteCard>
-                    );
-                  })}
+          <div className="day-tabs" role="tablist" aria-label="Day of the week">
+            {DAY_SHORT.map((label, i) => (
+              <button
+                key={label}
+                type="button"
+                role="tab"
+                aria-selected={day === i}
+                className={"day-tabs__btn" + (day === i ? " day-tabs__btn--active" : "")}
+                onClick={() => setDay(i)}
+              >
+                {label}
+                {i === today && <span className="day-tabs__today">Today</span>}
+              </button>
+            ))}
+          </div>
+
+          <h3 className="panel-heading panel-heading--sub">
+            {DAY_LONG[day]}
+            {day === today ? " (today)" : ""}
+          </h3>
+
+          {groups.size === 0 ? (
+            <p className="tab__empty">No shuttle trips on {DAY_LONG[day]}.</p>
+          ) : (
+            <div className="route-grid">
+              {[...groups.values()].map((g) => (
+                <div key={`${g.hostel_id}|${g.route_name}|${g.direction}`} className="glass-panel route-card">
+                  <div className="route-card__head">
+                    <h4 className="route-card__name">{g.route_name}</h4>
+                    <span className="badge badge--neutral">{DIRECTIONS[g.direction] ?? "Shuttle"}</span>
+                  </div>
+                  <p className="list-row__meta">{hostelName(g.hostel_id)}</p>
+                  <p className="list-row__meta">
+                    {g.pickup_point || "Pick-up at the hostel"} → {g.destination || "Main Campus"}
+                  </p>
+                  <ul className="chip-list" aria-label="Departure times">
+                    {g.times.map((t) => (
+                      <li
+                        key={t.id}
+                        className={"chip" + (upcoming?.id === t.id ? " chip--next" : "")}
+                      >
+                        {formatTime(t.departure_time)}
+                        {upcoming?.id === t.id ? " · next" : ""}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="list-row__meta">Runs {describeDays(g.days)}</p>
+                  {[...new Set(g.times.map((t) => t.notes).filter(Boolean))].map((n) => (
+                    <p key={n} className="list-row__meta">
+                      {n}
+                    </p>
+                  ))}
                 </div>
-              )}
-            </section>
-          );
-        })
-      )}
-
-      <h3 className="panel-heading panel-heading--sub">My Requests</h3>
-      {requests.length === 0 ? (
-        <p className="tab__empty">No transport requests yet.</p>
-      ) : (
-        <div className="list">
-          {requests.map((r) => (
-            <div key={r.id} className="list-row">
-              <div>
-                <p className="list-row__title">{routeById.get(r.route_id)?.name ?? "Shuttle route"}</p>
-                <p className="list-row__meta">
-                  {r.semester} · requested {formatDateTime(r.created_at)}
-                </p>
-              </div>
-              <div className="list-row__actions">
-                <span className={"badge badge--" + requestTone(r.status)}>
-                  {REQUEST_LABELS[r.status] ?? r.status}
-                </span>
-                {r.status === "pending" && (
-                  <button
-                    type="button"
-                    className="btn-outline"
-                    disabled={busyKey === r.id}
-                    onClick={() => cancelRequest(r)}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

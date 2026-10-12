@@ -16,7 +16,8 @@ import { ensureDeviceBinding } from "./lib/deviceBinding";
 import "./hooks/useTheme";
 import { useToast } from "./hooks/useToast";
 import { usePwaInstall } from "./hooks/usePwaInstall";
-import { EyeIcon, EyeOffIcon, ScanIcon, DownloadIcon } from "./components/dashboard/icons";
+import { loginWithPasskey, passkeysSupported } from "./lib/passkeys";
+import { FingerprintIcon, EyeIcon, EyeOffIcon, ScanIcon, DownloadIcon } from "./components/dashboard/icons";
 
 // Warden, Finance and Technician all share one "Staff" sign-in page now
 // (previously each had — or would have needed — its own login form).
@@ -328,6 +329,22 @@ function App() {
     setUser(data.user ?? null);
     setRole(isStaffSignup ? staffRole : "student");
     notify("Account created. Welcome to DormSphere!", "success");
+  };
+
+  // Biometric sign-in. The session it creates goes through the same
+  // onAuthStateChange -> role lookup as a password login; the portal
+  // (student/staff) is decided by the account's role.
+  const handlePasskeyLogin = async () => {
+    resetMessages();
+    setLoading(true);
+    try {
+      await loginWithPasskey();
+      notify("Signed in successfully. Welcome back!", "success");
+    } catch (e) {
+      notify(e.message, "error");
+      setError(e.message);
+    }
+    setLoading(false);
   };
 
   const handleForgotPassword = async (e) => {
@@ -687,6 +704,12 @@ function App() {
               onClick={() => switchPortal(isStaffPortal ? "student" : "staff")}
             >
               {isStaffPortal ? "← Back to student login" : "Staff? Login here"}
+            </button>
+          )}
+
+          {mode === "login" && passkeysSupported() && (
+            <button type="button" className="biometric-btn" onClick={handlePasskeyLogin} disabled={loading}>
+              <FingerprintIcon aria-hidden="true" /> Sign in with fingerprint / face
             </button>
           )}
 

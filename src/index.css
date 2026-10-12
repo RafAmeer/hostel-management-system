@@ -663,3 +663,6 @@ body {
     transition: none;
   }
 }
+
+.biometric-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; margin-top: 0.6rem; padding: 0.7rem 1rem; border-radius: 12px; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.biometric-btn:disabled { opacity: 0.6; cursor: default; }

@@ -13,11 +13,13 @@ const NEXT_LABEL = { pending: "Start Work", in_progress: "Mark Completed" };
 function TechnicianTasksTab({ tasks, onAdvanceStatus, onAddRemark }) {
   const [draftRemark, setDraftRemark] = useState({});
 
-  const submitRemark = (id) => {
+  // Clear the box only once the remark is really saved, so nothing typed is
+  // lost when the save fails.
+  const submitRemark = async (id) => {
     const text = (draftRemark[id] ?? "").trim();
     if (!text) return;
-    onAddRemark(id, text);
-    setDraftRemark((prev) => ({ ...prev, [id]: "" }));
+    const ok = await onAddRemark(id, text);
+    if (ok) setDraftRemark((prev) => ({ ...prev, [id]: "" }));
   };
 
   return (

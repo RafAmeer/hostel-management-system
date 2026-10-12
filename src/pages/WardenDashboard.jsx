@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "../dashboard.css";
 import { supabase } from "../lib/supabaseClient.js";
 import Sidebar from "../components/dashboard/SideBar.jsx";
@@ -14,15 +14,12 @@ import { mergeResidences } from "../lib/residences";
 import WardenAnnouncementsTab from "../components/dashboard/WardenAnnouncementsTab";
 import StudentsTab from "../components/dashboard/StudentsTab";
 import WardenTransportTab from "../components/dashboard/WardenTransportTab";
+import WardenHelpTab from "../components/dashboard/WardenHelpTab";
 import Toast from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 
-// Charts (Chart.js) load only when the warden opens Analytics.
-const WardenAnalyticsTab = lazy(() => import("../components/dashboard/WardenAnalyticsTab"));
-
 const NAV_ITEMS = [
   { key: "overview", label: "Overview", icon: "overview" },
-  { key: "analytics", label: "Analytics", icon: "analytics" },
   { key: "bookings", label: "Room Bookings", icon: "status" },
   { key: "students", label: "Students", icon: "students" },
   { key: "hostels", label: "Hostels & Rooms", icon: "rooms" },
@@ -30,6 +27,7 @@ const NAV_ITEMS = [
   { key: "news", label: "News", icon: "news" },
   { key: "complaints", label: "Complaints", icon: "complaint" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
+  { key: "help", label: "Help Center", icon: "help" },
 ];
 
 // NOTE: this assumes tables `bookings` and `complaints` exist in Supabase
@@ -86,10 +84,9 @@ function WardenDashboard({ user, onLogout }) {
   const [hostels, setHostels] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [curfewLogs, setCurfewLogs] = useState([]);
-  const [transportRoutes, setTransportRoutes] = useState([]);
-  const [transportRequests, setTransportRequests] = useState([]);
-  const [transportLoads, setTransportLoads] = useState([]);
+  const [schedule, setSchedule] = useState([]);
   const [transportError, setTransportError] = useState("");
+  const [helpTickets, setHelpTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast, notify, dismiss } = useToast();
   // Stats period lives here (not inside WardenOverviewTab) so the same
@@ -112,22 +109,20 @@ function WardenDashboard({ user, onLogout }) {
     setAnnouncements(data ?? []);
   };
 
-  // Transport changes only need these three tables refreshed, not the
-  // whole dashboard (which would blank the screen and reset open forms).
+  // Timetable edits only need this table refreshed, not the whole dashboard.
   const loadTransport = async () => {
-    const [routesRes, requestsRes, loadsRes] = await Promise.all([
-      supabase.from("transport_routes").select("*").order("name"),
-      supabase.from("transport_requests").select("*").order("created_at", { ascending: false }),
-      supabase.from("transport_route_load").select("*"),
-    ]);
-    if (routesRes.error) {
-      setTransportError(routesRes.error.message);
+    const res = await supabase.from("transport_schedule").select("*").order("departure_time");
+    if (res.error) {
+      setTransportError(res.error.message);
       return;
     }
     setTransportError("");
-    setTransportRoutes(routesRes.data ?? []);
-    setTransportRequests(requestsRes.data ?? []);
-    setTransportLoads(loadsRes.data ?? []);
+    setSchedule(res.data ?? []);
+  };
+
+  const loadHelp = async () => {
+    const res = await supabase.from("help_tickets").select("*").order("updated_at", { ascending: false });
+    if (res.data) setHelpTickets(res.data);
   };
 
   const loadAll = async () => {
@@ -142,9 +137,8 @@ function WardenDashboard({ user, onLogout }) {
       techniciansRes,
       profileRes,
       hostelsRes,
-      routesRes,
-      requestsRes,
-      loadsRes,
+      scheduleRes,
+      helpRes,
     ] =
       await Promise.all([
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
@@ -155,9 +149,8 @@ function WardenDashboard({ user, onLogout }) {
         supabase.from("profiles").select("id, full_name").eq("role", "technician"),
         supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
         supabase.from("hostels").select("*"),
-        supabase.from("transport_routes").select("*").order("name"),
-        supabase.from("transport_requests").select("*").order("created_at", { ascending: false }),
-        supabase.from("transport_route_load").select("*"),
+        supabase.from("transport_schedule").select("*").order("departure_time"),
+        supabase.from("help_tickets").select("*").order("updated_at", { ascending: false }),
       ]);
 
     if (bookingsRes.data) setBookings(bookingsRes.data);
@@ -165,14 +158,13 @@ function WardenDashboard({ user, onLogout }) {
     if (roomsRes.data) setRooms(roomsRes.data);
     if (studentsRes.data) setStudents(studentsRes.data);
     if (curfewRes.data) setCurfewLogs(curfewRes.data);
-    if (routesRes.error) {
-      setTransportError(routesRes.error.message);
+    if (scheduleRes.error) {
+      setTransportError(scheduleRes.error.message);
     } else {
       setTransportError("");
-      setTransportRoutes(routesRes.data ?? []);
-      setTransportRequests(requestsRes.data ?? []);
-      setTransportLoads(loadsRes.data ?? []);
+      setSchedule(scheduleRes.data ?? []);
     }
+    if (helpRes.data) setHelpTickets(helpRes.data);
     if (curfewRes.data && studentsRes.data) {
       setCurfewStatuses(curfewStatusesFromLogs(curfewRes.data, studentsRes.data));
     }
@@ -186,6 +178,11 @@ function WardenDashboard({ user, onLogout }) {
 
   useEffect(() => {
     loadAll();
+    // New student help requests show up without a manual refresh.
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") loadHelp();
+    }, 15000);
+    return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -298,6 +295,9 @@ function WardenDashboard({ user, onLogout }) {
     });
   };
 
+  const waitingHelp = helpTickets.filter((t) => t.status === "open").length;
+  const navItems = NAV_ITEMS.map((i) => (i.key === "help" ? { ...i, badge: waitingHelp } : i));
+
   const renderTab = () => {
     switch (activeTab) {
       case "bookings":
@@ -327,30 +327,12 @@ function WardenDashboard({ user, onLogout }) {
             residences={mergeResidences(hostels)}
           />
         );
-      case "analytics":
-        return (
-          <Suspense fallback={<p className="tab__empty">Loading charts…</p>}>
-            <WardenAnalyticsTab
-              period={period}
-              onPeriodChange={setPeriod}
-              bookings={bookings}
-              complaints={complaints}
-              rooms={rooms}
-              students={students}
-              curfewLogs={curfewLogs}
-              transportRoutes={transportRoutes}
-              transportRequests={transportRequests}
-              residences={mergeResidences(hostels)}
-            />
-          </Suspense>
-        );
+      case "help":
+        return <WardenHelpTab tickets={helpTickets} students={students} onChanged={loadHelp} />;
       case "transport":
         return (
           <WardenTransportTab
-            routes={transportRoutes}
-            requests={transportRequests}
-            loads={transportLoads}
-            students={students}
+            schedule={schedule}
             residences={mergeResidences(hostels)}
             loadError={transportError}
             onChanged={loadTransport}
@@ -382,6 +364,12 @@ function WardenDashboard({ user, onLogout }) {
             period={period}
             onPeriodChange={setPeriod}
             curfewStatuses={curfewStatuses}
+            bookings={bookings}
+            complaints={complaints}
+            rooms={rooms}
+            students={students}
+            curfewLogs={curfewLogs}
+            residences={mergeResidences(hostels)}
           />
         );
     }
@@ -390,7 +378,7 @@ function WardenDashboard({ user, onLogout }) {
   return (
     <div className="dashboard">
       <Sidebar
-        navItems={NAV_ITEMS}
+        navItems={navItems}
         activeTab={activeTab}
         onSelect={setActiveTab}
         userName={profile?.full_name ?? user?.email ?? "Warden"}

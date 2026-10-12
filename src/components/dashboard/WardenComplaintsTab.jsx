@@ -70,6 +70,9 @@ function WardenComplaintsTab({ complaints, technicians, onAssign, onComplete }) 
                   {[c.hostel, c.room_number].filter(Boolean).join(" · ") || "No location given"} &middot;{" "}
                   {c.description}
                 </p>
+                {Array.isArray(c.remarks) && c.remarks.length > 0 && (
+                  <p className="list-row__meta">Technician remark: {c.remarks[c.remarks.length - 1]}</p>
+                )}
                 {c.assigned_technician && (
                   <p className="list-row__meta">
                     Assigned to {technicianName(c.assigned_technician, technicians)}

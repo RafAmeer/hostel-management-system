@@ -1,4 +1,5 @@
 import ProfileForm from "./ProfileForm";
+import BiometricCard from "./BiometricCard";
 import { ELIGIBILITY_LABELS, eligibilityTone } from "../../lib/formatters";
 
 // "Profile" page shared by Student (variant="student") and Warden
@@ -46,6 +47,7 @@ function ProfileTab({ user, profile, variant, onSaved }) {
           onSaved={onSaved}
         />
       </section>
+      <BiometricCard />
     </div>
   );
 }
