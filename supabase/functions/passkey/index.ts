@@ -7,8 +7,10 @@
 //                                        browser exchanges for a real session
 //                                        with supabase.auth.verifyOtp().
 //
-// Deploy:  supabase functions deploy passkey --no-verify-jwt
-// (login must work signed-out; register actions check the user's JWT here.)
+// Deploy:  supabase functions deploy passkey
+// (supabase/config.toml already sets verify_jwt = false for this function:
+// login must work signed-out, and register actions check the user's JWT here.)
+// Needs the tables from supabase/migrations/2026-10-13_passkey_tables.sql.
 // Optional secret PASSKEY_ORIGINS="https://your-app.vercel.app,http://localhost:5173"
 // restricts which sites may use this function.
 
@@ -36,6 +38,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    // Quick health check: open /functions/v1/passkey in the browser or call
+    // it with {"action":"ping"} to prove the function is deployed and running.
+    if (req.method === "GET") return json({ ok: true, function: "passkey" });
+
     const origin = req.headers.get("origin") ?? "";
     if (!origin) return json({ error: "Missing origin" }, 400);
     const allowed = (Deno.env.get("PASSKEY_ORIGINS") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -44,9 +50,17 @@ Deno.serve(async (req) => {
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { action, response, device_name } = await req.json();
+    if (action === "ping") return json({ ok: true, function: "passkey", rpID });
 
+    // Fails loudly if the table is missing (migration not run) instead of
+    // silently continuing and later reporting a confusing "Challenge expired".
     const saveChallenge = async (challenge: string, userId: string | null, kind: string) => {
-      await admin.from("passkey_challenges").insert({ challenge, user_id: userId, kind });
+      const { error } = await admin.from("passkey_challenges").insert({ challenge, user_id: userId, kind });
+      if (error) {
+        throw new Error(
+          `Passkey setup is incomplete on the server (${error.message}). Run supabase/migrations/2026-10-13_passkey_tables.sql in the SQL editor.`
+        );
+      }
     };
     // One-time: fetched and deleted together, and must be under 5 minutes old.
     const takeChallenge = async (challenge: string, kind: string) => {
@@ -122,7 +136,8 @@ Deno.serve(async (req) => {
     if (action === "login-verify") {
       const ch = await takeChallenge(challengeOf(response), "login");
       if (!ch) return json({ error: "Challenge expired. Try again." }, 400);
-      const { data: pk } = await admin.from("passkeys").select("*").eq("id", response.id).maybeSingle();
+      const { data: pk, error: pkError } = await admin.from("passkeys").select("*").eq("id", response.id).maybeSingle();
+      if (pkError) return json({ error: `Could not look up the passkey: ${pkError.message}` }, 500);
       if (!pk) return json({ error: "This passkey isn't registered. Sign in with your password, then enable it in Profile." }, 404);
 
       const verification = await verifyAuthenticationResponse({

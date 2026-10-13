@@ -4,24 +4,11 @@
 // back a one-time sign-in token, so a password isn't needed.
 import { startAuthentication, startRegistration, browserSupportsWebAuthn } from "@simplewebauthn/browser";
 import { supabase } from "./supabaseClient";
+import { callFunction } from "./callFunction";
 
 export const passkeysSupported = () => typeof window !== "undefined" && browserSupportsWebAuthn();
 
-async function call(action, body = {}) {
-  const { data, error } = await supabase.functions.invoke("passkey", { body: { action, ...body } });
-  if (error) {
-    let detail = error.message;
-    try {
-      const j = await error.context?.json?.();
-      if (j?.error) detail = j.error;
-    } catch {
-      /* keep generic message */
-    }
-    throw new Error(detail);
-  }
-  if (data?.error) throw new Error(data.error);
-  return data;
-}
+const call = (action, body = {}) => callFunction("passkey", { action, ...body });
 
 function friendly(err) {
   if (err?.name === "NotAllowedError") return new Error("Cancelled, or your device couldn't verify you.");

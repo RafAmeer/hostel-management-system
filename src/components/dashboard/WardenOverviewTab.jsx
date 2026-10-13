@@ -177,6 +177,10 @@ function WardenOverviewTab({
     };
 
     return {
+      // `trend` was built above but missing from this object, so the
+      // "Activity this period" chart received `undefined` data and crashed
+      // the whole dashboard (blank screen) right after warden login.
+      trend,
       curfewNow,
       bookingStatus,
       bookingsByHostel,

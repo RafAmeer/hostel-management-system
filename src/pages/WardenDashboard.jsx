@@ -16,6 +16,7 @@ import StudentsTab from "../components/dashboard/StudentsTab";
 import WardenTransportTab from "../components/dashboard/WardenTransportTab";
 import WardenHelpTab from "../components/dashboard/WardenHelpTab";
 import Toast from "../components/Toast";
+import ErrorBoundary from "../components/ErrorBoundary";
 import { useToast } from "../hooks/useToast";
 
 const NAV_ITEMS = [
@@ -127,53 +128,59 @@ function WardenDashboard({ user, onLogout }) {
 
   const loadAll = async () => {
     setLoading(true);
+    try {
 
-    const [
-      bookingsRes,
-      complaintsRes,
-      roomsRes,
-      studentsRes,
-      curfewRes,
-      techniciansRes,
-      profileRes,
-      hostelsRes,
-      scheduleRes,
-      helpRes,
-    ] =
-      await Promise.all([
-        supabase.from("bookings").select("*").order("created_at", { ascending: false }),
-        supabase.from("complaints").select("*").order("created_at", { ascending: false }),
-        supabase.from("rooms").select("*"),
-        supabase.from("profiles").select("*").eq("role", "student"),
-        supabase.from("curfew_logs").select("*").order("timestamp", { ascending: false }),
-        supabase.from("profiles").select("id, full_name").eq("role", "technician"),
-        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-        supabase.from("hostels").select("*"),
-        supabase.from("transport_schedule").select("*").order("departure_time"),
-        supabase.from("help_tickets").select("*").order("updated_at", { ascending: false }),
-      ]);
+      const [
+        bookingsRes,
+        complaintsRes,
+        roomsRes,
+        studentsRes,
+        curfewRes,
+        techniciansRes,
+        profileRes,
+        hostelsRes,
+        scheduleRes,
+        helpRes,
+      ] =
+        await Promise.all([
+          supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+          supabase.from("complaints").select("*").order("created_at", { ascending: false }),
+          supabase.from("rooms").select("*"),
+          supabase.from("profiles").select("*").eq("role", "student"),
+          supabase.from("curfew_logs").select("*").order("timestamp", { ascending: false }),
+          supabase.from("profiles").select("id, full_name").eq("role", "technician"),
+          supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+          supabase.from("hostels").select("*"),
+          supabase.from("transport_schedule").select("*").order("departure_time"),
+          supabase.from("help_tickets").select("*").order("updated_at", { ascending: false }),
+        ]);
 
-    if (bookingsRes.data) setBookings(bookingsRes.data);
-    if (complaintsRes.data) setComplaints(complaintsRes.data);
-    if (roomsRes.data) setRooms(roomsRes.data);
-    if (studentsRes.data) setStudents(studentsRes.data);
-    if (curfewRes.data) setCurfewLogs(curfewRes.data);
-    if (scheduleRes.error) {
-      setTransportError(scheduleRes.error.message);
-    } else {
-      setTransportError("");
-      setSchedule(scheduleRes.data ?? []);
+      if (bookingsRes.data) setBookings(bookingsRes.data);
+      if (complaintsRes.data) setComplaints(complaintsRes.data);
+      if (roomsRes.data) setRooms(roomsRes.data);
+      if (studentsRes.data) setStudents(studentsRes.data);
+      if (curfewRes.data) setCurfewLogs(curfewRes.data);
+      if (scheduleRes.error) {
+        setTransportError(scheduleRes.error.message);
+      } else {
+        setTransportError("");
+        setSchedule(scheduleRes.data ?? []);
+      }
+      if (helpRes.data) setHelpTickets(helpRes.data);
+      if (curfewRes.data && studentsRes.data) {
+        setCurfewStatuses(curfewStatusesFromLogs(curfewRes.data, studentsRes.data));
+      }
+      if (techniciansRes.data) setTechnicians(techniciansRes.data);
+      if (profileRes.data) setProfile(profileRes.data);
+      setHostels(hostelsRes.data ?? []);
+      await loadAnnouncements();
+    } catch (err) {
+      // A network hiccup must not leave the dashboard stuck on "Loading…".
+      console.error("Warden dashboard load failed:", err);
+      notify("Some dashboard data couldn't be loaded. Check your connection and refresh.", "error");
+    } finally {
+      setLoading(false);
     }
-    if (helpRes.data) setHelpTickets(helpRes.data);
-    if (curfewRes.data && studentsRes.data) {
-      setCurfewStatuses(curfewStatusesFromLogs(curfewRes.data, studentsRes.data));
-    }
-    if (techniciansRes.data) setTechnicians(techniciansRes.data);
-    if (profileRes.data) setProfile(profileRes.data);
-    setHostels(hostelsRes.data ?? []);
-    await loadAnnouncements();
-
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -390,9 +397,9 @@ function WardenDashboard({ user, onLogout }) {
         {loading ? (
           <p className="tab__empty">Loading warden dashboard&hellip;</p>
         ) : (
-          <div key={activeTab} className="tab-fade">
-            {renderTab()}
-          </div>
+          <ErrorBoundary key={activeTab}>
+            <div className="tab-fade">{renderTab()}</div>
+          </ErrorBoundary>
         )}
       </main>
       <Toast toast={toast} onDismiss={dismiss} />

@@ -14,14 +14,26 @@
 //
 // Deploy:
 //   supabase functions deploy ai-summary
+// (supabase/config.toml sets verify_jwt = false; this function checks the
+// caller's token itself below.)
 // Set the secret once (get a free key at https://aistudio.google.com/apikey):
 //   supabase secrets set GEMINI_API_KEY=your-key-here
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const GEMINI_MODEL = "gemini-3.6-flash";
-const GEMINI_URL =
-  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+// Tried in order until one answers. Optional secret GEMINI_MODEL puts your
+// own choice first (supabase secrets set GEMINI_MODEL=...). A model that was
+// retired or renamed (404) used to make the whole assistant fail with
+// "Gemini API error"; now the next one is tried automatically.
+const GEMINI_MODELS = [
+  Deno.env.get("GEMINI_MODEL"),
+  "gemini-3.6-flash",
+  "gemini-flash-latest",
+  "gemini-2.5-flash",
+].filter((m, i, all): m is string => Boolean(m) && all.indexOf(m) === i);
+
+const geminiUrl = (model: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -64,31 +76,54 @@ Deno.serve(async (req) => {
 
     const prompt = question ? buildQuestionPrompt(question, stats) : buildPrompt(stats);
 
-    const geminiRes = await fetch(`${GEMINI_URL}?key=${geminiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        // 400 was enough for one question, but a warden asking two
-        // questions in one message needs room for two short answers, and
-        // this model spends some of maxOutputTokens on internal "thinking"
-        // before the visible answer — leaving too little headroom made
-        // Gemini return an empty candidate (finishReason MAX_TOKENS, no
-        // text at all), which is why combined questions fell through to
-        // "No summary could be generated." 800 covers a report plus a
-        // couple of extra sentences, with thinking turned off below.
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 800,
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-      }),
-    });
+    const callGemini = (model: string, withThinkingConfig: boolean) =>
+      fetch(geminiUrl(model), {
+        method: "POST",
+        // Key in a header (not the URL) so it never ends up in logs.
+        headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
+        signal: AbortSignal.timeout(30000),
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          // 400 was enough for one question, but a warden asking two
+          // questions in one message needs room for two short answers, and
+          // some models spend part of maxOutputTokens on internal "thinking"
+          // before the visible answer, which left too little headroom and
+          // made Gemini return an empty candidate (finishReason MAX_TOKENS).
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 800,
+            ...(withThinkingConfig ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+          },
+        }),
+      });
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      console.error("Gemini API error:", geminiRes.status, errText);
-      return jsonResponse({ error: `Gemini API error: ${errText}` }, 502);
+    let geminiRes: Response | null = null;
+    let lastError = "";
+    for (const model of GEMINI_MODELS) {
+      let res = await callGemini(model, true);
+      if (res.status === 400) {
+        // Some models refuse thinkingBudget: 0. Retry the same model without it.
+        const t = await res.text();
+        if (/thinking/i.test(t)) res = await callGemini(model, false);
+        else {
+          lastError = `${model}: ${t}`;
+          if (/API key/i.test(t)) break; // a bad key will fail on every model
+          continue;
+        }
+      }
+      if (res.ok) {
+        geminiRes = res;
+        break;
+      }
+      const errText = await res.text();
+      lastError = `${model}: ${res.status} ${errText}`;
+      console.error("Gemini API error:", lastError);
+      // 404 = model not available to this key; 429/5xx = try the next one too.
+      if (res.status === 401 || res.status === 403) break;
+    }
+
+    if (!geminiRes) {
+      return jsonResponse({ error: `Gemini API error: ${lastError || "no model answered"}` }, 502);
     }
 
     const geminiData = await geminiRes.json();
