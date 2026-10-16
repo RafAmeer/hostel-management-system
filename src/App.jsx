@@ -10,6 +10,7 @@ import CurfewScanPage from "./pages/CurfewScanPage";
 import Toast from "./components/Toast";
 import SplashScreen from "./components/SplashScreen";
 import SessionTimeoutModal from "./components/SessionTimeoutModal";
+import BiometricPrompt from "./components/BiometricPrompt";
 import { useIdleTimeout } from "./hooks/useIdleTimeout";
 import { useAwayLogout } from "./hooks/useAwayLogout";
 import { ensureDeviceBinding } from "./lib/deviceBinding";
@@ -28,9 +29,10 @@ const STAFF_ROLE_LABELS = { warden: "Warden", finance: "Finance", technician: "T
 
 const REMEMBERED_EMAIL_KEY = "hostel_remembered_email";
 
-// Session timeout: 5 minutes in total. After 4 minutes with no activity a
+// Session timeout: 15 minutes in total. After 14 minutes with no activity a
 // 60-second warning appears; if nobody responds, the user is signed out.
-const IDLE_TIMEOUT_MS = 4 * 60 * 1000;
+// (Change IDLE_TIMEOUT_MS to make it longer or shorter.)
+const IDLE_TIMEOUT_MS = 14 * 60 * 1000;
 const IDLE_WARNING_MS = 60 * 1000;
 
 // Leaving the site (another tab/app, locked screen) for this long signs the
@@ -77,7 +79,7 @@ function friendlyAuthError(error) {
   return msg;
 }
 
-function App() {
+function MainApp() {
   // Which login screen is showing when signed out — no longer a dashboard
   // toggle, just which form the person sees before they've authenticated.
   const [portal, setPortal] = useState("student"); // "student" | "staff"
@@ -249,7 +251,7 @@ function App() {
     setUser(data.user);
     setRole(actualRole);
     setLoading(false);
-    notify("Signed in successfully. Welcome back!", "success");
+    notify("Signed in. Welcome back!", "success");
   };
 
   // Shared signup for both portals. Student signups keep the existing
@@ -339,7 +341,7 @@ function App() {
     setLoading(true);
     try {
       await loginWithPasskey();
-      notify("Signed in successfully. Welcome back!", "success");
+      notify("Signed in. Welcome back!", "success");
     } catch (e) {
       notify(e.message, "error");
       setError(e.message);
@@ -405,14 +407,14 @@ function App() {
     if (error) return setError(error.message);
     setUser(null);
     setRole(null);
-    notify("You've been signed out.", "info");
+    notify("Signed out.", "info");
   };
 
   const handleIdleTimeout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setRole(null);
-    notify("You were signed out because of inactivity.", "info");
+    notify("Signed out due to inactivity.", "info");
   };
 
   const { secondsLeft, stayActive } = useIdleTimeout({
@@ -451,10 +453,6 @@ function App() {
     setMode(nextMode);
   };
 
-  // Public route, reachable without logging in: the entrance QR poster
-  // (or the in-page camera fallback) opens exactly this path. Checked
-  // before the session check below so it doesn't wait on an auth lookup
-  // it never needs.
   // Toast + splash sit on top of every screen (login, dashboards, scan page).
   const overlays = (
     <>
@@ -462,15 +460,6 @@ function App() {
       <SplashScreen done={splashMinDone && !checkingSession} />
     </>
   );
-
-  if (window.location.pathname === "/curfew") {
-    return (
-      <>
-        <CurfewScanPage />
-        {overlays}
-      </>
-    );
-  }
 
   if (checkingSession) return overlays;
 
@@ -489,6 +478,7 @@ function App() {
       <>
         {dashboard}
         <SessionTimeoutModal secondsLeft={secondsLeft} onStay={stayActive} onLogout={handleLogOut} />
+        <BiometricPrompt userId={user.id} onDone={(msg) => notify(msg, "success")} />
         {overlays}
       </>
     );
@@ -729,6 +719,17 @@ function App() {
     {overlays}
     </>
   );
+}
+
+// The curfew page is public (a poster QR opens it) and has nothing to do with
+// the login session, so it gets its own tiny root: no session lookup, no
+// splash screen waiting on one, no idle/away timers, no device binding.
+// Previously it was rendered from inside the main App, whose splash stayed
+// on top of the scan page until the session check finished — on a phone
+// that could look like the page "won't load until you refresh".
+function App() {
+  if (/^\/curfew\/?$/.test(window.location.pathname)) return <CurfewScanPage />;
+  return <MainApp />;
 }
 
 export default App;

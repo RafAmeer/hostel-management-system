@@ -1,4 +1,6 @@
 import { formatDateTime } from "../../lib/formatters";
+import ClearHistoryButton from "./ClearHistoryButton";
+import { useClearedHistory } from "../../lib/clearedHistory";
 
 const STATUS_LABELS = {
   pending: "Pending",
@@ -15,10 +17,25 @@ function statusTone(status) {
 // Shows every booking request the student has made, newest first (matches
 // the order `loadAll` in StudentDashboard already fetches them in), each
 // tagged with where it's at in the warden's approval flow.
-function BookingsTab({ bookings }) {
+function BookingsTab({ bookings, userId }) {
+  const history = useClearedHistory("bookings", userId);
+  // Rejected / cancelled requests can be cleared; pending and approved ones
+  // are still relevant, so they always stay.
+  const finished = (b) => b.status === "rejected" || b.status === "cancelled";
+  const { shown, hidden, clearable } = history.view(bookings, finished);
+
   return (
     <div className="tab">
       <h2 className="tab__title">Status</h2>
+
+      <ClearHistoryButton
+        canClear={clearable.length > 0}
+        hidden={hidden}
+        showAll={history.showAll}
+        onClear={() => history.clear(clearable)}
+        onToggleShowAll={history.toggleShowAll}
+        note="Clears rejected and cancelled requests. Pending and approved bookings stay."
+      />
 
       {bookings.length === 0 ? (
         <div className="glass-panel placeholder-panel">
@@ -26,7 +43,7 @@ function BookingsTab({ bookings }) {
         </div>
       ) : (
         <div className="list">
-          {bookings.map((b) => (
+          {shown.map((b) => (
             <div key={b.id} className="list-row">
               <div>
                 <p className="list-row__title">

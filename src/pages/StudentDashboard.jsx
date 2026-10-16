@@ -219,7 +219,7 @@ function StudentDashboard({ user, onLogout }) {
           />
         );
       case "bookings":
-        return <BookingsTab bookings={bookings} />;
+        return <BookingsTab bookings={bookings} userId={studentId} />;
       case "complaints":
         return (
           <ComplaintsTab

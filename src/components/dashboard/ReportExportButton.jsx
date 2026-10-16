@@ -29,7 +29,7 @@ function ReportExportButton({ buildReport }) {
     setBusy(true);
     try {
       const report = buildReport();
-      if (formatKey === "pdf") exportReportAsPdf(report);
+      if (formatKey === "pdf") await exportReportAsPdf(report);
       else if (formatKey === "docx") await exportReportAsWord(report);
       else await exportReportAsExcel(report);
     } finally {

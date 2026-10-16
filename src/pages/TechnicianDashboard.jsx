@@ -91,7 +91,7 @@ function TechnicianDashboard({ user, onLogout }) {
   };
 
   const renderTab = () => {
-    if (activeTab === "history") return <TechnicianHistoryTab tasks={tasks} />;
+    if (activeTab === "history") return <TechnicianHistoryTab tasks={tasks} userId={user.id} />;
     if (activeTab === "profile") return <ProfileTab user={user} profile={profile} variant="staff" onSaved={setProfile} />;
     return <TechnicianTasksTab tasks={tasks} onAdvanceStatus={handleAdvanceStatus} onAddRemark={handleAddRemark} />;
   };

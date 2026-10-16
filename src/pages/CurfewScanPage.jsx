@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
 import { isPhoneDevice } from "../lib/device";
 import { getCurrentPosition } from "../lib/geo";
 import { getDeviceToken, DEVICE_TOKEN_KEY } from "../lib/deviceBinding";
@@ -26,34 +25,53 @@ function goToLogin() {
   window.location.assign("/");
 }
 
+const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/curfew-scan`;
+const SCAN_TIMEOUT_MS = 20000;
+
+// Plain fetch (not supabase.functions.invoke). invoke() first waits for the
+// Supabase auth client to read/refresh a stored login session, and that wait
+// could stall this page — "Logging your scan…" would hang until a manual
+// refresh. This function is public and needs no login, so it doesn't need
+// the auth client at all, and the timeout guarantees the page always ends
+// in either a result or a "Try again" button.
 async function callCurfewScan(deviceToken, target, coords) {
-  const { data, error } = await supabase.functions.invoke("curfew-scan", {
-    body: {
-      device_token: deviceToken,
-      // From a poster scan these are already filled in. With neither, the
-      // server finds the hostel the phone is standing in from its GPS.
-      location: target.auto ? null : target.name ?? null,
-      hostel_id: target.auto ? null : target.id ?? null,
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      accuracy: coords.accuracy,
-    },
-  });
-  // supabase-js only rejects on network failure — a 4xx/5xx from the
-  // function still resolves here with `error` set from the response body.
-  if (error) {
-    let body = data;
-    // For non-2xx responses the JSON body sits on error.context (a Response).
-    if (!body && error.context?.json) {
-      try {
-        body = await error.context.json();
-      } catch {
-        /* ignore */
-      }
-    }
-    throw new Error(body?.error || error.message || "scan_failed");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SCAN_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(FUNCTION_URL, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        device_token: deviceToken,
+        // From a poster scan these are already filled in. With neither, the
+        // server finds the hostel the phone is standing in from its GPS.
+        location: target.auto ? null : target.name ?? null,
+        hostel_id: target.auto ? null : target.id ?? null,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+        accuracy: coords.accuracy,
+      }),
+    });
+  } catch {
+    throw new Error("network_error");
+  } finally {
+    clearTimeout(timer);
   }
-  return data;
+
+  let body = null;
+  try {
+    body = await res.json();
+  } catch {
+    /* empty or non-JSON body */
+  }
+  if (!res.ok) throw new Error(body?.error || body?.message || `scan_failed_${res.status}`);
+  return body;
 }
 
 function CurfewScanPage() {
@@ -102,6 +120,9 @@ function CurfewScanPage() {
         setPhase("error");
       } else if (err.message === "no_hostel_nearby") {
         setErrorMessage("You don't seem to be at any hostel entrance. Go to the entrance and try again, or scan its QR poster.");
+        setPhase("error");
+      } else if (err.message === "network_error") {
+        setErrorMessage("Couldn't reach DormSphere. Check your connection and tap Try again.");
         setPhase("error");
       } else if (err.message === "unknown_hostel") {
         setErrorMessage("This QR code isn't linked to a hostel. Ask the warden for a new poster.");
@@ -253,6 +274,7 @@ function QrCameraScanner({ onDecoded }) {
   const containerId = "curfew-qr-reader";
   const scannerRef = useRef(null);
   const [scanError, setScanError] = useState("");
+  const [attempt, setAttempt] = useState(0); // bumping this restarts the camera
 
   useEffect(() => {
     let cancelled = false;
@@ -277,6 +299,7 @@ function QrCameraScanner({ onDecoded }) {
               /* not a URL — treat the raw text as the hostel name */
             }
             scanner.stop().catch(() => {});
+            scannerRef.current = null;
             onDecoded({ name, id });
           },
           () => {
@@ -294,10 +317,14 @@ function QrCameraScanner({ onDecoded }) {
 
     return () => {
       cancelled = true;
-      scannerRef.current?.stop().catch(() => {});
+      const sc = scannerRef.current;
+      scannerRef.current = null;
+      // stop() throws if the camera never started; clear() frees the video
+      // element so a restart (or the next scan) can reuse it.
+      sc?.stop().then(() => sc.clear()).catch(() => {});
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [attempt]);
 
   return (
     <Shell title="Scan Hostel QR">
@@ -307,6 +334,14 @@ function QrCameraScanner({ onDecoded }) {
         <p className="message message--error" role="alert">
           {scanError}
         </p>
+      )}
+      {scanError && (
+        <button type="button" className="btn-outline btn-outline--neutral" style={{ width: "100%", marginBottom: "0.6rem" }} onClick={() => {
+            setScanError("");
+            setAttempt((n) => n + 1);
+          }}>
+          Try the camera again
+        </button>
       )}
       <div id={containerId} style={{ width: "100%", borderRadius: "16px", overflow: "hidden" }} />
 

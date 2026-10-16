@@ -3,6 +3,8 @@ import CurfewScanCard from "./CurfewScanCard";
 import { formatDateTime } from "../../lib/formatters";
 import { getDeviceOwnership, releaseDevice } from "../../lib/deviceBinding";
 import { isPhoneDevice } from "../../lib/device";
+import ClearHistoryButton from "./ClearHistoryButton";
+import { useClearedHistory } from "../../lib/clearedHistory";
 
 // Which phone is allowed to scan for this student. One phone per student
 // and one student per phone (see lib/deviceBinding.js).
@@ -50,7 +52,9 @@ function DeviceCard({ userId }) {
 // (camera + GPS check) — there is no manual button any more, so a scan
 // can't be logged from a desktop or from outside the hostel.
 function CurfewTab({ curfewLogs, userId }) {
-  const lastLog = curfewLogs[0];
+  const lastLog = curfewLogs[0]; // current status always uses the real latest scan
+  const history = useClearedHistory("curfew", userId);
+  const { shown: visibleLogs, hidden: hiddenLogs, clearable } = history.view(curfewLogs);
   const isOut = lastLog?.scan_type === "check_out";
 
   return (
@@ -73,11 +77,19 @@ function CurfewTab({ curfewLogs, userId }) {
       <DeviceCard userId={userId} />
 
       <h3 className="panel-heading panel-heading--sub">Scan History</h3>
-      {curfewLogs.length === 0 ? (
-        <p className="tab__empty">No curfew scans yet.</p>
+      <ClearHistoryButton
+        canClear={clearable.length > 0}
+        hidden={hiddenLogs}
+        showAll={history.showAll}
+        onClear={() => history.clear(clearable)}
+        onToggleShowAll={history.toggleShowAll}
+        note="Clearing only hides your scan list here. The hostel keeps its curfew records."
+      />
+      {visibleLogs.length === 0 ? (
+        <p className="tab__empty">{curfewLogs.length === 0 ? "No curfew scans yet." : "History cleared."}</p>
       ) : (
         <div className="list">
-          {curfewLogs.map((log) => (
+          {visibleLogs.map((log) => (
             <div key={log.id} className="list-row">
               <div>
                 <p className="list-row__title">{log.scan_type === "check_out" ? "Check Out" : "Check In"}</p>

@@ -2964,6 +2964,30 @@
     max-width: calc(100vw - 2rem);
   }
 
+  /* The sign-in / sign-out toast is positioned from the top on desktop. On
+     phones it also got a `bottom`, and with both set a fixed element
+     stretches between them — a huge toast. Anchor it to the bottom only
+     and shrink it to a slim pill. */
+  .app-toast {
+    top: auto;
+    width: max-content;
+    gap: 0.45rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    line-height: 1.25;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  }
+  .app-toast__icon {
+    width: 20px;
+    height: 20px;
+    font-size: 0.8rem;
+  }
+  .app-toast__icon svg {
+    width: 12px;
+    height: 12px;
+  }
+
   .list-row__title,
   .list-row__meta {
     overflow-wrap: anywhere;
@@ -3128,3 +3152,16 @@
 .period-split { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 1.5rem; align-items: start; }
 .period-split .receipt { max-width: none; }
 @media (max-width: 760px) { .period-split { grid-template-columns: 1fr; } }
+
+/* "Clear history" row above history lists */
+.history-clear {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 0.75rem;
+}
+.history-clear__note {
+  flex-basis: 100%;
+  margin: 0;
+}

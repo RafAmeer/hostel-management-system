@@ -246,7 +246,7 @@ function WardenOverviewTab({
     <div className="tab">
       <div className="tab__title-row">
         <h2 className="tab__title">Overview</h2>
-        <ReportExportButton buildReport={() => buildWardenReport(analytics, periodLabel)} />
+        <ReportExportButton buildReport={() => buildWardenReport(analytics, periodLabel, model)} />
       </div>
 
       <div className="stat-grid">

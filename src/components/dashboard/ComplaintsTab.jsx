@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import LikeBurst from "../LikeBurst";
+import ClearHistoryButton from "./ClearHistoryButton";
+import { useClearedHistory } from "../../lib/clearedHistory";
 
 const CATEGORIES = ["Plumbing", "Electrical", "Furniture", "Cleanliness", "Other"];
 
@@ -29,6 +31,12 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [likeShow, setLikeShow] = useState(false);
+  const history = useClearedHistory("complaints", studentId);
+  // Only finished complaints can be cleared; open ones always stay visible.
+  const { shown: visibleComplaints, hidden: hiddenComplaints, clearable } = history.view(
+    complaints,
+    (c) => c.status === "completed"
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -150,11 +158,19 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
       <LikeBurst show={likeShow} label="Complaint submitted!" onDone={() => setLikeShow(false)} />
 
       <h3 className="panel-heading panel-heading--sub">Your Complaints</h3>
-      {complaints.length === 0 ? (
-        <p className="tab__empty">No complaints submitted yet.</p>
+      <ClearHistoryButton
+        canClear={clearable.length > 0}
+        hidden={hiddenComplaints}
+        showAll={history.showAll}
+        onClear={() => history.clear(clearable)}
+        onToggleShowAll={history.toggleShowAll}
+        note="Clears completed complaints from this list. Pending and in-progress ones stay."
+      />
+      {visibleComplaints.length === 0 ? (
+        <p className="tab__empty">{complaints.length === 0 ? "No complaints submitted yet." : "History cleared."}</p>
       ) : (
         <div className="list">
-          {complaints.map((c) => (
+          {visibleComplaints.map((c) => (
             <div key={c.id} className="list-row">
               <div>
                 <p className="list-row__title">{c.category}</p>
