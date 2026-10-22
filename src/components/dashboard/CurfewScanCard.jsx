@@ -1,5 +1,6 @@
 import { ScanIcon, MapPinIcon } from "./icons";
 import { isPhoneDevice } from "../../lib/device";
+import { assetUrl } from "../../lib/assetUrl";
 
 // "Scan Curfew" entry point shared by Home and the Curfew tab. Scanning
 // needs the phone's camera and GPS, so on a desktop browser this shows a
@@ -37,7 +38,7 @@ function CurfewScanCard({ compact = false }) {
             : "Scan the QR poster at the hostel entrance to check in or out. Your location is checked when you scan."}
         </p>
       </div>
-      <a className="primary-btn scan-card__btn" href="/curfew">
+      <a className="primary-btn scan-card__btn" href={assetUrl("curfew")}>
         <MapPinIcon aria-hidden="true" /> Scan now
       </a>
     </section>

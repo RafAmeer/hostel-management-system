@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./index.css";
 import { supabase } from "./lib/supabaseClient";
+import { assetUrl } from "./lib/assetUrl";
 import HostelSlideshow from "./components/HostelSlideshow";
 import StudentDashboard from "./pages/StudentDashboard";
 import WardenDashboard from "./pages/WardenDashboard";
@@ -147,12 +148,21 @@ function MainApp() {
       }
     };
 
+    // try/finally: if the network drops during the first session check the
+    // splash screen still goes away and the login form shows, instead of
+    // the app sitting on the splash forever.
     const init = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      await syncFromSession(session);
-      setCheckingSession(false);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        await syncFromSession(session);
+      } catch {
+        setUser(null);
+        setRole(null);
+      } finally {
+        setCheckingSession(false);
+      }
     };
 
     init();
@@ -436,12 +446,14 @@ function MainApp() {
   useEffect(() => {
     if (!user || role !== "student") return;
     ensureDeviceBinding(user.id).then((res) => {
-      if (res.status === "owned_by_other") {
+      if (res?.status === "owned_by_other") {
         notify(
           "This phone is already registered to another student for curfew scans, so it can't scan for you.",
           "info"
         );
       }
+    }).catch(() => {
+      /* binding is retried on the next login; never break the dashboard */
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, role]);
@@ -522,7 +534,7 @@ function MainApp() {
           </p>
 
           {!isStaffPortal && mode === "login" && (
-            <a className="scan-tile" href="/curfew">
+            <a className="scan-tile" href={assetUrl("curfew")}>
               <span className="scan-tile__icon" aria-hidden="true">
                 <ScanIcon />
               </span>
@@ -728,7 +740,9 @@ function MainApp() {
 // on top of the scan page until the session check finished — on a phone
 // that could look like the page "won't load until you refresh".
 function App() {
-  if (/^\/curfew\/?$/.test(window.location.pathname)) return <CurfewScanPage />;
+  // Matches "/curfew" at the site root and under Vite's `base` path
+  // (e.g. "/hostel-management-system/curfew" when running `npm run dev`).
+  if (/(^|\/)curfew\/?$/.test(window.location.pathname)) return <CurfewScanPage />;
   return <MainApp />;
 }
 

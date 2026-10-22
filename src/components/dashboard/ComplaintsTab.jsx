@@ -31,6 +31,8 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [likeShow, setLikeShow] = useState(false);
+  // Changing the key remounts the file input so it clears after submitting.
+  const [fileInputKey, setFileInputKey] = useState(0);
   const history = useClearedHistory("complaints", studentId);
   // Only finished complaints can be cleared; open ones always stay visible.
   const { shown: visibleComplaints, hidden: hiddenComplaints, clearable } = history.view(
@@ -46,8 +48,11 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
     setMessage("");
 
     let photo_url = null;
+    let photoFailed = false;
     if (photo) {
-      const path = `${studentId}/${Date.now()}-${photo.name}`;
+      // Spaces/brackets in a phone photo's name can make the upload fail.
+      const safeName = photo.name.replace(/[^\w.-]+/g, "_");
+      const path = `${studentId}/${Date.now()}-${safeName}`;
       const { error: uploadError } = await supabase.storage
         .from("complaint-photos")
         .upload(path, photo);
@@ -56,6 +61,8 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
           .from("complaint-photos")
           .getPublicUrl(path);
         photo_url = publicUrlData?.publicUrl ?? null;
+      } else {
+        photoFailed = true;
       }
     }
 
@@ -80,7 +87,12 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
 
     setDescription("");
     setPhoto(null);
-    setMessage("Complaint submitted.");
+    setFileInputKey((k) => k + 1);
+    setMessage(
+      photoFailed
+        ? "Complaint submitted, but the photo couldn't be uploaded."
+        : "Complaint submitted."
+    );
     setLikeShow(true);
     onComplaintCreated?.();
   };
@@ -138,6 +150,7 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
         <label className="field">
           <span className="field__label">Photo (optional)</span>
           <input
+            key={fileInputKey}
             type="file"
             accept="image/*"
             onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}

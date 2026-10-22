@@ -176,13 +176,17 @@ function RoomsTab({ rooms, residences, bookings = [], studentId, studentGender, 
         </p>
       )}
 
-      <h3 className="panel-heading panel-heading--sub">Residents</h3>
+      <h3 className="panel-heading panel-heading--sub">Pick your hostel 🏠</h3>
 
       <div className="residence-grid">
         {residences.map((residence) => {
           const floors = residence.floors ?? [];
+          // Only this hostel's rooms: floor labels like "Ground Floor" repeat
+          // across hostels, so matching on the label alone counted other
+          // hostels' rooms too.
+          const ownRooms = roomsForResidence(rooms, residence.id);
           const totalRooms = floors.reduce((sum, f) => {
-            const real = rooms.filter((r) => r.floor === f.label);
+            const real = ownRooms.filter((r) => r.floor === f.label);
             return sum + (real.length > 0 ? real.length : (f.rooms ?? []).length);
           }, 0);
           return (

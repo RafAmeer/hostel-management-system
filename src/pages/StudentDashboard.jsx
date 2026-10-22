@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import "../dashboard.css";
+import "../student-theme.css";
 import { supabase } from "../lib/supabaseClient.js";
 import Sidebar from "../components/dashboard/SideBar.jsx";
 import OverviewTab from "../components/dashboard/OverviewTab";
@@ -60,6 +61,16 @@ function StudentDashboard({ user, onLogout }) {
   const helpStatuses = useRef(null);
 
   const studentId = user?.id;
+
+  // Turns on the playful student theme (src/student-theme.css) while the
+  // student dashboard is on screen. It sits on <html> so popups rendered
+  // into <body> (hostel details, toasts) get the same look; it's removed on
+  // log out so the sign-in page and staff dashboards are untouched.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add("student-fun");
+    return () => root.classList.remove("student-fun");
+  }, []);
 
   // `silent` refreshes in the background (realtime / polling) without
   // flashing the "Loading…" state over whatever the student is reading.
@@ -284,10 +295,10 @@ function StudentDashboard({ user, onLogout }) {
         <div className="container">
           <section className="card setup-card" aria-labelledby="setup-title">
             <h1 id="setup-title" className="title">
-              Complete your profile
+              Welcome to DormSphere! 👋
             </h1>
             <p className="subtitle">
-              We need a few details before you can book a room or submit a complaint.
+              Tell us a bit about yourself first, then you can book a room, report problems and more.
             </p>
             <ProfileForm
               user={user}
@@ -321,7 +332,7 @@ function StudentDashboard({ user, onLogout }) {
         />
         <main className="dashboard__content">
           {loading ? (
-            <p className="tab__empty">Loading your dashboard…</p>
+            <p className="tab__empty">Getting your dashboard ready…</p>
           ) : profileError ? (
             <div className="glass-panel placeholder-panel">
               <div>
@@ -332,7 +343,7 @@ function StudentDashboard({ user, onLogout }) {
               </div>
             </div>
           ) : (
-            <div key={activeTab} className="tab-fade">
+            <div key={activeTab} className="tab-fade" data-tab={activeTab}>
               {renderTab()}
             </div>
           )}

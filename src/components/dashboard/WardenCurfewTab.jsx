@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { assetUrl } from "../../lib/assetUrl";
 import { supabase } from "../../lib/supabaseClient";
 import { getCurrentPosition } from "../../lib/geo";
 import { MapPinIcon, DownloadIcon } from "./icons";
@@ -110,7 +111,7 @@ function HostelQrCard({ hostel, location, onSaved }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
-  const url = `${window.location.origin}/curfew?loc=${encodeURIComponent(hostel.name)}&h=${encodeURIComponent(hostel.id)}`;
+  const url = `${window.location.origin}${assetUrl("curfew")}?loc=${encodeURIComponent(hostel.name)}&h=${encodeURIComponent(hostel.id)}`;
 
   useEffect(() => {
     let cancelled = false;

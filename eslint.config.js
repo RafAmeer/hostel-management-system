@@ -14,8 +14,21 @@ export default defineConfig([
       reactRefresh.configs.vite,
     ],
     languageOptions: {
-      globals: globals.browser,
+      globals: { ...globals.browser },
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Loading data in an effect (setLoading → fetch → setState) is the
+      // pattern this app uses on purpose; keep it visible as a warning
+      // rather than failing `npm run lint`.
+      'react-hooks/set-state-in-effect': 'warn',
+      // Only affects hot-reload during development.
+      'react-refresh/only-export-components': 'warn',
+    },
+  },
+  {
+    // Build config runs in Node, not the browser.
+    files: ['vite.config.js', 'eslint.config.js'],
+    languageOptions: { globals: globals.node },
   },
 ])

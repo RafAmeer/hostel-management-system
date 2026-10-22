@@ -15,7 +15,7 @@ function TransportToday({ schedule, scope, residences, onOpen }) {
     <section className="glass-panel side-panel" aria-labelledby="transport-today-title">
       <div className="side-panel__head">
         <h3 className="panel-heading" id="transport-today-title">
-          Shuttle today
+          🚌 Shuttle today
         </h3>
         <button type="button" className="link-btn" onClick={onOpen}>
           Full timetable

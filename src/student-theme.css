@@ -1,0 +1,1168 @@
+/* ======================================================================
+   Student side: "Sunny Dorm" theme
+   ----------------------------------------------------------------------
+   A friendlier look for the student dashboard only. Warden, technician,
+   finance and the sign-in pages keep the original style.
+
+   How it is scoped: StudentDashboard adds the class `student-fun` to
+   <html> while it is on screen (and removes it on log out). Every rule
+   below starts with `:root.student-fun`, so nothing here can leak into the
+   other dashboards. Popups that render straight into <body> (hostel
+   details, toasts) are themed the same way.
+
+   Look: rounded "Fredoka" headings + "Nunito" body text, candy colours,
+   thick outlines and a solid offset shadow, so cards read like stickers.
+   White mode = cream paper, black mode = deep plum night.
+   ====================================================================== */
+
+/* ---------- Colour tokens ------------------------------------------- */
+
+/* Black mode (default) */
+:root.student-fun .page--app,
+:root.student-fun .dashboard,
+:root.student-fun .modal-backdrop,
+:root.student-fun .app-toast,
+:root.student-fun .timeout-backdrop,
+:root.student-fun .like-burst {
+  --fun-grape: #a78bfa;
+  --fun-grape-rgb: 167 139 250;
+  --fun-coral: #ff8a8a;
+  --fun-sun: #ffd166;
+  --fun-mint: #5fe0bd;
+  --fun-sky: #7dd3fc;
+  --fun-pink: #ffb3c7;
+  --fun-lilac: #c4b5fd;
+  --fun-line: #0f0b1d;
+  --fun-pop: #0b0816;
+  --fun-paper: #2e2650;
+  --fun-paper-2: #3a3163;
+  --fun-dots: rgba(255, 255, 255, 0.05);
+
+  --ink: 255 244 230;
+  --app-bg: #1d1733;
+  --glass: var(--fun-paper);
+  --glass-strong: var(--fun-paper-2);
+  --glass-rgb: 46 38 80;
+  --glass-border: var(--fun-line);
+  --text-primary: #fff4e6;
+  --text-muted: #c9c0e4;
+  --accent: var(--fun-grape);
+  --accent-rgb: var(--fun-grape-rgb);
+  --accent-hover: #c4b5fd;
+  --on-accent: #1a1430;
+  --accent-warm: var(--fun-sun);
+  --success: #86efc8;
+  --success-rgb: 134 239 200;
+  --warn: #ffd166;
+  --warn-rgb: 255 209 102;
+  --warn-text: #ffd166;
+  --danger: #ff9aa8;
+  --danger-rgb: 255 154 168;
+  --info: var(--fun-sky);
+  --hl-warm: #ffd166;
+  --hl-ok: #86efc8;
+  --hl-danger: #ffb3c7;
+  --panel-shadow: 5px 5px 0 var(--fun-pop);
+  --focus-ring: rgba(167, 139, 250, 0.6);
+}
+
+/* White mode */
+:root.student-fun[data-theme="light"] .page--app,
+:root.student-fun[data-theme="light"] .dashboard,
+:root.student-fun[data-theme="light"] .modal-backdrop,
+:root.student-fun[data-theme="light"] .app-toast,
+:root.student-fun[data-theme="light"] .timeout-backdrop,
+:root.student-fun[data-theme="light"] .like-burst {
+  --fun-grape: #6a47f5;
+  --fun-grape-rgb: 106 71 245;
+  --fun-coral: #ff8a8a;
+  --fun-sun: #ffc93c;
+  --fun-mint: #3dd9b3;
+  --fun-sky: #7dd3fc;
+  --fun-pink: #ffb3c7;
+  --fun-lilac: #c4b5fd;
+  --fun-line: #2b2340;
+  --fun-pop: #2b2340;
+  --fun-paper: #ffffff;
+  --fun-paper-2: #fffaf2;
+  --fun-dots: rgba(43, 35, 64, 0.07);
+
+  --ink: 43 35 64;
+  --app-bg: #fff8ec;
+  --glass: var(--fun-paper);
+  --glass-strong: var(--fun-paper-2);
+  --glass-rgb: 255 255 255;
+  --glass-border: var(--fun-line);
+  --text-primary: #2b2340;
+  --text-muted: #5f5878;
+  --accent: var(--fun-grape);
+  --accent-rgb: var(--fun-grape-rgb);
+  --accent-hover: #5b3df0;
+  --on-accent: #ffffff;
+  --success: #17613f;
+  --success-rgb: 23 97 63;
+  --warn: #a46a0c;
+  --warn-rgb: 164 106 12;
+  --warn-text: #7a4f08;
+  --danger: #b4233d;
+  --danger-rgb: 180 35 61;
+  --info: #1f5a75;
+  --hl-warm: #8a3f0e;
+  --hl-ok: #17613f;
+  --hl-danger: #8a1f3d;
+  --panel-shadow: 5px 5px 0 var(--fun-pop);
+  --focus-ring: rgba(106, 71, 245, 0.45);
+}
+
+/* ---------- Page, type ---------------------------------------------- */
+
+:root.student-fun body {
+  background: var(--app-bg, #1d1733);
+}
+
+:root.student-fun .page--app,
+:root.student-fun .dashboard {
+  font-family: "Nunito", "Inter", system-ui, sans-serif;
+  /* Soft polka dots, like a notebook cover. */
+  background-color: var(--app-bg);
+  background-image: radial-gradient(var(--fun-dots) 1.6px, transparent 1.7px);
+  background-size: 22px 22px;
+}
+
+:root.student-fun .tab__title,
+:root.student-fun .panel-heading,
+:root.student-fun .greeting-card__title,
+:root.student-fun .hostel-modal__title,
+:root.student-fun .residence-card__name,
+:root.student-fun .room-card__number,
+:root.student-fun .floor-card__label,
+:root.student-fun .route-card__name,
+:root.student-fun .scan-card__title,
+:root.student-fun .semester-picker__title,
+:root.student-fun .room-tag__number,
+:root.student-fun .sidebar__name,
+:root.student-fun .title {
+  font-family: "Fredoka", "Nunito", system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+:root.student-fun .tab__title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  text-decoration: underline wavy var(--fun-sun);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 9px;
+  text-decoration-skip-ink: none;
+  margin-bottom: 1.6rem;
+}
+
+/* An emoji badge in front of each page title (set by data-tab). */
+:root.student-fun [data-tab] .tab__title::before {
+  /* Inline-level box, so the wavy underline skips the emoji badge. */
+  display: inline-grid;
+  vertical-align: middle;
+  margin: -0.3rem 0.6rem 0 0;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  flex-shrink: 0;
+  border-radius: 14px;
+  border: 2px solid var(--fun-line);
+  box-shadow: 3px 3px 0 var(--fun-pop);
+  font-size: 1.35rem;
+  transform: rotate(-6deg);
+}
+:root.student-fun [data-tab="rooms"] .tab__title::before { content: "🛏️"; background: var(--fun-sky); }
+:root.student-fun [data-tab="bookings"] .tab__title::before { content: "📋"; background: var(--fun-sun); }
+:root.student-fun [data-tab="complaints"] .tab__title::before { content: "🛠️"; background: var(--fun-coral); }
+:root.student-fun [data-tab="transport"] .tab__title::before { content: "🚌"; background: var(--fun-mint); }
+:root.student-fun [data-tab="curfew"] .tab__title::before { content: "🌙"; background: var(--fun-lilac); }
+:root.student-fun [data-tab="help"] .tab__title::before { content: "💬"; background: var(--fun-pink); }
+:root.student-fun [data-tab="profile"] .tab__title::before { content: "😎"; background: var(--fun-sun); }
+
+:root.student-fun .panel-heading {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+:root.student-fun .tab__subtitle-text,
+:root.student-fun .tab__empty {
+  font-size: 0.95rem;
+}
+
+:root.student-fun .tab__empty::before {
+  content: "🫧 ";
+}
+
+/* ---------- Sticker cards ------------------------------------------- */
+
+:root.student-fun .glass-panel,
+:root.student-fun .panel-form,
+:root.student-fun .page--app .card {
+  background: var(--glass);
+  border: 2px solid var(--fun-line);
+  border-radius: 24px;
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+:root.student-fun .panel-form {
+  max-width: 520px;
+  padding: 1.4rem;
+}
+
+/* ---------- Buttons ------------------------------------------------- */
+
+:root.student-fun .primary-btn {
+  border: 2px solid var(--fun-line);
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 3px 3px 0 var(--fun-pop);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.15s ease;
+}
+
+:root.student-fun .primary-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--fun-pop);
+}
+
+:root.student-fun .primary-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--fun-pop);
+}
+
+:root.student-fun .btn-outline {
+  border: 2px solid var(--fun-line);
+  border-radius: 999px;
+  background: var(--glass);
+  font-weight: 700;
+  box-shadow: 2px 2px 0 var(--fun-pop);
+}
+
+:root.student-fun .btn-outline:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--fun-pop);
+}
+
+:root.student-fun .btn-outline--neutral {
+  color: var(--text-primary);
+}
+
+:root.student-fun .link-btn {
+  font-weight: 800;
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* ---------- Badges & highlights ------------------------------------- */
+
+:root.student-fun .badge {
+  border: 2px solid var(--fun-line);
+  font-weight: 800;
+  font-size: 0.74rem;
+  padding: 0.2rem 0.7rem;
+}
+
+:root.student-fun .badge--ok { background: #d8f7ec; color: #17613f; }
+:root.student-fun .badge--warn { background: #fff1c7; color: #7a4f08; }
+:root.student-fun .badge--danger { background: #ffe1ea; color: #8a1f3d; }
+:root.student-fun .badge--neutral { background: #ece7ff; color: #4a3aa8; }
+:root.student-fun .badge--ok::before { content: "✓ "; }
+:root.student-fun .badge--warn::before { content: "⏳ "; }
+:root.student-fun .badge--danger::before { content: "✕ "; }
+
+:root.student-fun .hl {
+  padding: 0 0.3em;
+  border-radius: 6px;
+}
+
+/* ---------- Form fields --------------------------------------------- */
+
+:root.student-fun .field__label {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+:root.student-fun .field input,
+:root.student-fun .field select,
+:root.student-fun .field textarea,
+:root.student-fun .panel-form select,
+:root.student-fun .panel-form textarea,
+:root.student-fun .panel-form input[type="file"],
+:root.student-fun .help-reply textarea {
+  border: 2px solid var(--fun-line);
+  border-radius: 14px;
+  /* background-color only: a shorthand would reset the select's arrow
+     image to repeat across the whole field. */
+  background-color: var(--glass-strong);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+:root.student-fun .field input:focus,
+:root.student-fun .field select:focus,
+:root.student-fun .field textarea:focus,
+:root.student-fun .panel-form select:focus,
+:root.student-fun .panel-form textarea:focus,
+:root.student-fun .help-reply textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+:root.student-fun .field input::placeholder,
+:root.student-fun textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+
+/* ---------- Sidebar (desktop) --------------------------------------- */
+
+:root.student-fun .sidebar {
+  background: var(--glass);
+  border: 2px solid var(--fun-line);
+  border-radius: 28px;
+  box-shadow: 6px 6px 0 var(--fun-pop);
+}
+
+:root.student-fun .sidebar__link {
+  background: transparent;
+  color: var(--text-primary);
+  font-family: "Nunito", sans-serif;
+  font-weight: 700;
+  font-size: 0.92rem;
+  border: 2px solid transparent;
+}
+
+/* Every tab gets its own colour bubble. */
+:root.student-fun .sidebar__nav .sidebar__link:nth-child(7n + 1) { --tab-colour: var(--fun-sun); }
+:root.student-fun .sidebar__nav .sidebar__link:nth-child(7n + 2) { --tab-colour: var(--fun-sky); }
+:root.student-fun .sidebar__nav .sidebar__link:nth-child(7n + 3) { --tab-colour: var(--fun-mint); }
+:root.student-fun .sidebar__nav .sidebar__link:nth-child(7n + 4) { --tab-colour: var(--fun-coral); }
+:root.student-fun .sidebar__nav .sidebar__link:nth-child(7n + 5) { --tab-colour: var(--fun-pink); }
+:root.student-fun .sidebar__nav .sidebar__link:nth-child(7n + 6) { --tab-colour: var(--fun-lilac); }
+:root.student-fun .sidebar__nav .sidebar__link:nth-child(7n + 7) { --tab-colour: var(--fun-sun); }
+
+:root.student-fun .sidebar__nav .sidebar__icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  background: var(--tab-colour);
+  color: #1a1430;
+  border: 2px solid var(--fun-line);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:root.student-fun .sidebar:not(.sidebar--expanded) .sidebar__link {
+  background: transparent;
+}
+
+:root.student-fun .sidebar__link:hover {
+  background: rgb(var(--ink) / 0.07);
+  color: var(--text-primary);
+}
+
+:root.student-fun .sidebar__link:hover .sidebar__icon {
+  transform: rotate(-10deg) scale(1.1);
+}
+
+:root.student-fun .sidebar__link--active,
+:root.student-fun .sidebar__link--active:hover {
+  background: var(--tab-colour, var(--accent));
+  color: #1a1430;
+  border-color: var(--fun-line);
+  box-shadow: 3px 3px 0 var(--fun-pop);
+  font-weight: 800;
+}
+
+:root.student-fun .sidebar__link--active .sidebar__icon {
+  background: #ffffff;
+  transform: rotate(-8deg);
+}
+
+:root.student-fun .sidebar__footer {
+  border-top: 2px dashed rgb(var(--ink) / 0.25);
+}
+
+:root.student-fun .sidebar__logout {
+  color: var(--text-muted);
+}
+
+:root.student-fun .sidebar__who {
+  border: 2px solid var(--fun-line);
+  background: var(--fun-sun);
+  color: #1a1430;
+  box-shadow: 3px 3px 0 var(--fun-pop);
+}
+
+:root.student-fun .sidebar__who:hover,
+:root.student-fun .sidebar__who--active {
+  background: var(--fun-sun);
+  transform: translate(-1px, -1px);
+}
+
+:root.student-fun .sidebar__who-hint,
+:root.student-fun .sidebar:not(.sidebar--expanded) .sidebar__who {
+  color: #3d3357;
+}
+
+:root.student-fun .sidebar__name {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+:root.student-fun .sidebar__name::before {
+  content: "👋 ";
+}
+
+:root.student-fun .sidebar__toggle {
+  border: 2px solid var(--fun-line);
+  background: var(--fun-sun);
+  color: #1a1430;
+  font-weight: 800;
+}
+
+:root.student-fun .theme-toggle {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* ---------- Home -------------------------------------------------- */
+
+:root.student-fun .home-greeting {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(120deg, var(--fun-grape), #8b6cff 55%, var(--fun-pink));
+  color: #ffffff;
+  padding: 1.5rem 1.6rem;
+}
+
+:root.student-fun .home-greeting .greeting-card__title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.25rem;
+}
+
+:root.student-fun .home-greeting .greeting-card__subtitle {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+:root.student-fun .home-greeting__wave {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: fun-wave 2.4s ease-in-out 0.4s 2;
+}
+
+/* Floating shapes in the greeting banner. */
+:root.student-fun .home-greeting::before,
+:root.student-fun .home-greeting::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  pointer-events: none;
+}
+:root.student-fun .home-greeting::before {
+  width: 140px;
+  height: 140px;
+  right: -40px;
+  top: -50px;
+  background: rgba(255, 209, 102, 0.55);
+}
+:root.student-fun .home-greeting::after {
+  width: 70px;
+  height: 70px;
+  right: 90px;
+  bottom: -30px;
+  background: rgba(125, 211, 252, 0.55);
+}
+
+:root.student-fun .home-greeting .profile-panel__head,
+:root.student-fun .home-greeting .profile-panel__row,
+:root.student-fun .home-greeting .room-tag {
+  position: relative;
+  z-index: 1;
+}
+
+:root.student-fun .home-greeting .link-btn {
+  color: #ffffff;
+  background: rgba(26, 20, 48, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+:root.student-fun .home-greeting .profile-panel__row {
+  margin: 1.25rem 0 0;
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid var(--fun-line);
+  color: #2b2340;
+}
+
+:root.student-fun .home-greeting .profile-panel__details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.45rem 1.25rem;
+  flex: 1;
+}
+
+:root.student-fun .home-greeting .profile-panel__details dt {
+  color: #5f5878;
+  font-weight: 700;
+}
+
+:root.student-fun .home-greeting .profile-panel__details dd {
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+:root.student-fun .avatar-fallback {
+  background: var(--fun-sun);
+  color: #1a1430;
+  border: 3px solid var(--fun-line);
+  font-family: "Fredoka", sans-serif;
+}
+
+:root.student-fun .avatar-img {
+  border: 3px solid var(--fun-line);
+}
+
+/* The room key tag, now a big yellow sticker. */
+:root.student-fun .room-tag {
+  border-radius: 18px;
+  background: var(--fun-sun);
+  color: #1a1430;
+  border: 2px solid var(--fun-line);
+  box-shadow: 4px 4px 0 var(--fun-pop);
+  padding: 1rem 1.25rem 1rem 3.6rem;
+  transform: rotate(-1deg);
+}
+
+:root.student-fun .room-tag__ring {
+  width: auto;
+  height: auto;
+  left: 0.9rem;
+  border: none;
+  border-radius: 0;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+:root.student-fun .room-tag__ring::before { content: "🔑"; }
+:root.student-fun .room-tag--away .room-tag__ring::before { content: "🧳"; }
+
+:root.student-fun .room-tag__eyebrow,
+:root.student-fun .room-tag__hostel {
+  color: #3d3357;
+  font-weight: 800;
+}
+
+:root.student-fun .room-tag--away {
+  background: var(--fun-pink);
+  color: #1a1430;
+}
+
+/* Quick access: colourful tiles, two per row. */
+:root.student-fun .quick-access {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+
+:root.student-fun .quick-access__btn {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 92px;
+  padding: 0.8rem;
+  border-radius: 18px;
+  border: 2px solid var(--fun-line);
+  background: var(--tile, var(--fun-sky));
+  color: #1a1430;
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-weight: 600;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  box-shadow: 3px 3px 0 var(--fun-pop);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+}
+
+:root.student-fun .quick-access__btn:nth-child(5n + 1) { --tile: var(--fun-sky); }
+:root.student-fun .quick-access__btn:nth-child(5n + 2) { --tile: var(--fun-sun); }
+:root.student-fun .quick-access__btn:nth-child(5n + 3) { --tile: var(--fun-coral); }
+:root.student-fun .quick-access__btn:nth-child(5n + 4) { --tile: var(--fun-lilac); }
+:root.student-fun .quick-access__btn:nth-child(5n + 5) { --tile: var(--fun-mint); grid-column: 1 / -1; min-height: 64px; }
+
+:root.student-fun .quick-access__btn:hover {
+  background: var(--tile);
+  transform: translate(-2px, -3px) rotate(-1.5deg);
+  box-shadow: 5px 6px 0 var(--fun-pop);
+}
+
+:root.student-fun .quick-access__btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--fun-pop);
+}
+
+:root.student-fun .quick-access__icon {
+  width: auto;
+  height: auto;
+  background: none;
+  color: inherit;
+  border-radius: 0;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+/* Notifications look like little chat bubbles. */
+:root.student-fun .notification-item {
+  position: relative;
+  padding: 0.65rem 0.9rem 0.65rem 2.4rem;
+  border-radius: 16px;
+  background: var(--glass-strong);
+  border: 2px solid var(--fun-line);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+:root.student-fun .notification-item::before {
+  content: "🔔";
+  position: absolute;
+  left: 0.75rem;
+  top: 0.6rem;
+}
+
+:root.student-fun .notification-item--empty {
+  padding-left: 0.9rem;
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+:root.student-fun .notification-item--empty::before {
+  content: none;
+}
+
+:root.student-fun .side-panel__head {
+  align-items: center;
+}
+
+/* Announcements */
+:root.student-fun .announcement {
+  border: 2px solid var(--fun-line);
+  border-radius: 16px;
+  background: var(--glass-strong);
+}
+
+:root.student-fun .announcement__thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 2px solid var(--fun-line);
+  background: var(--fun-sun);
+  font-size: 1.25rem;
+}
+
+:root.student-fun .announcement:nth-child(3n + 2) .announcement__thumb { background: var(--fun-sky); }
+:root.student-fun .announcement:nth-child(3n + 3) .announcement__thumb { background: var(--fun-pink); }
+
+:root.student-fun .announcement__title {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+:root.student-fun .announcement__pin {
+  background: var(--fun-coral);
+  color: #1a1430;
+  border: 2px solid var(--fun-line);
+}
+
+:root.student-fun .announcement__pin::before {
+  content: "📌 ";
+}
+
+/* Shuttle mini-table */
+:root.student-fun .mini-table td {
+  border-top: 2px dashed rgb(var(--ink) / 0.18);
+}
+
+:root.student-fun .mini-table__next td {
+  background: rgb(var(--fun-grape-rgb) / 0.14);
+}
+
+:root.student-fun .mini-table__next .mini-table__time::before {
+  content: "🚌 ";
+}
+
+/* Scan curfew card */
+:root.student-fun .scan-card {
+  background: var(--fun-mint);
+  color: #1a1430;
+}
+
+:root.student-fun .scan-card .scan-card__sub {
+  color: #2b2340;
+  font-weight: 600;
+}
+
+:root.student-fun .scan-card__icon {
+  background: #ffffff;
+  color: #1a1430;
+  border: 2px solid var(--fun-line);
+  border-radius: 16px;
+  transform: rotate(-6deg);
+}
+
+:root.student-fun .scan-card .primary-btn {
+  background: #1a1430;
+  color: #ffffff;
+}
+
+:root.student-fun .scan-card .primary-btn:hover {
+  background: #2b2340;
+}
+
+:root.student-fun .scan-card--disabled {
+  background: var(--glass);
+  color: var(--text-primary);
+}
+
+:root.student-fun .scan-card--disabled .scan-card__sub {
+  color: var(--text-muted);
+}
+
+:root.student-fun .scan-card--disabled .scan-card__icon {
+  background: var(--glass-strong);
+  color: var(--text-muted);
+}
+
+/* ---------- Lists (Status, Complaint, Curfew, Help) ----------------- */
+
+:root.student-fun .list {
+  gap: 0.8rem;
+}
+
+:root.student-fun .list-row {
+  border: 2px solid var(--fun-line);
+  border-radius: 18px;
+  background: var(--glass);
+  box-shadow: 3px 3px 0 var(--fun-pop);
+  padding: 0.9rem 1.1rem;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+:root.student-fun .list-row--button {
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+
+:root.student-fun .list-row:hover {
+  transform: translate(-1px, -2px);
+  box-shadow: 5px 5px 0 var(--fun-pop);
+}
+
+:root.student-fun .list-row__title {
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+:root.student-fun .list-row__meta {
+  font-size: 0.85rem;
+}
+
+:root.student-fun .history-clear .btn-outline--danger {
+  color: var(--danger);
+}
+
+/* Curfew status */
+:root.student-fun .curfew-status .badge {
+  display: inline-block;
+  margin: 0.35rem 0;
+  font-size: 1rem;
+  padding: 0.35rem 1rem;
+}
+
+/* ---------- Rooms --------------------------------------------------- */
+
+:root.student-fun .segmented {
+  border: 2px solid var(--fun-line);
+  background: var(--glass-strong);
+  border-radius: 999px;
+}
+
+:root.student-fun .segmented__btn {
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+:root.student-fun .segmented__btn--active {
+  background: var(--fun-sun);
+  color: #1a1430;
+  box-shadow: inset 0 0 0 2px var(--fun-line);
+}
+
+:root.student-fun .residence-grid {
+  gap: 1.25rem;
+}
+
+:root.student-fun .residence-card {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+}
+
+:root.student-fun .residence-card:hover {
+  transform: translate(-2px, -4px) rotate(-0.6deg);
+  box-shadow: 7px 9px 0 var(--fun-pop);
+}
+
+:root.student-fun .residence-card__media {
+  margin: -1.5rem -1.5rem 0;
+  height: 130px;
+  border-radius: 22px 22px 0 0;
+  border-bottom: 2px solid var(--fun-line);
+}
+
+:root.student-fun .residence-card__tag {
+  background: var(--fun-sun);
+  color: #1a1430;
+  border: 2px solid var(--fun-line);
+  font-weight: 800;
+  font-size: 0.7rem;
+}
+
+:root.student-fun .residence-card__name {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+:root.student-fun .residence-card__meta::before {
+  content: "🏢 ";
+}
+
+/* Hostel popup (rendered into <body>) */
+:root.student-fun .modal-backdrop {
+  background: rgba(29, 23, 51, 0.6);
+  font-family: "Nunito", "Inter", sans-serif;
+  color: var(--text-primary);
+}
+
+:root.student-fun .modal.glass-panel {
+  background: var(--glass);
+  color: var(--text-primary);
+  border: 2px solid var(--fun-line);
+  border-radius: 26px;
+  box-shadow: 8px 8px 0 var(--fun-pop);
+}
+
+:root.student-fun .modal__close {
+  border: 2px solid var(--fun-line);
+  border-radius: 50%;
+  background: var(--fun-coral);
+  color: #1a1430;
+  font-weight: 800;
+  box-shadow: 2px 2px 0 var(--fun-pop);
+}
+
+:root.student-fun .gallery__stage,
+:root.student-fun .gallery__thumb,
+:root.student-fun .hostel-modal__map {
+  border: 2px solid var(--fun-line);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+:root.student-fun .chip {
+  border: 2px solid var(--fun-line);
+  background: var(--glass-strong);
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+:root.student-fun .chip--next {
+  background: var(--fun-sun);
+  color: #1a1430;
+  border-color: var(--fun-line);
+}
+
+:root.student-fun .floor-card,
+:root.student-fun .room-card--modal {
+  border: 2px solid var(--fun-line);
+  border-radius: 18px;
+  background: var(--glass-strong);
+  box-shadow: 3px 3px 0 var(--fun-pop);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+}
+
+:root.student-fun .floor-card:hover {
+  background: var(--fun-sky);
+  color: #1a1430;
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--fun-pop);
+}
+
+:root.student-fun .floor-card:hover .floor-card__meta {
+  color: #2b2340;
+}
+
+:root.student-fun .floor-card__label::before {
+  content: "🪜 ";
+}
+
+:root.student-fun .room-card--modal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+:root.student-fun .room-card--modal .primary-btn {
+  margin-top: 0.4rem;
+}
+
+:root.student-fun .room-card__number {
+  font-size: 1.2rem;
+}
+
+:root.student-fun .badge--female {
+  background: var(--fun-pink);
+  color: #1a1430;
+}
+
+:root.student-fun .badge--male {
+  background: var(--fun-sky);
+  color: #1a1430;
+}
+
+/* ---------- Transport ---------------------------------------------- */
+
+:root.student-fun .day-tabs__btn {
+  border: 2px solid var(--fun-line);
+  background: var(--glass);
+  font-weight: 800;
+  box-shadow: 2px 2px 0 var(--fun-pop);
+  transition: transform 0.15s ease;
+}
+
+:root.student-fun .day-tabs__btn:hover {
+  transform: translateY(-2px);
+}
+
+:root.student-fun .day-tabs__btn--active {
+  background: var(--fun-mint);
+  border-color: var(--fun-line);
+  color: #1a1430;
+}
+
+:root.student-fun .route-card__name::before {
+  content: "🚏 ";
+}
+
+/* ---------- Help center chat ----------------------------------------- */
+
+:root.student-fun .help-msg {
+  border: 2px solid var(--fun-line);
+  border-radius: 18px 18px 18px 6px;
+  background: var(--fun-sky);
+  color: #1a1430;
+}
+
+:root.student-fun .help-msg--mine {
+  border-radius: 18px 18px 6px 18px;
+  background: var(--fun-sun);
+}
+
+:root.student-fun .help-msg__who {
+  color: #3d3357;
+  font-weight: 800;
+}
+
+:root.student-fun .faq__item summary {
+  font-weight: 800;
+  list-style: none;
+}
+
+:root.student-fun .faq__item summary::-webkit-details-marker {
+  display: none;
+}
+
+:root.student-fun .faq__item summary::before {
+  content: "🤔 ";
+}
+
+:root.student-fun .faq__item[open] summary::before {
+  content: "💡 ";
+}
+
+/* ---------- Toasts --------------------------------------------------- */
+
+:root.student-fun .app-toast,
+:root.student-fun .toast {
+  border: 2px solid var(--fun-line);
+  border-radius: 999px;
+  box-shadow: 4px 4px 0 var(--fun-pop);
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+}
+
+/* ---------- Phone layout --------------------------------------------- */
+
+@media (max-width: 720px) {
+  :root.student-fun .tab__title {
+    font-size: 1.55rem;
+  }
+
+  :root.student-fun .mobile-topbar {
+    background: var(--app-bg);
+    border-bottom: 2px solid var(--fun-line);
+  }
+
+  :root.student-fun .mobile-topbar__user {
+    background: var(--fun-sun);
+    color: #1a1430;
+    border: 2px solid var(--fun-line);
+  }
+
+  /* Bottom tab bar */
+  :root.student-fun .sidebar,
+  :root.student-fun .sidebar--expanded {
+    border-radius: 22px 22px 0 0;
+    border-width: 2px 0 0;
+    box-shadow: 0 -4px 0 rgb(var(--ink) / 0.06);
+  }
+
+  :root.student-fun .sidebar .sidebar__link,
+  :root.student-fun .sidebar--expanded .sidebar__link {
+    font-size: 0.66rem;
+    border-radius: 16px;
+  }
+
+  :root.student-fun .sidebar__nav .sidebar__icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+  }
+
+  :root.student-fun .sidebar__link--active,
+  :root.student-fun .sidebar__link--active:hover {
+    box-shadow: 2px 2px 0 var(--fun-pop);
+  }
+
+  :root.student-fun .home-greeting .greeting-card__title {
+    font-size: 1.6rem;
+  }
+
+  :root.student-fun .home-greeting .profile-panel__row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ---------- Motion ----------------------------------------------------- */
+
+@keyframes fun-wave {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10%, 30% { transform: rotate(16deg); }
+  20%, 40% { transform: rotate(-10deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root.student-fun .home-greeting__wave {
+    animation: none;
+  }
+  :root.student-fun .primary-btn,
+  :root.student-fun .quick-access__btn,
+  :root.student-fun .residence-card,
+  :root.student-fun .list-row,
+  :root.student-fun .floor-card,
+  :root.student-fun .room-tag,
+  :root.student-fun .sidebar__icon {
+    transition: none;
+    transform: none !important;
+  }
+}
+
+/* ---------- Small fixes ------------------------------------------------ */
+
+:root.student-fun .sidebar__who .sidebar__name,
+:root.student-fun .sidebar__who .sidebar__role {
+  color: #1a1430;
+}
+
+:root.student-fun .announcement__title--important {
+  background: none;
+}
+
+:root.student-fun .announcement__pin {
+  white-space: nowrap;
+}
+
+:root.student-fun .message--info {
+  border: 2px solid var(--fun-line);
+  border-radius: 16px;
+  background: #e0f4ff;
+  color: #1f3a52;
+  font-weight: 600;
+  box-shadow: 3px 3px 0 var(--fun-pop);
+}
+
+:root.student-fun .message--info::before {
+  content: "💡 ";
+}
+
+@media (max-width: 720px) {
+  :root.student-fun .home-greeting .profile-panel__head {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+}
+
+:root.student-fun .field select,
+:root.student-fun .panel-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23fff4e6' stroke-width='2' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  padding-right: 2.2rem;
+}
+
+@media (max-width: 520px) {
+  :root.student-fun .announcement__title {
+    flex: 1 1 calc(100% - 3.5rem);
+    flex-wrap: wrap;
+  }
+
+  :root.student-fun .announcement__meta {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    padding-left: 3.25rem;
+  }
+}
+
+:root.student-fun[data-theme="light"] .field select,
+:root.student-fun[data-theme="light"] .panel-form select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%232b2340' stroke-width='2' fill='none'/></svg>");
+}

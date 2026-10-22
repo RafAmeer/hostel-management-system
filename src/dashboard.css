@@ -509,6 +509,24 @@
   gap: 1.25rem;
 }
 
+/* Grid items default to min-width: auto, so one long unbreakable line (an
+   announcement's badge + date) used to stretch the column past the phone
+   screen and cut every card off on the right. */
+.home-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .announcement__head {
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+  }
+
+  .announcement__meta {
+    margin-left: auto;
+  }
+}
+
 .greeting-card {
   min-height: 140px;
   display: flex;
@@ -994,6 +1012,7 @@
 }
 
 .ai-chat-widget__dot {
+  z-index: 2;
   position: absolute;
   top: 4px;
   right: 4px;
@@ -3164,4 +3183,91 @@
 .history-clear__note {
   flex-basis: 100%;
   margin: 0;
+}
+
+/* AI Assistant launcher: a glowing, shimmering button so the warden notices
+   it. Closed = animated (rotating ring, soft pulse, shine sweep, twinkling
+   sparkle). Open = calm. All motion is off for prefers-reduced-motion. */
+.ai-chat-widget__bubble--glow {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  color: var(--on-accent);
+  box-shadow: 0 10px 28px rgb(var(--accent-rgb) / 0.45);
+}
+.ai-chat-widget__face {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+/* Rotating bright arc around the button */
+.ai-chat-widget__halo {
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 55%, var(--accent-warm) 75%, #fff 88%, transparent 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  animation: ai-ring-spin 2.6s linear infinite;
+}
+/* Soft pulse that expands outwards */
+.ai-chat-widget__bubble--glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.55);
+  animation: ai-pulse 2.2s ease-out infinite;
+}
+/* Diagonal shine sweeping across the face */
+.ai-chat-widget__shine {
+  position: absolute;
+  top: -20%;
+  left: -70%;
+  width: 45%;
+  height: 140%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: skewX(-18deg);
+  animation: ai-shine 3.2s ease-in-out infinite;
+}
+.ai-chat-widget__spark {
+  animation: ai-twinkle 2.4s ease-in-out infinite;
+}
+.ai-chat-widget__spark-sm {
+  transform-origin: 19px 17px;
+  animation: ai-twinkle-sm 2.4s ease-in-out infinite 0.5s;
+}
+
+@keyframes ai-ring-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes ai-pulse {
+  0% { box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.55); }
+  70%, 100% { box-shadow: 0 0 0 16px rgb(var(--accent-rgb) / 0); }
+}
+@keyframes ai-shine {
+  0%, 55% { left: -70%; }
+  100% { left: 130%; }
+}
+@keyframes ai-twinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.12) rotate(12deg); }
+}
+@keyframes ai-twinkle-sm {
+  0%, 100% { transform: scale(0.8); opacity: 0.7; }
+  50% { transform: scale(1.25); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-chat-widget__halo,
+  .ai-chat-widget__shine,
+  .ai-chat-widget__spark,
+  .ai-chat-widget__spark-sm,
+  .ai-chat-widget__bubble--glow::before {
+    animation: none;
+  }
 }

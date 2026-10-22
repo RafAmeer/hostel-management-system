@@ -6,11 +6,13 @@ const STATUS_LABELS = {
   pending: "Pending",
   approved: "Approved",
   rejected: "Rejected",
+  cancelled: "Cancelled",
 };
 
 function statusTone(status) {
   if (status === "approved") return "ok";
   if (status === "rejected") return "danger";
+  if (status === "cancelled") return "neutral";
   return "warn";
 }
 

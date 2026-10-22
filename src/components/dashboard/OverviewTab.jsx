@@ -2,7 +2,6 @@ import Avatar from "./Avatar";
 import AnnouncementsPanel from "./AnnouncementsPanel";
 import CurfewScanCard from "./CurfewScanCard";
 import TransportToday from "./TransportToday";
-import { NAV_ICONS } from "./icons";
 import { scopeSchedule, studentTransportScope } from "../../lib/transport";
 import { formatDateTime, ELIGIBILITY_LABELS, eligibilityTone } from "../../lib/formatters";
 
@@ -12,6 +11,12 @@ function getGreetingTime() {
   if (hour < 18) return "afternoon";
   return "evening";
 }
+
+const GREETING_LINES = {
+  morning: "Rise and shine! Here's what's happening at your hostel.",
+  afternoon: "Hope your day's going great. Here's your hostel at a glance.",
+  evening: "Winding down? Here's a quick look before curfew.",
+};
 
 // Matches the "Home" wireframe: a combined greeting + profile card and news
 // & announcements on the left, Quick Access + Notifications on the right.
@@ -44,11 +49,11 @@ function OverviewTab({
   const firstName = (profile?.full_name ?? "Student").split(" ")[0];
 
   const quickAccessItems = [
-    { key: "rooms", label: "Room Registration", icon: "rooms" },
-    { key: "bookings", label: "Status Tracking", icon: "status" },
-    { key: "complaints", label: "Complaint", icon: "complaint" },
-    { key: "curfew", label: "Curfew", icon: "curfew" },
-    { key: "help", label: "Help Center", icon: "help" },
+    { key: "rooms", label: "Find a room", emoji: "🛏️" },
+    { key: "bookings", label: "My booking status", emoji: "📋" },
+    { key: "complaints", label: "Report a problem", emoji: "🛠️" },
+    { key: "curfew", label: "Curfew check-in", emoji: "🌙" },
+    { key: "help", label: "Ask the warden", emoji: "💬" },
   ];
 
   // Important words are wrapped in <mark className="hl"> so they stand out.
@@ -87,7 +92,7 @@ function OverviewTab({
   if (lastScan) {
     notifications.push(
       <>
-        Last curfew scan: <mark className="hl">{lastScan.scan_type.replace("_", " ")}</mark> ·{" "}
+        Last curfew scan: <mark className="hl">{lastScan.scan_type === "check_out" ? "check out" : "check in"}</mark> ·{" "}
         {formatDateTime(lastScan.timestamp)}
       </>
     );
@@ -96,19 +101,16 @@ function OverviewTab({
   return (
     <div className="tab home-grid">
       <div className="home-grid__main">
-        <AnnouncementsPanel announcements={announcements} />
-
-        <CurfewScanCard compact />
-
-        <section className="glass-panel profile-panel">
+        <section className="glass-panel profile-panel home-greeting">
           <div className="profile-panel__head">
             <div>
               <h2 className="greeting-card__title">
-                Good {getGreetingTime()}, {firstName}.
+                Good {getGreetingTime()}, {firstName}!{" "}
+                <span className="home-greeting__wave" aria-hidden="true">
+                  👋
+                </span>
               </h2>
-              <p className="greeting-card__subtitle">
-                Here's a quick look at your hostel status.
-              </p>
+              <p className="greeting-card__subtitle">{GREETING_LINES[getGreetingTime()]}</p>
             </div>
             <button type="button" className="link-btn" onClick={() => onNavigate?.("profile")}>
               Edit profile
@@ -153,18 +155,22 @@ function OverviewTab({
                 ? "Book a room under Rooms to move in"
                 : approvedBooking || profile?.room_number
                 ? "Current resident"
-                : "No room booked yet"}
+                : "No room yet. Let's find you one!"}
             </span>
           </div>
         </section>
+
+        <AnnouncementsPanel announcements={announcements} />
+
+        <CurfewScanCard compact />
+
       </div>
 
       <div className="home-grid__side">
         <section className="glass-panel side-panel">
-          <h3 className="panel-heading">Quick Access</h3>
+          <h3 className="panel-heading">⚡ Quick Access</h3>
           <div className="quick-access">
             {quickAccessItems.map((item) => {
-              const Icon = NAV_ICONS[item.icon];
               return (
                 <button
                   key={item.key}
@@ -172,11 +178,9 @@ function OverviewTab({
                   className="quick-access__btn"
                   onClick={() => onNavigate?.(item.key)}
                 >
-                  {Icon && (
-                    <span className="quick-access__icon" aria-hidden="true">
-                      <Icon />
-                    </span>
-                  )}
+                  <span className="quick-access__icon" aria-hidden="true">
+                    {item.emoji}
+                  </span>
                   {item.label}
                 </button>
               );
@@ -194,10 +198,10 @@ function OverviewTab({
         )}
 
         <section className="glass-panel side-panel">
-          <h3 className="panel-heading">Notification / Reminders</h3>
+          <h3 className="panel-heading">🔔 Reminders</h3>
           {notifications.length === 0 ? (
             <p className="notification-item notification-item--empty">
-              No new notification
+              All caught up! Nothing new right now.
             </p>
           ) : (
             <ul className="notification-list">

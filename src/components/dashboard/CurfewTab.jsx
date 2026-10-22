@@ -56,6 +56,8 @@ function CurfewTab({ curfewLogs, userId }) {
   const history = useClearedHistory("curfew", userId);
   const { shown: visibleLogs, hidden: hiddenLogs, clearable } = history.view(curfewLogs);
   const isOut = lastLog?.scan_type === "check_out";
+  const statusLabel = !lastLog ? "No scans yet" : isOut ? "Out of Hostel" : "In Hostel";
+  const statusTone = !lastLog ? "neutral" : isOut ? "warn" : "ok";
 
   return (
     <div className="tab">
@@ -65,9 +67,7 @@ function CurfewTab({ curfewLogs, userId }) {
         <div>
           <p className="list-row__meta">Current status</p>
           <p className="curfew-status__value">
-            <span className={"badge badge--" + (isOut ? "warn" : "ok")}>
-              {isOut ? "Out of Hostel" : "In Hostel"}
-            </span>
+            <span className={"badge badge--" + statusTone}>{statusLabel}</span>
           </p>
           {lastLog && <p className="list-row__meta">Last scan: {formatDateTime(lastLog.timestamp)}</p>}
         </div>

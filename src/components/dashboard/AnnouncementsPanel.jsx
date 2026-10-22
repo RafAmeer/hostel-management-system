@@ -36,12 +36,12 @@ function AnnouncementsPanel({ announcements }) {
   return (
     <section className="glass-panel announcements-panel" aria-labelledby="announcements-heading">
       <h3 id="announcements-heading" className="panel-heading">
-        News &amp; Announcements
+        📣 News &amp; Announcements
       </h3>
 
       {announcements.length === 0 ? (
         <p className="notification-item notification-item--empty">
-          No announcements yet. Hostel news will show up here.
+          It's quiet for now. Hostel news will pop up here.
         </p>
       ) : (
         <ul className="announcement-list">

@@ -122,11 +122,22 @@ function HostelChatbot({ stats }) {
 
       <button
         type="button"
-        className="ai-chat-widget__bubble"
+        className={"ai-chat-widget__bubble" + (open ? "" : " ai-chat-widget__bubble--glow")}
         onClick={toggleOpen}
         aria-label={open ? "Close AI Assistant" : "Open AI Assistant"}
       >
-        {open ? "✕" : "💬"}
+        {!open && <span className="ai-chat-widget__halo" aria-hidden="true" />}
+        <span className="ai-chat-widget__face" aria-hidden="true">
+          {!open && <span className="ai-chat-widget__shine" />}
+          {open ? (
+            "✕"
+          ) : (
+            <svg className="ai-chat-widget__spark" viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+              <path d="M10 2.5l1.9 5.6 5.6 1.9-5.6 1.9L10 17.5l-1.9-5.6L2.5 10l5.6-1.9L10 2.5z" />
+              <path className="ai-chat-widget__spark-sm" d="M18.5 13l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z" />
+            </svg>
+          )}
+        </span>
         {hasUnread && !open && <span className="ai-chat-widget__dot" aria-hidden="true" />}
       </button>
     </div>

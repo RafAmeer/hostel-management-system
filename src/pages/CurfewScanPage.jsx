@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { assetUrl } from "../lib/assetUrl";
 import { isPhoneDevice } from "../lib/device";
 import { getCurrentPosition } from "../lib/geo";
 import { getDeviceToken, DEVICE_TOKEN_KEY } from "../lib/deviceBinding";
@@ -22,7 +23,7 @@ import { RESIDENCES } from "../data/residences";
 const RETURN_TO_LOGIN_MS = 3500;
 
 function goToLogin() {
-  window.location.assign("/");
+  window.location.assign(assetUrl("/"));
 }
 
 const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/curfew-scan`;
