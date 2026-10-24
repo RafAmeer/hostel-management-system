@@ -711,7 +711,7 @@ function MainApp() {
 
           {mode === "login" && passkeysSupported() && (
             <button type="button" className="biometric-btn" onClick={handlePasskeyLogin} disabled={loading}>
-              <FingerprintIcon aria-hidden="true" /> Sign in with fingerprint / face
+              <FingerprintIcon aria-hidden="true" /> Sign in with fingerprint
             </button>
           )}
 

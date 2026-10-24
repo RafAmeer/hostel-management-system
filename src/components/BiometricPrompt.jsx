@@ -3,7 +3,7 @@ import { FingerprintIcon } from "./dashboard/icons";
 import { listPasskeys, passkeysSupported, registerPasskey } from "../lib/passkeys";
 
 // One-time, optional offer shown right after someone signs in to their new
-// account: "use fingerprint / face next time?". Fingerprint/face sign-in can
+// account: "use fingerprint next time?". Fingerprint sign-in can
 // only be set up while signed in (there has to be an account to attach the
 // passkey to), so this is the natural moment to ask. "Not now" is
 // remembered per account; it can always be turned on later in Profile.
@@ -70,7 +70,7 @@ function BiometricPrompt({ userId, onDone }) {
       await registerPasskey(deviceName());
       remember();
       setOpen(false);
-      onDone?.("Fingerprint / face sign-in is on.");
+      onDone?.("Fingerprint sign-in is on.");
     } catch (e) {
       setError(e.message);
     }
@@ -84,7 +84,7 @@ function BiometricPrompt({ userId, onDone }) {
           Sign in faster next time?
         </h2>
         <p className="timeout-modal__text">
-          Use this device's fingerprint, face or screen lock instead of typing your password. It's optional, and you
+          Use your fingerprint instead of typing your password. It's optional, and you
           can change it any time in Profile.
         </p>
         {error && (
@@ -94,7 +94,7 @@ function BiometricPrompt({ userId, onDone }) {
         )}
         <div className="timeout-modal__actions">
           <button type="button" className="primary-btn" onClick={enable} disabled={busy} autoFocus>
-            <FingerprintIcon aria-hidden="true" /> {busy ? "Waiting for your device…" : "Turn on fingerprint / face"}
+            <FingerprintIcon aria-hidden="true" /> {busy ? "Waiting for your device…" : "Turn on fingerprint"}
           </button>
           <button type="button" className="link-btn" onClick={notNow} disabled={busy}>
             Not now

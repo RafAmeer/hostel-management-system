@@ -7,6 +7,10 @@
 //   1. Chat mode  — body has `question` (+ `stats`): answers ONE specific
 //      question the warden typed or picked from a suggested-question chip,
 //      in 1-3 sentences. This is what the "AI Assistant" chat panel uses.
+//   1b. Predictions mode — body has `mode: "predictions"` (+ `question`,
+//      `stats.predictions`): explains the forecasts on the warden's
+//      "AI Predictions" tab and suggests 3 actions. The forecasts are
+//      calculated in the browser (src/lib/predictions.js), not by the AI.
 //   2. Report mode — body has only `stats` (no `question`, kept for
 //      backwards compatibility): writes the old fixed 3-5 sentence report.
 //
@@ -117,7 +121,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { stats, question } = await req.json();
+    const { stats, question, mode } = await req.json();
     if (!stats) {
       return jsonResponse({ error: "Missing `stats` in request body" }, 400);
     }
@@ -129,7 +133,12 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "GROQ_API_KEY secret is not set" }, 500);
     }
 
-    const prompt = question ? buildQuestionPrompt(question, stats) : buildPrompt(stats);
+    const prompt =
+      mode === "predictions"
+        ? buildPredictionsPrompt(stats)
+        : question
+        ? buildQuestionPrompt(question, stats)
+        : buildPrompt(stats);
     const startedAt = Date.now();
 
     // Groq first, then Claude (if a key is set), then Gemini as last backup.
@@ -444,6 +453,22 @@ function buildQuestionPrompt(question: string, stats: Record<string, unknown>) {
     "4. Keep the tone plain and factual, the way a colleague would answer over chat.\n\n",
     `Warden's question: "${question}"\n\n`,
     "Here is the aggregated hostel data as JSON:\n\n",
+    JSON.stringify(stats, null, 2),
+  ].join("");
+}
+
+function buildPredictionsPrompt(stats: Record<string, unknown>) {
+  return [
+    "You are an assistant for a university hostel warden. Below are FORECASTS for the coming week/month that were ",
+    "already calculated from the hostel's own records with simple statistics (trend lines, averages, repeat counts). ",
+    "Do NOT change, recompute or invent any number — quote figures exactly as given. If a section has no data ",
+    "(zeros, empty lists or null), say there isn't enough data yet instead of guessing.\n\n",
+    "Write your answer in this exact shape, plain text, no markdown headers or bold:\n",
+    "First, ONE or TWO short sentences summarising what is likely to happen next (complaints, bed demand, curfew).\n",
+    "Then exactly 3 numbered action points (\"1. \", \"2. \", \"3. \"), most urgent first, each ONE sentence that ",
+    "tells the warden something concrete to do this week and mentions the forecast figure or room it is based on.\n",
+    "If the confidence is Low, add a final short sentence saying the forecast will get more accurate as more data is recorded.\n\n",
+    "Forecast data as JSON:\n\n",
     JSON.stringify(stats, null, 2),
   ].join("");
 }

@@ -12,7 +12,7 @@ const NARROW_SCREEN_PX = 720;
 
 // `brand` (optional) shows a small logo + product name at the top — only the
 // warden dashboard passes it, so the other dashboards are unchanged.
-function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl, onLogout, onProfile, brand }) {
+function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl, onLogout, onProfile, brand, bell }) {
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== "undefined" && window.innerWidth < NARROW_SCREEN_PX
   );
@@ -42,6 +42,7 @@ function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl
           <span className="mobile-topbar__name">{userName}</span>
         </button>
         <div className="mobile-topbar__actions">
+          {bell}
           <ThemeToggle />
           <button type="button" className="theme-toggle mobile-topbar__logout" onClick={onLogout} aria-label="Log out">
             <span className="theme-toggle__icon" aria-hidden="true">
@@ -86,7 +87,11 @@ function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl
             <button
               key={item.key}
               type="button"
-              className={"sidebar__link" + (isActive ? " sidebar__link--active" : "")}
+              className={
+                "sidebar__link" +
+                (isActive ? " sidebar__link--active" : "") +
+                (item.mobileHidden ? " sidebar__link--desktop-only" : "")
+              }
               onClick={() => onSelect(item.key)}
               title={item.label}
             >
@@ -105,6 +110,7 @@ function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl
       </nav>
 
       <div className="sidebar__footer">
+        {bell}
         <ThemeToggle />
 
         <button

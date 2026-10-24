@@ -3271,3 +3271,396 @@
     animation: none;
   }
 }
+
+/* ---- Home status cards (curfew / booking / help) ------------------- */
+.home-status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.home-status__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.8rem;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-strong, var(--glass));
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-status__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary, var(--text-primary));
+}
+
+.home-status__value {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-status__hint {
+  max-width: 100%;
+  font-size: 0.74rem;
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Phone bottom bar: only the main tabs, all on one row, no scrolling. */
+@media (max-width: 720px) {
+  .sidebar .sidebar__link--desktop-only,
+  .sidebar--expanded .sidebar__link--desktop-only {
+    display: none;
+  }
+
+  /* Student side only — the warden has many more tabs, so its bar keeps
+     scrolling sideways with full-size buttons. */
+  .dashboard:not(.dashboard--console) .sidebar__nav {
+    justify-content: space-around;
+    overflow-x: visible;
+  }
+
+  .dashboard:not(.dashboard--console) .sidebar .sidebar__link,
+  .dashboard:not(.dashboard--console) .sidebar--expanded .sidebar__link {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .home-status {
+    gap: 0.5rem;
+  }
+
+  .home-status__tile {
+    padding: 0.65rem 0.55rem;
+  }
+
+  .home-status__label {
+    font-size: 0.72rem;
+  }
+
+  .home-status__value {
+    font-size: 0.7rem;
+    padding-left: 0.4rem;
+    padding-right: 0.45rem;
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .home-status__hint {
+    font-size: 0.68rem;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 360px) {
+  .home-status {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Notification bell ---------------------------------------------- */
+.notif-bell__icon {
+  position: relative;
+}
+
+.notif-bell__count {
+  position: absolute;
+  top: -0.45rem;
+  right: -0.6rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: #e5484d;
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1.15rem;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--app-bg, #111);
+}
+
+.notif-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  background: rgb(0 0 0 / 0.25);
+}
+
+.notif-panel {
+  position: fixed;
+  z-index: 150;
+  top: 1rem;
+  right: 1rem;
+  width: min(380px, calc(100vw - 2rem));
+  max-height: min(70vh, 560px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: var(--app-bg, #fff);
+  color: var(--text-primary);
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.35);
+  overflow: hidden;
+  animation: notif-in 0.18s ease both;
+}
+
+.notif-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notif-panel__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.notif-panel__enable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 14px;
+  background: rgb(var(--accent-rgb, 20 184 166) / 0.12);
+}
+
+.notif-panel__enable p,
+.notif-panel__note,
+.notif-panel__empty {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.notif-panel__note {
+  opacity: 0.8;
+}
+
+.notif-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.notif-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0.75rem 0.65rem 0.9rem;
+  border: 1px solid var(--glass-border);
+  border-left: 4px solid var(--notif-tone, var(--glass-border));
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notif-item:hover {
+  background: rgb(var(--ink, 0 0 0) / 0.06);
+}
+
+.notif-item--ok { --notif-tone: #30a46c; }
+.notif-item--warn { --notif-tone: #f5a524; }
+.notif-item--danger { --notif-tone: #e5484d; }
+.notif-item--neutral { --notif-tone: #8b8d98; }
+
+.notif-item--unread {
+  background: rgb(var(--accent-rgb, 20 184 166) / 0.1);
+}
+
+.notif-item__title {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.notif-item--unread .notif-item__title::after {
+  content: "";
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: 0.4rem;
+  border-radius: 50%;
+  background: #e5484d;
+  vertical-align: middle;
+}
+
+.notif-item__body {
+  font-size: 0.84rem;
+}
+
+.notif-item__time {
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+
+@keyframes notif-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notif-panel { animation: none; }
+}
+
+@media (max-width: 720px) {
+  .mobile-topbar__actions .notif-bell .theme-toggle__label {
+    display: none;
+  }
+
+  .notif-panel {
+    top: calc(3.6rem + env(safe-area-inset-top, 0px));
+    right: 0.6rem;
+    left: 0.6rem;
+    width: auto;
+    max-height: calc(100vh - 10rem);
+  }
+}
+
+.sidebar .notif-bell {
+  gap: 0.95rem;
+}
+
+/* ---- AI Predictions tab --------------------------------------------- */
+.predict-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.predict-how {
+  margin-top: auto;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.predict-how summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.predict-how p {
+  margin: 0.4rem 0 0;
+  line-height: 1.45;
+}
+
+.predict-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 1.1rem 1.2rem;
+  border-left: 4px solid var(--accent);
+}
+
+.predict-ai__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.predict-ai__head .list-row__meta {
+  margin: 0.2rem 0 0;
+}
+
+.predict-ai__answer p {
+  margin: 0 0 0.5rem;
+  line-height: 1.55;
+}
+
+.predict-ai__list {
+  margin: 0;
+  padding-left: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  line-height: 1.5;
+}
+
+.predict-facts,
+.predict-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.predict-facts li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px dashed var(--glass-border);
+  font-size: 0.9rem;
+}
+
+.predict-facts li:last-child {
+  border-bottom: 0;
+}
+
+.predict-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+}
+
+.predict-list .list-row__title,
+.predict-list .list-row__meta {
+  margin: 0;
+}
+
+.predict-list .badge {
+  flex-shrink: 0;
+}
+
+.stat-card .badge {
+  align-self: flex-start;
+  font-size: 0.74rem;
+}
+
+.chart-card-grid .predict-card {
+  align-self: start;
+}
+
+.predict-ai__head > div {
+  flex: 1 1 280px;
+}
+
+.predict-ai__head .primary-btn {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.predict-confidence,
+.predict-card .badge,
+.predict-ai .badge,
+.stat-card .badge {
+  text-transform: none;
+}

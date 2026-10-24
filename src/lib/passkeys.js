@@ -1,4 +1,4 @@
-// Fingerprint / Face / screen-lock sign-in using passkeys (WebAuthn).
+// Fingerprint sign-in using passkeys (WebAuthn).
 // The phone's own biometric prompt unlocks a key that never leaves the
 // device; the `passkey` Edge Function checks it server-side and then hands
 // back a one-time sign-in token, so a password isn't needed.

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "../dashboard.css";
 import "../student-theme.css";
 import { supabase } from "../lib/supabaseClient.js";
@@ -16,6 +16,9 @@ import { isStudentProfileComplete } from "../lib/studentProfile";
 import { mergeResidences } from "../lib/residences";
 import Toast from "../components/Toast.jsx";
 import { useToast } from "../hooks/useToast";
+import NotificationBell from "../components/dashboard/NotificationBell";
+import { useNotifications } from "../hooks/useNotifications";
+import { buildStudentNotifications } from "../lib/notifications";
 
 // NOTE: this assumes tables `profiles`, `rooms`, `bookings`, `complaints`,
 // `curfew_logs` and `announcements` exist in Supabase (the announcements
@@ -26,14 +29,17 @@ import { useToast } from "../hooks/useToast";
 
 // Labels/keys match the "Home" wireframe's sidebar + Quick Access section.
 // `icon` looks up a matching glyph in components/dashboard/icons.jsx.
+// `mobileHidden` items stay in the desktop sidebar but are left out of the
+// phone's bottom bar so it fits on one row (Home, Rooms, Complaint, Curfew).
+// On phones they're reached from the status cards on Home instead.
 const NAV_ITEMS = [
   { key: "overview", label: "Home", icon: "home" },
   { key: "rooms", label: "Rooms", icon: "rooms" },
-  { key: "bookings", label: "Status", icon: "status" },
+  { key: "bookings", label: "Status", icon: "status", mobileHidden: true },
   { key: "complaints", label: "Complaint", icon: "complaint" },
-  { key: "transport", label: "Transport", icon: "transport" },
+  { key: "transport", label: "Transport", icon: "transport", mobileHidden: true },
   { key: "curfew", label: "Curfew", icon: "curfew" },
-  { key: "help", label: "Help", icon: "help" },
+  { key: "help", label: "Help", icon: "help", mobileHidden: true },
 ];
 
 // PostgREST's "no rows" code — a brand-new account whose profile row hasn't
@@ -61,6 +67,12 @@ function StudentDashboard({ user, onLogout }) {
   const helpStatuses = useRef(null);
 
   const studentId = user?.id;
+
+  const notifItems = useMemo(
+    () => buildStudentNotifications({ bookings, complaints, helpTickets, announcements }),
+    [bookings, complaints, helpTickets, announcements]
+  );
+  const notif = useNotifications(studentId, notifItems, { ready: !loading });
 
   // Turns on the playful student theme (src/student-theme.css) while the
   // student dashboard is on screen. It sits on <html> so popups rendered
@@ -329,6 +341,7 @@ function StudentDashboard({ user, onLogout }) {
           avatarUrl={profile?.avatar_url}
           onLogout={onLogout}
           onProfile={() => setActiveTab("profile")}
+          bell={<NotificationBell notif={notif} onNavigate={setActiveTab} />}
         />
         <main className="dashboard__content">
           {loading ? (

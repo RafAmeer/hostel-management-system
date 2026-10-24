@@ -16,12 +16,18 @@ import WardenAnnouncementsTab from "../components/dashboard/WardenAnnouncementsT
 import StudentsTab from "../components/dashboard/StudentsTab";
 import WardenTransportTab from "../components/dashboard/WardenTransportTab";
 import WardenHelpTab from "../components/dashboard/WardenHelpTab";
+import WardenPredictionsTab from "../components/dashboard/WardenPredictionsTab";
+import { buildPredictions, predictionsForAi } from "../lib/predictions";
 import Toast from "../components/Toast";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { useToast } from "../hooks/useToast";
+import NotificationBell from "../components/dashboard/NotificationBell";
+import { useNotifications } from "../hooks/useNotifications";
+import { buildWardenNotifications } from "../lib/notifications";
 
 const NAV_ITEMS = [
   { key: "overview", label: "Overview", icon: "overview" },
+  { key: "predictions", label: "AI Predictions", icon: "analytics" },
   { key: "bookings", label: "Room Bookings", icon: "status" },
   { key: "students", label: "Students", icon: "students" },
   { key: "hostels", label: "Hostels & Rooms", icon: "rooms" },
@@ -101,6 +107,33 @@ function WardenDashboard({ user, onLogout }) {
     () => buildHostelAnalytics({ bookings, complaints, curfewStatuses, rooms, students, periodDays }),
     [bookings, complaints, curfewStatuses, rooms, students, periodDays]
   );
+
+  // Forecasts are also handed to the AI chat bubble, so the warden can ask
+  // things like "how many complaints are expected next week?".
+  const chatStats = useMemo(
+    () => ({
+      ...analytics,
+      predictions: predictionsForAi(buildPredictions({ bookings, complaints, rooms, students, curfewLogs })),
+    }),
+    [analytics, bookings, complaints, rooms, students, curfewLogs]
+  );
+
+  const notifItems = useMemo(
+    () => buildWardenNotifications({ bookings, complaints, helpTickets, students }),
+    [bookings, complaints, helpTickets, students]
+  );
+  const notif = useNotifications(user?.id, notifItems, { ready: !loading });
+
+  // Background refresh for the bell: new booking requests and complaints
+  // appear without the warden reloading the page.
+  const loadInbox = async () => {
+    const [b, c] = await Promise.all([
+      supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+      supabase.from("complaints").select("*").order("created_at", { ascending: false }),
+    ]);
+    if (b.data) setBookings(b.data);
+    if (c.data) setComplaints(c.data);
+  };
 
   const loadAnnouncements = async () => {
     const { data } = await supabase
@@ -187,10 +220,16 @@ function WardenDashboard({ user, onLogout }) {
   useEffect(() => {
     loadAll();
     // New student help requests show up without a manual refresh.
+    // Keeps polling while the app is in the background too, so the phone
+    // notification can still fire.
     const id = setInterval(() => {
-      if (document.visibilityState === "visible") loadHelp();
+      loadHelp();
     }, 15000);
-    return () => clearInterval(id);
+    const inbox = setInterval(loadInbox, 30000);
+    return () => {
+      clearInterval(id);
+      clearInterval(inbox);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -308,6 +347,17 @@ function WardenDashboard({ user, onLogout }) {
 
   const renderTab = () => {
     switch (activeTab) {
+      case "predictions":
+        return (
+          <WardenPredictionsTab
+            bookings={bookings}
+            complaints={complaints}
+            rooms={rooms}
+            students={students}
+            curfewLogs={curfewLogs}
+            onNavigate={setActiveTab}
+          />
+        );
       case "bookings":
         return <WardenBookingsTab bookings={bookings} onApprove={handleApprove} onReject={handleReject} />;
       case "students":
@@ -395,6 +445,7 @@ function WardenDashboard({ user, onLogout }) {
         brand="DormSphere"
         avatarUrl={profile?.avatar_url}
         onLogout={onLogout}
+        bell={<NotificationBell notif={notif} onNavigate={setActiveTab} />}
       />
       <main className="dashboard__content">
         {loading ? (
@@ -409,7 +460,7 @@ function WardenDashboard({ user, onLogout }) {
 
       {/* AI-assisted analytics per the proposal — a chat bubble the warden
           can open from any tab, rather than a panel fixed to Overview. */}
-      {!loading && <HostelChatbot stats={analytics} />}
+      {!loading && <HostelChatbot stats={chatStats} />}
     </div>
   );
 }

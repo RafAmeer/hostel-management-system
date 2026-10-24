@@ -47,6 +47,47 @@ function OverviewTab({
   const myTrips = scopeSchedule(schedule, transportScope);
   const answeredHelp = helpTickets.filter((t) => t.status === "answered").length;
   const firstName = (profile?.full_name ?? "Student").split(" ")[0];
+  const openHelp = helpTickets.filter((t) => t.status === "open").length;
+  const latestBooking = approvedBooking ?? pendingBooking ?? bookings[0];
+
+  // At-a-glance status cards. On phones these replace the Status and Help
+  // tabs that were dropped from the bottom bar, so each card opens its page.
+  // Short time for the small cards: "9:41 PM" today, otherwise "24 Oct".
+  const shortWhen = (iso) => {
+    const d = new Date(iso);
+    return d.toDateString() === new Date().toDateString()
+      ? d.toLocaleTimeString("en-MY", { hour: "numeric", minute: "2-digit" })
+      : d.toLocaleDateString("en-MY", { day: "numeric", month: "short" });
+  };
+
+  const curfewTile = !lastScan
+    ? { value: "No scans yet", hint: "Scan at the entrance", tone: "neutral" }
+    : lastScan.scan_type === "check_out"
+    ? { value: "Checked out", hint: `Since ${shortWhen(lastScan.timestamp)}`, tone: "warn" }
+    : { value: "In hostel", hint: `Since ${shortWhen(lastScan.timestamp)}`, tone: "ok" };
+
+  const BOOKING_TEXT = { approved: "Approved", pending: "Pending", rejected: "Rejected", cancelled: "Cancelled" };
+  const BOOKING_TONE = { approved: "ok", pending: "warn", rejected: "danger", cancelled: "neutral" };
+  const bookingTile = latestBooking
+    ? {
+        value: BOOKING_TEXT[latestBooking.status] ?? latestBooking.status,
+        hint: latestBooking.room_number ? `Room ${latestBooking.room_number}` : "Room request",
+        tone: BOOKING_TONE[latestBooking.status] ?? "neutral",
+      }
+    : { value: "No booking", hint: "Find a room", tone: "neutral" };
+
+  const helpTile =
+    answeredHelp > 0
+      ? { value: `${answeredHelp} repl${answeredHelp > 1 ? "ies" : "y"}`, hint: "From the warden", tone: "ok" }
+      : openHelp > 0
+      ? { value: `${openHelp} open`, hint: "Waiting for warden", tone: "warn" }
+      : { value: "Ask us", hint: "Questions & support", tone: "neutral" };
+
+  const statusTiles = [
+    { key: "curfew", label: "Curfew", emoji: "🌙", ...curfewTile },
+    { key: "bookings", label: "Booking status", emoji: "📋", ...bookingTile },
+    { key: "help", label: "Help Center", emoji: "💬", ...helpTile },
+  ];
 
   const quickAccessItems = [
     { key: "rooms", label: "Find a room", emoji: "🛏️" },
@@ -158,6 +199,23 @@ function OverviewTab({
                 : "No room yet. Let's find you one!"}
             </span>
           </div>
+        </section>
+
+        <section className="home-status" aria-label="Your status">
+          {statusTiles.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              className={"home-status__tile home-status__tile--" + t.key}
+              onClick={() => onNavigate?.(t.key)}
+            >
+              <span className="home-status__label">
+                <span aria-hidden="true">{t.emoji}</span> {t.label}
+              </span>
+              <span className={"badge badge--" + t.tone + " home-status__value"}>{t.value}</span>
+              <span className="home-status__hint">{t.hint}</span>
+            </button>
+          ))}
         </section>
 
         <AnnouncementsPanel announcements={announcements} />

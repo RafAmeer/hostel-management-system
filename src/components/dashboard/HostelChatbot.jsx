@@ -12,6 +12,8 @@ const SUGGESTED_QUESTIONS = [
   "What's the top complaint category right now?",
   "How many students are currently outside past curfew?",
   "How do bookings compare to the previous period?",
+  "How many complaints do you predict for next week?",
+  "Which rooms are likely to need maintenance soon?",
 ];
 
 // Floating chat-bubble launcher (bottom-right, like a typical support

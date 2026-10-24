@@ -15,12 +15,13 @@ import { callFunction } from "./callFunction.js";
 const CACHE_KEY = "hostel-ai-answer-cache-v1";
 const MAX_CACHED = 50;
 
-export async function askHostelAssistant(question, stats) {
+// `extra` is sent along with the request, e.g. { mode: "predictions" }.
+export async function askHostelAssistant(question, stats, extra = {}) {
   const key = normalize(question);
   const statsHash = hashStats(stats);
 
   try {
-    const data = await callFunction("ai-summary", { question, stats }, { timeoutMs: 40000 });
+    const data = await callFunction("ai-summary", { question, stats, ...extra }, { timeoutMs: 40000 });
     const answer = data?.answer ?? data?.summary;
     if (answer) saveAnswer(key, statsHash, answer);
     return answer;

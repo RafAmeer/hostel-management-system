@@ -1166,3 +1166,48 @@
 :root.student-fun[data-theme="light"] .panel-form select {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%232b2340' stroke-width='2' fill='none'/></svg>");
 }
+
+/* ---------- Home status cards ---------------------------------------- */
+:root.student-fun .home-status__tile {
+  border: 2px solid var(--fun-line);
+  border-radius: 18px;
+  background: var(--tile, var(--fun-sky));
+  color: #1a1430;
+  box-shadow: 3px 3px 0 var(--fun-pop);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+}
+:root.student-fun .home-status__tile--curfew { --tile: var(--fun-lilac); }
+:root.student-fun .home-status__tile--bookings { --tile: var(--fun-sun); }
+:root.student-fun .home-status__tile--help { --tile: var(--fun-mint); }
+:root.student-fun .home-status__label {
+  color: #1a1430;
+  font-family: "Fredoka", "Nunito", sans-serif;
+  font-weight: 600;
+}
+:root.student-fun .home-status__hint { color: #1a1430; }
+:root.student-fun .home-status__tile:hover {
+  transform: translate(-2px, -3px);
+  box-shadow: 5px 6px 0 var(--fun-pop);
+}
+:root.student-fun .home-status__tile:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--fun-pop);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root.student-fun .home-status__tile { transition: none; transform: none !important; }
+}
+
+/* ---------- Notification panel ---------------------------------------- */
+:root.student-fun .notif-panel {
+  border: 2px solid var(--fun-line);
+  border-radius: 22px;
+  box-shadow: 5px 5px 0 var(--fun-pop);
+}
+:root.student-fun .notif-panel__title {
+  font-family: "Fredoka", "Nunito", sans-serif;
+}
+:root.student-fun .notif-item {
+  border: 2px solid var(--fun-line);
+  border-left: 6px solid var(--notif-tone);
+  border-radius: 14px;
+}

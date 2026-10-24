@@ -283,6 +283,15 @@ export function FingerprintIcon(props) {
   );
 }
 
+export function BellIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M6 9.5a6 6 0 0 1 12 0c0 3.6 1.2 5.6 2 6.5H4c.8-.9 2-2.9 2-6.5Z" />
+      <path d="M10 19.5a2.2 2.2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
 export const NAV_ICONS = {
   help: HelpIcon,
   home: HomeIcon,

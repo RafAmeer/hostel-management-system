@@ -13,7 +13,7 @@ function guessDeviceName() {
   return "This device";
 }
 
-// Profile → "Fingerprint / Face sign-in" settings.
+// Profile → "Fingerprint sign-in" settings.
 function BiometricCard() {
   const [keys, setKeys] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -33,8 +33,8 @@ function BiometricCard() {
   if (!passkeysSupported()) {
     return (
       <section className="glass-panel biometric-card">
-        <h3 className="panel-heading">Fingerprint / Face sign-in</h3>
-        <p className="list-row__meta">This browser doesn't support passkeys. Try Chrome, Safari or Edge on a phone or laptop with a screen lock.</p>
+        <h3 className="panel-heading">Fingerprint sign-in</h3>
+        <p className="list-row__meta">This browser doesn't support passkeys. Try Chrome, Safari or Edge on a phone or laptop with a fingerprint sensor.</p>
       </section>
     );
   }
@@ -44,7 +44,7 @@ function BiometricCard() {
     setMsg({ text: "", tone: "info" });
     try {
       await registerPasskey(guessDeviceName());
-      setMsg({ text: "Done. Next time use “Sign in with fingerprint / face” on the login page.", tone: "info" });
+      setMsg({ text: "Done. Next time use “Sign in with fingerprint” on the login page.", tone: "info" });
       await refresh();
     } catch (e) {
       setMsg({ text: e.message, tone: "error" });
@@ -63,9 +63,9 @@ function BiometricCard() {
 
   return (
     <section className="glass-panel biometric-card">
-      <h3 className="panel-heading">Fingerprint / Face sign-in</h3>
+      <h3 className="panel-heading">Fingerprint sign-in</h3>
       <p className="list-row__meta">
-        Sign in with your phone's fingerprint, face or screen lock instead of typing your password. Your biometric
+        Sign in with your fingerprint instead of typing your password. Your fingerprint
         never leaves the phone.
       </p>
       {msg.text && (
