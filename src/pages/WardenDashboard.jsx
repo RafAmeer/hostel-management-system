@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "../dashboard.css";
+import "../warden-console.css";
 import { supabase } from "../lib/supabaseClient.js";
 import Sidebar from "../components/dashboard/SideBar.jsx";
 import WardenOverviewTab from "../components/dashboard/WardenOverviewTab";
@@ -377,19 +378,21 @@ function WardenDashboard({ user, onLogout }) {
             students={students}
             curfewLogs={curfewLogs}
             residences={mergeResidences(hostels)}
+            wardenName={profile?.full_name}
           />
         );
     }
   };
 
   return (
-    <div className="dashboard">
+    <div className="dashboard dashboard--console">
       <Sidebar
         navItems={navItems}
         activeTab={activeTab}
         onSelect={setActiveTab}
         userName={profile?.full_name ?? user?.email ?? "Warden"}
         roleLabel="Warden"
+        brand="DormSphere"
         avatarUrl={profile?.avatar_url}
         onLogout={onLogout}
       />

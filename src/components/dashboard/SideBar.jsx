@@ -10,7 +10,9 @@ import ThemeToggle from "../ThemeToggle.jsx";
 // narrow screens does it start as the icon rail, so it doesn't cover the page.
 const NARROW_SCREEN_PX = 720;
 
-function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl, onLogout, onProfile }) {
+// `brand` (optional) shows a small logo + product name at the top — only the
+// warden dashboard passes it, so the other dashboards are unchanged.
+function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl, onLogout, onProfile, brand }) {
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== "undefined" && window.innerWidth < NARROW_SCREEN_PX
   );
@@ -50,6 +52,12 @@ function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl
       </header>
 
     <aside className={"sidebar" + (collapsed ? "" : " sidebar--expanded")}>
+      {brand && (
+        <div className="sidebar__brand-row">
+          <img className="sidebar__brand-logo" src="/logo.png" alt="" />
+          <span className="sidebar__brand-name">{brand}</span>
+        </div>
+      )}
       <button
         type="button"
         className={"sidebar__who" + (profileActive ? " sidebar__who--active" : "")}

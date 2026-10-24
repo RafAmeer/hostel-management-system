@@ -44,6 +44,7 @@ function WardenOverviewTab({
   students,
   curfewLogs,
   residences,
+  wardenName,
 }) {
   const periodDays = period === "all" ? null : Number(period);
 
@@ -233,21 +234,34 @@ function WardenOverviewTab({
     { label: "Bookings", value: analytics.totals.bookings, trend: trendLabel(analytics.trends?.bookings) },
     { label: "Complaints", value: analytics.totals.complaints, trend: trendLabel(analytics.trends?.complaints) },
     {
-      label: "Top Category",
+      label: "Top category",
       value: analytics.topComplaintCategory
         ? `${analytics.topComplaintCategory.category} (${analytics.topComplaintCategory.count})`
         : "—",
     },
-    { label: "Students Currently Out", value: studentsOut },
-    { label: "Overdue Curfews", value: overdue },
+    { label: "Students currently out", value: studentsOut },
+    { label: "Overdue curfews", value: overdue },
   ];
+
+  // "Good afternoon, Ain" — skips a leading title such as Mr / Ms / Mdm / Dr.
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const nameParts = (wardenName ?? "").trim().split(/\s+/).filter(Boolean);
+  if (nameParts.length > 1 && /^(mr|mrs|ms|mdm|miss|dr|prof|encik|en|puan|pn|cik)\.?$/i.test(nameParts[0])) {
+    nameParts.shift();
+  }
+  const firstName = nameParts[0];
 
   return (
     <div className="tab">
       <div className="tab__title-row">
-        <h2 className="tab__title">Overview</h2>
+        <h2 className="tab__title">
+          {greeting}
+          {firstName ? `, ${firstName}` : ""}
+        </h2>
         <ReportExportButton buildReport={() => buildWardenReport(analytics, periodLabel, model)} />
       </div>
+      <p className="tab__lede">Here's how the hostels are doing.</p>
 
       <div className="stat-grid">
         <div className="stat-card">

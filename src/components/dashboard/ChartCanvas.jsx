@@ -33,8 +33,12 @@ Chart.register(
 
 // Reads the app's current theme tokens (dashboard.css) so every chart
 // follows light/dark mode instead of using fixed colours.
-function readTheme() {
-  const css = getComputedStyle(document.documentElement);
+// Reads from the dashboard element (where the theme tokens are actually
+// set) so each dashboard's own palette — e.g. the warden Console theme —
+// is what the charts use.
+function readTheme(el) {
+  const host = el?.closest(".dashboard") ?? document.querySelector(".dashboard") ?? document.documentElement;
+  const css = getComputedStyle(host);
   const v = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
   const ink = v("--ink", "255 255 255").split(/\s+/).join(",");
   return {
@@ -142,7 +146,7 @@ function ChartCanvas({ type, data, height = 260, ariaLabel, legend, stacked, hor
 
   useEffect(() => {
     if (!canvasRef.current) return undefined;
-    const colours = readTheme();
+    const colours = readTheme(canvasRef.current);
     const chart = new Chart(canvasRef.current, {
       type,
       data: paint(type, data, colours),
