@@ -104,9 +104,17 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+    // Pass the token explicitly (the recommended pattern for Edge Functions)
+    // and include Supabase's reason in the error, e.g. "token is expired",
+    // so a failure on another device can be diagnosed from the message.
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !userData?.user) {
-      return jsonResponse({ error: "Not authenticated" }, 401);
+      console.warn("ai-summary: auth rejected:", userError?.message);
+      return jsonResponse(
+        { error: `Not authenticated${userError?.message ? ` (${userError.message})` : ""}` },
+        401
+      );
     }
 
     const { stats, question } = await req.json();

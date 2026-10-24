@@ -15,7 +15,25 @@ import { supabase } from "./supabaseClient.js";
 //   - the function itself crashed (we return its own JSON error text)
 const DEFAULT_TIMEOUT_MS = 25000;
 
-export async function callFunction(name, body = {}, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+export async function callFunction(name, body = {}, options = {}) {
+  try {
+    return await callFunctionOnce(name, body, options);
+  } catch (err) {
+    // "Not authenticated" usually means the login token the browser sent
+    // was already expired on Supabase's side — e.g. the laptop's clock is
+    // wrong, so supabase-js thought the token was still fresh and didn't
+    // refresh it, or the laptop woke from sleep. Get a fresh token once
+    // and retry before giving up.
+    if (err?.status !== 401 || !/not authenticated/i.test(err.message)) throw err;
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error || !data?.session) {
+      throw new Error("Your login session has expired. Please sign out and sign in again.", { cause: err });
+    }
+    return await callFunctionOnce(name, body, options);
+  }
+}
+
+async function callFunctionOnce(name, body = {}, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   let result;
   try {
     result = await supabase.functions.invoke(name, { body, timeout: timeoutMs });
@@ -47,7 +65,11 @@ export async function callFunction(name, body = {}, { timeoutMs = DEFAULT_TIMEOU
           `The "${name}" edge function rejected the request (invalid JWT). Redeploy it: supabase functions deploy ${name} --no-verify-jwt`
         );
       }
-      throw new Error(detail || `The "${name}" edge function returned an error${status ? ` (${status})` : ""}.`);
+      const httpErr = new Error(
+        detail || `The "${name}" edge function returned an error${status ? ` (${status})` : ""}.`
+      );
+      httpErr.status = status;
+      throw httpErr;
     }
     if (error.name === "FunctionsRelayError") {
       throw new Error(`Supabase couldn't start the "${name}" edge function. Check its logs in the dashboard.`);
