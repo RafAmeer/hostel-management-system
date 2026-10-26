@@ -506,7 +506,7 @@ function MainApp() {
 
       <div className="container">
         <form className="card card--enter" onSubmit={handleSubmit}>
-          <img src="/logo.png" alt="" className="avatar" aria-hidden="true" />
+          <img src={assetUrl("logo.png")} alt="" className="avatar" aria-hidden="true" />
           <p className="brand-name">DormSphere</p>
           <h1 className="title">
             {mode === "forgot"

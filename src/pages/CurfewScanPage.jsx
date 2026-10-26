@@ -256,7 +256,7 @@ function Shell({ title, subtitle, children }) {
       <div className="scrim" />
       <div className="container">
         <div className="card">
-          <img src="/logo.png" alt="" className="avatar" aria-hidden="true" />
+          <img src={assetUrl("logo.png")} alt="" className="avatar" aria-hidden="true" />
           <p className="brand-name">DormSphere</p>
           <h1 className="title">{title}</h1>
           {subtitle && <p className="subtitle">{subtitle}</p>}

@@ -1,6 +1,9 @@
+import { assetUrl } from "../../lib/assetUrl";
 import { useState } from "react";
 import { LogoutIcon, UserIcon, NAV_ICONS } from "./icons.jsx";
 import ThemeToggle from "../ThemeToggle.jsx";
+import MobileShell from "./MobileShell.jsx";
+import "../../mobile.css";
 
 // navItems is passed in by each dashboard (Student/Warden) instead of being
 // hardcoded here, so this one Sidebar works for both roles. Each item can
@@ -23,39 +26,30 @@ function Sidebar({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl
   // The signed-in person's name is the way into Profile settings (there is
   // no separate Profile tab). Shows their photo if they uploaded one — no
   // placeholder circle otherwise.
+  // On phones the desktop sidebar is hidden and MobileShell (app bar on
+  // top, tab bar at the bottom, "More" sheet) takes over instead.
   const photo = (size) => (
     <img className="avatar-img" src={avatarUrl} alt="" style={{ width: size, height: size }} />
   );
 
   return (
     <>
-      {/* Phone layout: a slim top bar (name -> profile, theme, log out); the
-          tabs sit in a bottom bar. Hidden on larger screens. */}
-      <header className="mobile-topbar">
-        <button
-          type="button"
-          className={"mobile-topbar__user" + (profileActive ? " mobile-topbar__user--active" : "")}
-          onClick={openProfile}
-          aria-label="Open profile settings"
-        >
-          {avatarUrl ? photo(28) : <UserIcon aria-hidden="true" />}
-          <span className="mobile-topbar__name">{userName}</span>
-        </button>
-        <div className="mobile-topbar__actions">
-          {bell}
-          <ThemeToggle />
-          <button type="button" className="theme-toggle mobile-topbar__logout" onClick={onLogout} aria-label="Log out">
-            <span className="theme-toggle__icon" aria-hidden="true">
-              <LogoutIcon />
-            </span>
-          </button>
-        </div>
-      </header>
+      <MobileShell
+        navItems={navItems}
+        activeTab={activeTab}
+        onSelect={onSelect}
+        userName={userName}
+        roleLabel={roleLabel}
+        avatarUrl={avatarUrl}
+        onLogout={onLogout}
+        onProfile={openProfile}
+        bell={bell}
+      />
 
     <aside className={"sidebar" + (collapsed ? "" : " sidebar--expanded")}>
       {brand && (
         <div className="sidebar__brand-row">
-          <img className="sidebar__brand-logo" src="/logo.png" alt="" />
+          <img className="sidebar__brand-logo" src={assetUrl("logo.png")} alt="" />
           <span className="sidebar__brand-name">{brand}</span>
         </div>
       )}

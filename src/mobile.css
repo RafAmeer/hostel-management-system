@@ -1,0 +1,751 @@
+/* ======================================================================
+   Phone layout (≤ 720px) — shared by every dashboard
+   ----------------------------------------------------------------------
+   Makes the signed-in screens behave like a normal phone app:
+     • app bar on top (logo → page title when you scroll, bell, avatar)
+     • tab bar at the bottom (4 main tabs + "More")
+     • "More" opens a bottom sheet (other pages, dark mode, log out)
+     • popups (hostel details, notifications, AI chat) slide up from the
+       bottom as sheets instead of floating in the middle
+   Loaded after dashboard.css / student-theme.css / warden-console.css
+   (imported by SideBar.jsx), so it wins over their older phone rules.
+   The desktop sidebar is untouched above 720px.
+   ====================================================================== */
+
+/* Hidden on desktop / tablet. */
+.m-appbar,
+.m-tabbar,
+.m-sheet,
+.m-sheet-backdrop {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --m-bar-h: 56px;
+    --m-tab-h: 64px;
+    --m-safe-top: env(safe-area-inset-top, 0px);
+    --m-safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  html,
+  body {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* The desktop sidebar (and the old phone top bar) step aside. */
+  .dashboard .sidebar,
+  .dashboard .sidebar--expanded,
+  .mobile-topbar {
+    display: none !important;
+  }
+
+  .dashboard {
+    flex-direction: column;
+  }
+
+  /* `overflow: hidden` on the page wrapper would stop the app bar from
+     sticking to the top; `clip` still prevents sideways scrolling. */
+  .page.page--app {
+    overflow: visible;
+    overflow-x: clip;
+  }
+
+  .dashboard__content,
+  .dashboard.dashboard--console .dashboard__content {
+    padding: 0.25rem 1rem calc(var(--m-tab-h) + var(--m-safe-bottom) + 1.5rem);
+    overflow: visible;
+  }
+
+  /* ---- App bar ------------------------------------------------------ */
+  .m-appbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    height: calc(var(--m-bar-h) + var(--m-safe-top));
+    padding: var(--m-safe-top) 0.5rem 0 1rem;
+    /* Solid, not blurred: a backdrop-filter here would trap the
+       notification sheet (opened from the bell inside this bar). */
+    background: var(--app-bg);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  /* The notification list opens from the bell inside this bar, so lift
+     the bar over the tab bar and AI button while it's open. */
+  .m-appbar:has(.notif-panel) {
+    z-index: 80;
+  }
+
+  .m-appbar--scrolled {
+    border-bottom-color: var(--glass-border);
+    box-shadow: 0 1px 10px rgb(0 0 0 / 0.06);
+  }
+
+  .m-appbar__lead {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+  }
+
+  .m-appbar__brand,
+  .m-appbar__title {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .m-appbar__brand {
+    gap: 0.5rem;
+  }
+
+  .m-appbar__logo {
+    width: 30px;
+    height: 30px;
+    padding: 3px;
+    border-radius: 50%;
+    background: #fff;
+    object-fit: contain;
+  }
+
+  .m-appbar__brand-name {
+    font-size: 1.08rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+  }
+
+  .m-appbar__title {
+    opacity: 0;
+    transform: translateY(6px);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+  }
+
+  .m-appbar--scrolled .m-appbar__brand {
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+  }
+
+  .m-appbar--scrolled .m-appbar__title {
+    opacity: 1;
+    transform: none;
+  }
+
+  .m-appbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    flex-shrink: 0;
+  }
+
+  /* Bell: a plain round icon button. */
+  .m-appbar__actions .theme-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+  }
+
+  .m-appbar__actions .theme-toggle__label {
+    display: none;
+  }
+
+  .m-appbar__actions .theme-toggle:active {
+    background: rgb(var(--ink) / 0.1);
+  }
+
+  /* Avatar → Profile */
+  .m-avatar {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .m-avatar__img,
+  .m-avatar__initial {
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 800;
+    font-size: 0.95rem;
+    box-shadow: 0 0 0 2px var(--app-bg), 0 0 0 3px transparent;
+    transition: box-shadow 0.15s ease;
+  }
+
+  .m-avatar--active .m-avatar__img,
+  .m-avatar--active .m-avatar__initial {
+    box-shadow: 0 0 0 2px var(--app-bg), 0 0 0 4px var(--accent);
+  }
+
+  /* ---- Bottom tab bar ---------------------------------------------- */
+  .m-tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    height: calc(var(--m-tab-h) + var(--m-safe-bottom));
+    padding: 0 0.25rem var(--m-safe-bottom);
+    background: color-mix(in srgb, var(--glass) 90%, transparent);
+    backdrop-filter: saturate(1.6) blur(18px);
+    -webkit-backdrop-filter: saturate(1.6) blur(18px);
+    border-top: 1px solid var(--glass-border);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .m-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .m-tab__pill {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 30px;
+    border-radius: 999px;
+    font-size: 1.3rem;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+  }
+
+  .m-tab:active .m-tab__pill {
+    transform: scale(0.92);
+  }
+
+  .m-tab__label {
+    max-width: 100%;
+    padding: 0 2px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .m-tab--active {
+    color: var(--text-primary);
+  }
+
+  .m-tab--active .m-tab__pill {
+    background: rgb(var(--accent-rgb) / 0.22);
+    color: var(--accent);
+  }
+
+  .m-tab--active .m-tab__label {
+    font-weight: 800;
+  }
+
+  .m-tab__badge {
+    position: absolute;
+    top: -3px;
+    left: calc(50% + 6px);
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--danger, #e5484d);
+    color: #fff;
+    font-size: 0.66rem;
+    font-weight: 800;
+    line-height: 18px;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--glass);
+  }
+
+  .m-tab__badge--inline {
+    position: static;
+    margin-left: auto;
+    box-shadow: none;
+  }
+
+  /* ---- "More" bottom sheet ----------------------------------------- */
+  .m-sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgb(0 0 0 / 0.42);
+    animation: m-fade 0.2s ease both;
+  }
+
+  .m-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 61;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    max-height: 86vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.5rem 1rem calc(1rem + var(--m-safe-bottom));
+    border-radius: 22px 22px 0 0;
+    background: var(--app-bg);
+    color: var(--text-primary);
+    box-shadow: 0 -10px 40px rgb(0 0 0 / 0.3);
+    animation: m-sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+
+  .m-sheet__grabber {
+    align-self: center;
+    width: 38px;
+    height: 5px;
+    margin-bottom: 0.2rem;
+    border-radius: 999px;
+    background: rgb(var(--ink) / 0.25);
+  }
+
+  .m-sheet__profile {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    width: 100%;
+    padding: 0.85rem;
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    background: var(--glass);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .m-sheet__profile-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .m-sheet__profile-name {
+    font-weight: 800;
+    font-size: 1.02rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .m-sheet__profile-hint {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .m-sheet__group {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    background: var(--glass);
+    overflow: hidden;
+  }
+
+  .m-sheet__group li + li {
+    border-top: 1px solid var(--glass-border);
+  }
+
+  .m-sheet__row {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    width: 100%;
+    min-height: 54px;
+    padding: 0 1rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.98rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .m-sheet__row:active,
+  .m-sheet__profile:active {
+    background: rgb(var(--ink) / 0.08);
+  }
+
+  .m-sheet__row--active {
+    color: var(--accent);
+  }
+
+  .m-sheet__row--danger {
+    color: var(--danger);
+  }
+
+  .m-sheet__icon {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: rgb(var(--accent-rgb) / 0.16);
+    color: var(--accent);
+    font-size: 1.1rem;
+  }
+
+  .m-sheet__row--danger .m-sheet__icon {
+    background: rgb(var(--danger-rgb, 229 72 77) / 0.14);
+    color: var(--danger);
+  }
+
+  .m-sheet__label {
+    flex: 1;
+  }
+
+  .m-sheet__chev {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+  }
+
+  /* iOS-style switch */
+  .m-switch {
+    position: relative;
+    width: 46px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: rgb(var(--ink) / 0.22);
+    transition: background-color 0.2s ease;
+  }
+
+  .m-switch::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+    transition: transform 0.2s ease;
+  }
+
+  .m-switch--on {
+    background: var(--accent);
+  }
+
+  .m-switch--on::after {
+    transform: translateX(18px);
+  }
+
+  /* ---- Page content -------------------------------------------------- */
+
+  /* Big page heading under the app bar (iPhone "large title"). */
+  .dashboard .tab__title,
+  :root.student-fun .dashboard .tab__title,
+  .dashboard.dashboard--console .tab__title {
+    margin-top: 0.25rem;
+    font-size: 1.85rem;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .dashboard .tab__title-row {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .dashboard .glass-panel {
+    padding: 1rem;
+    border-radius: 18px;
+  }
+
+  .dashboard .tab {
+    gap: 1rem;
+  }
+
+  /* Comfortable thumb-sized controls. */
+  .dashboard .primary-btn,
+  .dashboard .btn-outline {
+    min-height: 48px;
+  }
+
+  .dashboard .panel-form .primary-btn,
+  .dashboard form .primary-btn[type="submit"] {
+    width: 100%;
+  }
+
+  .dashboard input,
+  .dashboard select,
+  .dashboard textarea {
+    min-height: 48px;
+    font-size: 16px; /* stops iOS zooming into the field */
+  }
+
+  .dashboard textarea {
+    min-height: 110px;
+  }
+
+  /* Rows of buttons inside list cards share the width evenly. */
+  .dashboard .list-row__actions {
+    width: 100%;
+  }
+
+  .dashboard .list-row__actions > .primary-btn,
+  .dashboard .list-row__actions > .btn-outline {
+    flex: 1 1 0;
+  }
+
+  .dashboard img {
+    max-width: 100%;
+  }
+
+  /* Wide tables scroll sideways inside their card, not the whole page. */
+  .dashboard table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ---- Popups become bottom sheets ---------------------------------- */
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal-backdrop .modal {
+    max-width: none;
+    max-height: 92vh;
+    padding-bottom: calc(1.25rem + var(--m-safe-bottom));
+    border-radius: 22px 22px 0 0;
+    overscroll-behavior: contain;
+    animation: m-sheet-up 0.3s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+
+  .notif-backdrop {
+    background: rgb(0 0 0 / 0.42);
+    animation: m-fade 0.2s ease both;
+  }
+
+  .notif-panel,
+  :root.student-fun .notif-panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 80vh;
+    padding: 1rem 1rem calc(1rem + var(--m-safe-bottom));
+    border-radius: 22px 22px 0 0;
+    animation: m-sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+
+  .notif-panel::before {
+    content: "";
+    align-self: center;
+    width: 38px;
+    height: 5px;
+    margin: -0.4rem 0 0.2rem;
+    border-radius: 999px;
+    background: rgb(var(--ink) / 0.25);
+  }
+
+  /* Toasts: keep dashboard.css's slim pill anchored above the tab bar.
+     (Never give it a `top` here as well — with both top and bottom set a
+     fixed element stretches into a huge box.) */
+  .app-toast {
+    top: auto;
+    bottom: calc(var(--m-tab-h) + var(--m-safe-bottom) + 0.75rem);
+  }
+
+  /* AI assistant: button floats above the tab bar, chat opens full-height. */
+  .ai-chat-widget,
+  .dashboard--console .ai-chat-widget {
+    right: 1rem;
+    bottom: calc(var(--m-tab-h) + var(--m-safe-bottom) + 0.85rem);
+    z-index: 44;
+  }
+
+  /* Lift the whole widget above the tab bar while the chat is open. */
+  .ai-chat-widget:has(.ai-chat-widget__panel) {
+    z-index: 70;
+  }
+
+  .ai-chat-widget__panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 70;
+    width: auto;
+    height: 88vh;
+    max-height: 88vh;
+    border-radius: 22px 22px 0 0;
+    padding-bottom: calc(1rem + var(--m-safe-bottom));
+    display: flex;
+    flex-direction: column;
+    animation: m-sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+
+  .ai-chat-widget__panel .ai-chat__messages {
+    flex: 1;
+    max-height: none;
+  }
+
+  /* Touch screens have no hover — stop cards "sticking" lifted after a tap. */
+  @media (hover: none) {
+    :root.student-fun .primary-btn:hover:not(:disabled),
+    :root.student-fun .btn-outline:hover,
+    :root.student-fun .quick-access__btn:hover,
+    :root.student-fun .list-row:hover,
+    :root.student-fun .residence-card:hover,
+    :root.student-fun .floor-card:hover,
+    :root.student-fun .home-status__tile:hover,
+    .ai-chat-widget__bubble:hover {
+      transform: none;
+    }
+  }
+
+  /* ---- Student "Sunny Dorm" flavour -------------------------------- */
+  :root.student-fun .m-appbar__brand-name,
+  :root.student-fun .m-appbar__title,
+  :root.student-fun .m-tab__label,
+  :root.student-fun .m-sheet__profile-name {
+    font-family: "Fredoka", "Nunito", sans-serif;
+    font-weight: 600;
+  }
+
+  :root.student-fun .m-appbar--scrolled {
+    border-bottom: 2px solid var(--fun-line);
+  }
+
+  :root.student-fun .m-tabbar {
+    background: var(--glass);
+    border-top: 2px solid var(--fun-line);
+  }
+
+  :root.student-fun .m-tab--active .m-tab__pill {
+    background: var(--fun-sun);
+    color: #1a1430;
+    box-shadow: inset 0 0 0 2px var(--fun-line);
+  }
+
+  :root.student-fun .m-avatar__initial {
+    background: var(--fun-sun);
+    color: #1a1430;
+    box-shadow: 0 0 0 2px var(--fun-line);
+  }
+
+  :root.student-fun .m-avatar--active .m-avatar__initial,
+  :root.student-fun .m-avatar--active .m-avatar__img {
+    box-shadow: 0 0 0 2px var(--fun-line), 0 0 0 4px var(--fun-grape);
+  }
+
+  :root.student-fun .m-sheet,
+  :root.student-fun .modal-backdrop .modal {
+    border: 2px solid var(--fun-line);
+    border-bottom: 0;
+  }
+
+  :root.student-fun .m-sheet__group,
+  :root.student-fun .m-sheet__profile {
+    border: 2px solid var(--fun-line);
+    box-shadow: 3px 3px 0 var(--fun-pop);
+  }
+
+  :root.student-fun .m-sheet__group li + li {
+    border-top: 2px solid var(--fun-line);
+  }
+
+  /* ---- Staff "console" flavour -------------------------------------- */
+  .dashboard--console .m-tabbar {
+    background: color-mix(in srgb, var(--sidebar-bg, var(--glass)) 92%, transparent);
+  }
+
+  .dashboard--console .m-tab--active {
+    color: var(--accent-text, var(--text-primary));
+  }
+
+  .dashboard--console .m-tab--active .m-tab__pill {
+    color: var(--accent-text, var(--accent));
+  }
+}
+
+@keyframes m-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes m-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m-sheet,
+  .m-sheet-backdrop,
+  .m-appbar__brand,
+  .m-appbar__title,
+  .modal-backdrop .modal,
+  .notif-panel,
+  .ai-chat-widget__panel {
+    animation: none !important;
+    transition: none !important;
+  }
+}

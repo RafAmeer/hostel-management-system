@@ -25,17 +25,19 @@ import NotificationBell from "../components/dashboard/NotificationBell";
 import { useNotifications } from "../hooks/useNotifications";
 import { buildWardenNotifications } from "../lib/notifications";
 
+// On phones the bottom tab bar shows Overview, Room Bookings, Complaints and
+// Curfew; items marked `mobileHidden` live in the "More" sheet instead.
 const NAV_ITEMS = [
   { key: "overview", label: "Overview", icon: "overview" },
-  { key: "predictions", label: "AI Predictions", icon: "analytics" },
-  { key: "bookings", label: "Room Bookings", icon: "status" },
-  { key: "students", label: "Students", icon: "students" },
-  { key: "hostels", label: "Hostels & Rooms", icon: "rooms" },
-  { key: "transport", label: "Transport", icon: "transport" },
-  { key: "news", label: "News", icon: "news" },
+  { key: "predictions", label: "AI Predictions", icon: "analytics", mobileHidden: true },
+  { key: "bookings", label: "Room Bookings", shortLabel: "Bookings", icon: "status" },
+  { key: "students", label: "Students", icon: "students", mobileHidden: true },
+  { key: "hostels", label: "Hostels & Rooms", icon: "rooms", mobileHidden: true },
+  { key: "transport", label: "Transport", icon: "transport", mobileHidden: true },
+  { key: "news", label: "News", icon: "news", mobileHidden: true },
   { key: "complaints", label: "Complaints", icon: "complaint" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
-  { key: "help", label: "Help Center", icon: "help" },
+  { key: "help", label: "Help Center", icon: "help", mobileHidden: true },
 ];
 
 // NOTE: this assumes tables `bookings` and `complaints` exist in Supabase
@@ -262,7 +264,14 @@ function WardenDashboard({ user, onLogout }) {
 
     // Approved: the student now lives in that room, so keep their profile in
     // step (this is what fixes "Not in hostel" showing after approval).
-    if (status === "approved") {
+    //
+    // Only when the booking is for the student's CURRENT semester (the one on
+    // their profile). Approving a next-semester booking must not overwrite
+    // the room they live in now — that's what made Home show next
+    // semester's room as "Your room".
+    const student = students.find((s) => s.id === data.student_id);
+    const forCurrentSemester = !student?.semester || !data.semester || data.semester === student.semester;
+    if (status === "approved" && forCurrentSemester) {
       const patch = { in_hostel: true, room_number: data.room_number ?? previous?.room_number ?? null };
       const { error: profileError } = await supabase.from("profiles").update(patch).eq("id", data.student_id);
       if (!profileError) {

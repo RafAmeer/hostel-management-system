@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../lib/formatters";
 import { useState } from "react";
 
 const STATUS_FLOW = { pending: "in_progress", in_progress: "completed" };
@@ -36,7 +37,7 @@ function TechnicianTasksTab({ tasks, onAdvanceStatus, onAddRemark }) {
                 {t.category} &middot; {t.hostel ? `${t.hostel}, ` : ""}Room {t.room_number ?? "—"}
               </p>
               <p className="list-row__meta">{t.description}</p>
-              <p className="list-row__meta">Reported by {t.student_name} &middot; {t.created_at}</p>
+              <p className="list-row__meta">Reported by {t.student_name} &middot; {formatDateTime(t.created_at)}</p>
 
               <div className="list-row__actions" style={{ marginTop: "0.5rem" }}>
                 <span className={"badge badge--" + (STATUS_TONE[t.status] ?? "neutral")}>

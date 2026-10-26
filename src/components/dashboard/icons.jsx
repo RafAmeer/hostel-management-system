@@ -292,6 +292,26 @@ export function BellIcon(props) {
   );
 }
 
+// Four rounded squares — the usual "More" tab glyph on phone apps.
+export function MoreIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.8" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.8" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.8" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.8" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m9.5 6 6 6-6 6" />
+    </svg>
+  );
+}
+
 export const NAV_ICONS = {
   help: HelpIcon,
   home: HomeIcon,

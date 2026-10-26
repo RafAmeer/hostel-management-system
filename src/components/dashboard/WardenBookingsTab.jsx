@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../lib/formatters";
 const STATUS_LABELS = {
   pending: "Pending",
   approved: "Approved",
@@ -38,7 +39,7 @@ function BookingRow({ b, onApprove, onReject }) {
           {b.hostel ? ` (${b.hostel}${b.floor ? `, ${b.floor}` : ""})` : ""}
         </p>
         <p className="list-row__meta">
-          {b.semester} &middot; requested {b.created_at}
+          {b.semester} &middot; requested {formatDateTime(b.created_at)}
           {isPlaceholderRoom && " · room not yet added to the system"}
         </p>
       </div>

@@ -4,6 +4,7 @@ import CurfewScanCard from "./CurfewScanCard";
 import TransportToday from "./TransportToday";
 import { scopeSchedule, studentTransportScope } from "../../lib/transport";
 import { formatDateTime, ELIGIBILITY_LABELS, eligibilityTone } from "../../lib/formatters";
+import { FALLBACK_SEMESTER, nextSemester, parseSemester } from "../../lib/semesters";
 
 function getGreetingTime() {
   const hour = new Date().getHours();
@@ -35,10 +36,27 @@ function OverviewTab({
 }) {
   // "Your room" only counts once the warden has approved it. A pending
   // request is shown as a request, not as the student's room.
-  const approvedBooking = bookings.find((b) => b.status === "approved");
+  //
+  // A student can hold an approved booking for this semester AND one for
+  // next semester. "Your room" is always THIS semester's (the one on their
+  // profile, same as the Rooms page calls "current"); next semester's
+  // booking is mentioned underneath instead of replacing it.
+  const currentSemester = profile?.semester || FALLBACK_SEMESTER;
+  const upcomingSemester = nextSemester(currentSemester);
+  const approved = bookings.filter((b) => b.status === "approved");
+  const nextBooking = approved.find((b) => b.semester === upcomingSemester) ?? null;
+  const approvedBooking =
+    approved.find((b) => b.semester === currentSemester) ??
+    // Older bookings saved without a recognisable semester still count.
+    approved.find((b) => !parseSemester(b.semester)) ??
+    null;
   const pendingBooking = bookings.find((b) => b.status === "pending");
   const notInHostel = profile?.in_hostel === false;
-  const roomLabel = approvedBooking?.room_number ?? profile?.room_number ?? "Not assigned";
+  // profiles.room_number can already hold next semester's room (older
+  // approvals copied it over), so it is only a fallback.
+  const profileRoom =
+    profile?.room_number && profile.room_number !== nextBooking?.room_number ? profile.room_number : null;
+  const roomLabel = approvedBooking?.room_number ?? profileRoom ?? "Not assigned";
   const openComplaints = complaints.filter(
     (c) => c.status !== "completed"
   ).length;
@@ -48,7 +66,7 @@ function OverviewTab({
   const answeredHelp = helpTickets.filter((t) => t.status === "answered").length;
   const firstName = (profile?.full_name ?? "Student").split(" ")[0];
   const openHelp = helpTickets.filter((t) => t.status === "open").length;
-  const latestBooking = approvedBooking ?? pendingBooking ?? bookings[0];
+  const latestBooking = approvedBooking ?? pendingBooking ?? nextBooking ?? bookings[0];
 
   // At-a-glance status cards. On phones these replace the Status and Help
   // tabs that were dropped from the bottom bar, so each card opens its page.
@@ -103,6 +121,13 @@ function OverviewTab({
     notifications.push(
       <>
         Booking for Room {approvedBooking.room_number} was <mark className="hl hl--ok">approved</mark>
+      </>
+    );
+  }
+  if (nextBooking) {
+    notifications.push(
+      <>
+        Room {nextBooking.room_number} for {nextBooking.semester} is <mark className="hl hl--ok">approved</mark>
       </>
     );
   }
@@ -170,7 +195,7 @@ function OverviewTab({
               </div>
               <div>
                 <dt>Semester</dt>
-                <dd>{approvedBooking?.semester ?? profile?.semester ?? "—"}</dd>
+                <dd>{profile?.semester ?? approvedBooking?.semester ?? "—"}</dd>
               </div>
               <div>
                 <dt>Eligibility</dt>
@@ -194,8 +219,12 @@ function OverviewTab({
                 ? `Request for Room ${pendingBooking.room_number ?? ""} is pending`
                 : notInHostel
                 ? "Book a room under Rooms to move in"
-                : approvedBooking || profile?.room_number
-                ? "Current resident"
+                : approvedBooking || profileRoom
+                ? nextBooking
+                  ? `Current resident · ${nextBooking.semester}: ${nextBooking.room_number}`
+                  : "Current resident"
+                : nextBooking
+                ? `Booked for ${nextBooking.semester}: Room ${nextBooking.room_number}`
                 : "No room yet. Let's find you one!"}
             </span>
           </div>

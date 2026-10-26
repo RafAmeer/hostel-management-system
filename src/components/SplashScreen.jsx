@@ -1,3 +1,4 @@
+import { assetUrl } from "../lib/assetUrl";
 import { useEffect, useState } from "react";
 
 // Full-screen loading animation shown when the site (or installed app)
@@ -20,7 +21,7 @@ function SplashScreen({ done }) {
     <div className={"splash" + (done ? " splash--hide" : "")} role="status" aria-live="polite">
       <div className="splash__loader">
         <span className="splash__ring" aria-hidden="true" />
-        <img src="/logo.png" alt="" className="splash__logo" />
+        <img src={assetUrl("logo.png")} alt="" className="splash__logo" />
       </div>
       <p className="splash__name">DormSphere</p>
       <p className="splash__hint">Loading your hostel…</p>
