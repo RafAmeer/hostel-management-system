@@ -79,11 +79,14 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
     if (isStudent) {
       if (!gender) return "Select your gender — this decides which hostel rooms you can book.";
       if (!studentId.trim()) return "Enter your student ID.";
+      if (!/^\d{8,12}$/.test(studentId.trim())) return "Student ID should be numbers only, e.g. 2502040448.";
       const n = Number(age);
       if (!Number.isInteger(n) || n < 15 || n > 99) return "Enter a valid age (15–99).";
       if (!programmeChoice) return "Select your programme.";
       if (programmeChoice === OTHER_PROGRAMME && !otherProgramme.trim()) return "Type your programme name.";
       if (!phone.trim()) return "Enter your phone number.";
+      if (!/^(\+?60|0)\d{8,10}$/.test(phone.replace(/[\s-]/g, "")))
+        return "Enter a valid Malaysian phone number, e.g. 012-345 6789.";
       if (!semester) return "Select your current semester.";
       if (inHostel === null) return "Tell us whether you are currently staying in a hostel.";
     }
@@ -162,6 +165,9 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
     setPhotoPreview(null);
     setNotice(`Profile saved.${photoWarning}`);
     onSaved?.(data);
+    // Lets the one-time fingerprint offer (BiometricPrompt) appear now that
+    // a new student has finished setting up, instead of on top of the form.
+    window.dispatchEvent(new Event("dormsphere:profile-saved"));
   };
 
   const shownAvatar = photoPreview ?? profile?.avatar_url ?? null;

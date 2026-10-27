@@ -60,6 +60,19 @@ export function buildHostelAnalytics({ bookings, complaints, curfewStatuses, roo
 
   const topCategoryEntry = Object.entries(complaintsByCategory).sort((a, b) => b[1] - a[1])[0];
 
+  // Work still waiting right now, counted over ALL records (not just the
+  // stats period). Before, "open complaints" only looked at the last 7 days,
+  // so older pending complaints silently dropped out of the count.
+  const openComplaintsAll = complaints.filter((c) => c.status !== "completed");
+  const openNow = {
+    note: "Live counts over all records, not limited to the stats period. Use these for 'how many are still open/pending' questions.",
+    pendingBookings: bookings.filter((b) => b.status === "pending").length,
+    openComplaints: openComplaintsAll.length,
+    complaintsPending: openComplaintsAll.filter((c) => c.status === "pending").length,
+    complaintsInProgress: openComplaintsAll.filter((c) => c.status === "in_progress").length,
+    unassignedComplaints: openComplaintsAll.filter((c) => !c.assigned_technician).length,
+  };
+
   const totalCapacity = rooms.reduce((sum, r) => sum + (r.capacity ?? 0), 0);
   const totalOccupied = rooms.reduce((sum, r) => sum + (r.occupied_count ?? 0), 0);
   const fullRooms = rooms.filter((r) => r.occupied_count >= r.capacity).length;
@@ -72,6 +85,7 @@ export function buildHostelAnalytics({ bookings, complaints, curfewStatuses, roo
           days: periodDays,
         }
       : { start: null, end: now.toISOString().slice(0, 10), days: null, label: "All time" },
+    openNow,
     totals: {
       bookings: currentBookings.length,
       complaints: currentComplaints.length,

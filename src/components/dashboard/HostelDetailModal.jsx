@@ -281,13 +281,8 @@ function HostelDetailModal({
                             disabled={full || isBookingThis || bookingLocked}
                             onClick={() => onBook(room, { residence, floor: selectedFloor })}
                           >
-                            {full ? "Full" : isBookingThis ? "Requesting…" : bookingLocked ? "Already booked" : "Request booking"}
+                            {full ? "Full" : isBookingThis ? "Requesting…" : bookingLocked ? "You have a request" : "Request booking"}
                           </button>
-                          {room.mock && (
-                            <p className="room-card__hint">
-                              Pending warden confirmation — this room isn't in the system yet.
-                            </p>
-                          )}
                         </div>
                       );
                     })}

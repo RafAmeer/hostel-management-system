@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { FingerprintIcon } from "./dashboard/icons";
 import { listPasskeys, passkeysSupported, registerPasskey } from "../lib/passkeys";
+import { supabase } from "../lib/supabaseClient";
+import { isStudentProfileComplete } from "../lib/studentProfile";
 
 // One-time, optional offer shown right after someone signs in to their new
 // account: "use fingerprint next time?". Fingerprint sign-in can
@@ -32,19 +34,35 @@ function BiometricPrompt({ userId, onDone }) {
       return undefined;
     }
     let cancelled = false;
-    // Wait a moment so it doesn't land on top of the "Signed in" toast, and
-    // only ask people who don't have a passkey yet.
-    const t = setTimeout(async () => {
+
+    // A brand-new student first sees the "Welcome to DormSphere" profile
+    // form. Don't cover it: wait until the profile is complete (ProfileForm
+    // fires "dormsphere:profile-saved" when it saves).
+    const profileReady = async () => {
+      const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+      if (!data) return false;
+      return data.role !== "student" || isStudentProfileComplete(data);
+    };
+
+    const tryOpen = async () => {
       try {
+        if (!(await profileReady())) return;
         const keys = await listPasskeys();
         if (!cancelled && keys.length === 0) setOpen(true);
       } catch {
         /* can't tell — don't nag */
       }
-    }, 2500);
+    };
+
+    // Wait a moment so it doesn't land on top of the "Signed in" toast, and
+    // only ask people who don't have a passkey yet.
+    const t = setTimeout(tryOpen, 2500);
+    const onSaved = () => setTimeout(tryOpen, 1500);
+    window.addEventListener("dormsphere:profile-saved", onSaved);
     return () => {
       cancelled = true;
       clearTimeout(t);
+      window.removeEventListener("dormsphere:profile-saved", onSaved);
     };
   }, [userId]);
 

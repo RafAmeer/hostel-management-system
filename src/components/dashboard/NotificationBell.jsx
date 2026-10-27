@@ -12,6 +12,12 @@ function NotificationBell({ notif, onNavigate, className = "" }) {
   const buttonRef = useRef(null);
   const { items, seen, unreadCount, markAllRead, permission, enablePhoneAlerts } = notif;
 
+  // Closing the list counts as having seen everything in it.
+  const close = () => {
+    setOpen(false);
+    markAllRead();
+  };
+
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => e.key === "Escape" && close();
@@ -19,12 +25,6 @@ function NotificationBell({ notif, onNavigate, className = "" }) {
     return () => document.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
-
-  // Closing the list counts as having seen everything in it.
-  const close = () => {
-    setOpen(false);
-    markAllRead();
-  };
 
   const go = (item) => {
     close();
@@ -36,8 +36,12 @@ function NotificationBell({ notif, onNavigate, className = "" }) {
   // page content was being drawn over the open list (it looked clipped
   // behind the page). Render the list at the dashboard's root instead, so
   // it floats above everything but still picks up the warden theme colours.
-  const portalTarget =
-    (typeof document !== "undefined" && (buttonRef.current?.closest(".dashboard") ?? document.body)) || null;
+  // Found when the list opens (the button is on screen by then).
+  const [portalTarget, setPortalTarget] = useState(null);
+  const openList = () => {
+    setPortalTarget(buttonRef.current?.closest(".dashboard") ?? document.body);
+    setOpen(true);
+  };
 
   return (
     <>
@@ -45,7 +49,7 @@ function NotificationBell({ notif, onNavigate, className = "" }) {
         ref={buttonRef}
         type="button"
         className={"theme-toggle notif-bell " + className}
-        onClick={() => (open ? close() : setOpen(true))}
+        onClick={() => (open ? close() : openList())}
         aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
         aria-expanded={open}
         title="Notifications"

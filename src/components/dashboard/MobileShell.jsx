@@ -118,6 +118,7 @@ function MobileShell({ navItems, activeTab, onSelect, userName, roleLabel, avata
               className={"m-tab" + (active ? " m-tab--active" : "")}
               onClick={() => pick(item.key)}
               aria-current={active ? "page" : undefined}
+              aria-label={item.badge > 0 ? `${item.label}, ${item.badge} new` : item.label}
             >
               <span className="m-tab__pill">
                 {Icon ? <Icon /> : <span className="sidebar__dot" />}
@@ -133,6 +134,7 @@ function MobileShell({ navItems, activeTab, onSelect, userName, roleLabel, avata
           onClick={() => setSheetOpen((o) => !o)}
           aria-expanded={sheetOpen}
           aria-haspopup="dialog"
+          aria-label={moreBadge > 0 ? `More, ${moreBadge} new` : "More"}
           data-more-btn
         >
           <span className="m-tab__pill">

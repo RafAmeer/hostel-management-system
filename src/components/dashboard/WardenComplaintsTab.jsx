@@ -43,6 +43,7 @@ function AssignRow({ complaint, technicians, onAssign }) {
       <button
         className="primary-btn btn-sm"
         disabled={!selectedId}
+        title={selectedId ? "Assign this technician" : "Choose a technician first"}
         onClick={() => onAssign(complaint.id, selectedId)}
       >
         Assign

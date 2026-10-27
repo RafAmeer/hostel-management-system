@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { formatDateTime } from "../../lib/formatters";
 const STATUS_LABELS = {
   pending: "Pending",
@@ -26,7 +27,28 @@ function sortByPriority(bookings) {
   });
 }
 
+// Approve/Reject can't be undone from here, so each needs a second tap:
+// the first turns the button into "Confirm approve?" for a few seconds.
+function useConfirm() {
+  const [armed, setArmed] = useState(null);
+  useEffect(() => {
+    if (!armed) return undefined;
+    const t = setTimeout(() => setArmed(null), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
+  const press = (action, run) => {
+    if (armed === action) {
+      setArmed(null);
+      run();
+    } else {
+      setArmed(action);
+    }
+  };
+  return [armed, press];
+}
+
 function BookingRow({ b, onApprove, onReject }) {
+  const [armed, press] = useConfirm();
   // A booking with no room_id came from a placeholder/preview room that
   // isn't a real `rooms` row yet (see RoomsTab.jsx handleBook) — flag it so
   // the warden knows to add that room before approving.
@@ -50,11 +72,11 @@ function BookingRow({ b, onApprove, onReject }) {
         </span>
         {b.status === "pending" && (
           <>
-            <button className="primary-btn btn-sm" onClick={() => onApprove(b.id)}>
-              Approve
+            <button className="primary-btn btn-sm" onClick={() => press("approve", () => onApprove(b.id))}>
+              {armed === "approve" ? "Confirm approve?" : "Approve"}
             </button>
-            <button className="btn-outline" onClick={() => onReject(b.id)}>
-              Reject
+            <button className="btn-outline" onClick={() => press("reject", () => onReject(b.id))}>
+              {armed === "reject" ? "Confirm reject?" : "Reject"}
             </button>
           </>
         )}

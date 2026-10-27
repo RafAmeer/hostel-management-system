@@ -290,7 +290,7 @@ function WardenHostelsTab({ residences, rooms, onChanged }) {
             <span className="field__label">Hostel</span>
             <select
               value={roomForm.residenceId}
-              onChange={(e) => setRoomForm((f) => ({ ...f, residenceId: e.target.value }))}
+              onChange={(e) => setRoomForm((f) => ({ ...f, residenceId: e.target.value, floor: "" }))}
               required
             >
               {residences.map((r) => (
@@ -301,14 +301,27 @@ function WardenHostelsTab({ residences, rooms, onChanged }) {
             </select>
           </label>
           <label className="field">
-            <span className="field__label">Floor label</span>
-            <input
-              type="text"
+            <span className="field__label">Floor</span>
+            {/* A dropdown, not free text: students only see a room when its
+                floor exactly matches one of the hostel's floors, so a typo
+                ("Ground Floor" vs "Block A") used to hide the room. */}
+            <select
               value={roomForm.floor}
               onChange={(e) => setRoomForm((f) => ({ ...f, floor: e.target.value }))}
-              placeholder="Must match one of the hostel's floor labels"
               required
-            />
+            >
+              <option value="" disabled>
+                Select a floor
+              </option>
+              {floorLabelsOf(residences, roomForm.residenceId).map((label) => (
+                <option key={label} value={label}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            {floorLabelsOf(residences, roomForm.residenceId).length === 0 && (
+              <span className="list-row__meta">This hostel has no floors yet. Add them under "Edit an existing hostel" first.</span>
+            )}
           </label>
           <label className="field">
             <span className="field__label">Room number</span>
@@ -364,6 +377,7 @@ function WardenHostelsTab({ residences, rooms, onChanged }) {
               key={room.id}
               room={room}
               hostelName={residences.find((r) => r.id === room.residence)?.name ?? room.residence ?? "—"}
+              floorOptions={floorLabelsOf(residences, room.residence)}
               onSave={(patch) => handleUpdateRoom(room.id, patch)}
               onDelete={() => handleDeleteRoom(room.id)}
             />
@@ -374,7 +388,12 @@ function WardenHostelsTab({ residences, rooms, onChanged }) {
   );
 }
 
-function RoomRow({ room, hostelName, onSave, onDelete }) {
+function floorLabelsOf(residences, residenceId) {
+  const r = residences.find((res) => res.id === residenceId);
+  return (r?.floors ?? []).map((f) => f.label).filter(Boolean);
+}
+
+function RoomRow({ room, hostelName, floorOptions = [], onSave, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [capacity, setCapacity] = useState(String(room.capacity ?? 2));
   const [price, setPrice] = useState(room.price != null ? String(room.price) : "");
@@ -397,7 +416,17 @@ function RoomRow({ room, hostelName, onSave, onDelete }) {
         <div className="room-edit-fields">
           <label className="field field--compact">
             <span className="field__label">Floor</span>
-            <input type="text" value={floor} onChange={(e) => setFloor(e.target.value)} />
+            <select value={floor} onChange={(e) => setFloor(e.target.value)}>
+              <option value="">No floor</option>
+              {floor && !floorOptions.includes(floor) && (
+                <option value={floor}>{floor} (not a floor of this hostel)</option>
+              )}
+              {floorOptions.map((label) => (
+                <option key={label} value={label}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="field field--compact">
             <span className="field__label">Capacity</span>
@@ -438,6 +467,11 @@ function RoomRow({ room, hostelName, onSave, onDelete }) {
           {room.floor ?? "No floor set"} · {room.occupied_count ?? 0}/{room.capacity} occupied
           {room.price != null ? ` · RM ${room.price}/semester` : ""}
           {room.gender ? ` · ${room.gender}` : ""}
+          {(!room.residence || !room.floor || !floorOptions.includes(room.floor)) && (
+            <span className="badge badge--danger" style={{ marginLeft: "0.5rem" }}>
+              Hidden from students — set its hostel floor
+            </span>
+          )}
         </p>
       </div>
       <div className="list-row__actions">

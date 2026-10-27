@@ -66,7 +66,7 @@ function RoomsTab({ rooms, residences, bookings = [], studentId, studentGender, 
     };
   }, [rooms]);
 
-  // Auto-dismiss the "Room Booked" toast after a few seconds.
+  // Auto-dismiss the "Request sent" toast after a few seconds.
   useEffect(() => {
     if (!bookedRoom) return;
     const timer = setTimeout(() => setBookedRoom(null), 3500);
@@ -226,11 +226,11 @@ function RoomsTab({ rooms, residences, bookings = [], studentId, studentGender, 
         />
       )}
 
-      <LikeBurst show={likeShow} label="Room booked!" onDone={() => setLikeShow(false)} />
+      <LikeBurst show={likeShow} label="Request sent!" onDone={() => setLikeShow(false)} />
 
       {bookedRoom && (
         <div className="toast toast--success" role="status" onClick={() => setBookedRoom(null)}>
-          Room Booked ✅ — {bookedRoom.room_number}
+          Request sent ✅ — {bookedRoom.room_number}. The warden will confirm it.
         </div>
       )}
     </div>

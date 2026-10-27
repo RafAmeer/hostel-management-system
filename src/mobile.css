@@ -215,7 +215,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 45;
+    z-index: 62; /* above the More sheet and its backdrop */
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, 1fr);
@@ -316,19 +316,22 @@
     animation: m-fade 0.2s ease both;
   }
 
+  /* The sheet opens ABOVE the tab bar (which stays visible and tappable), so
+     a quick second tap on "More" closes the sheet instead of landing on the
+     "Log out" row that used to sit in the same spot. */
   .m-sheet {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: calc(var(--m-tab-h) + var(--m-safe-bottom));
     z-index: 61;
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
-    max-height: 86vh;
+    max-height: calc(86vh - var(--m-tab-h) - var(--m-safe-bottom));
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 0.5rem 1rem calc(1rem + var(--m-safe-bottom));
+    padding: 0.5rem 1rem 1rem;
     border-radius: 22px 22px 0 0;
     background: var(--app-bg);
     color: var(--text-primary);

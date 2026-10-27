@@ -266,11 +266,11 @@ function WardenOverviewTab({
       <div className="stat-grid">
         <div className="stat-card">
           <span className="stat-card__label">Pending bookings</span>
-          <span className="stat-card__value badge badge--warn">{analytics.bookingsByStatus.pending ?? 0}</span>
+          <span className="stat-card__value badge badge--warn">{analytics.openNow.pendingBookings}</span>
         </div>
         <div className="stat-card">
           <span className="stat-card__label">Open complaints</span>
-          <span className="stat-card__value">{kpis.openComplaints}</span>
+          <span className="stat-card__value">{analytics.openNow.openComplaints}</span>
         </div>
         <div className="stat-card">
           <span className="stat-card__label">Students out</span>
