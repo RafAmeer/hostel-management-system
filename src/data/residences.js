@@ -143,26 +143,4 @@ export const RESIDENCES = [
       { label: "Floor 4", prefix: "DB-4", roomCount: 6, price: 500, genders: ["male"] },
     ]),
   },
-  {
-    id: "aspace-residence",
-    name: "Aspace Residence",
-    tag: "Off-Campus",
-    cover: img("hostel-6.png"),
-    description:
-      "Newer residence with bright, open rooms and shared study spaces. Good for students who like a calm environment to focus.",
-    facilities: ["Wi-Fi", "Study area", "Air-conditioning", "Laundry"],
-    gallery: [
-      { src: img("hostel-6.png"), caption: "Building exterior" },
-      { src: img("hostel-2.jpg"), caption: "Room interior" },
-      { src: img("hostel-4.jpg"), caption: "Common area" },
-    ],
-    mapQuery: "Aspace Residence, Kuching",
-    floors: floorsFor([
-      { label: "Floor 1", prefix: "AS-1", roomCount: 6, price: 460, genders: ["male"] },
-      { label: "Floor 2", prefix: "AS-2", roomCount: 6, price: 460, genders: ["male"] },
-      { label: "Floor 3", prefix: "AS-3", roomCount: 6, price: 460, genders: ["female"] },
-      { label: "Floor 4", prefix: "AS-4", roomCount: 6, price: 460, genders: ["female"] },
-      { label: "Floor 5", prefix: "AS-5", roomCount: 6, price: 490, genders: ["female"] },
-    ]),
-  },
 ];
