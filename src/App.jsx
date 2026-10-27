@@ -74,6 +74,9 @@ function friendlyAuthError(error) {
   if (/email not confirmed/i.test(msg)) {
     return "Please confirm your email first — open the confirmation link we sent you.";
   }
+  if (/invalid staff code/i.test(msg) || /database error saving new user/i.test(msg)) {
+    return "That staff code isn't right. Ask the hostel office for the current code.";
+  }
   if (error?.code === "user_already_exists" || /already (registered|exists)/i.test(msg)) {
     return "An account with this email already exists. Try signing in instead.";
   }
@@ -92,6 +95,7 @@ function MainApp() {
   const [staffTitle, setStaffTitle] = useState(""); // staff signup only
   const [fullName, setFullName] = useState(""); // staff signup only
   const [staffRole, setStaffRole] = useState("warden"); // staff signup only
+  const [staffCode, setStaffCode] = useState(""); // staff signup only — given out by the hostel office
   const [rememberMe, setRememberMe] = useState(false);
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
@@ -192,6 +196,7 @@ function MainApp() {
     resetMessages();
     setPassword("");
     setFullName("");
+    setStaffCode("");
     setMode("login");
     setPortal(nextPortal);
   };
@@ -275,6 +280,24 @@ function MainApp() {
     setLoading(true);
 
     const isStaffSignup = expectedPortal === "staff";
+
+    // Staff accounts need the staff code. The database checks it again when
+    // the account is created (handle_new_user), so this is just for a clear
+    // message instead of a generic "Database error".
+    if (isStaffSignup) {
+      const { data: codeOk, error: codeError } = await supabase.rpc("verify_staff_code", {
+        p_code: staffCode.trim(),
+      });
+      if (codeError || !codeOk) {
+        setLoading(false);
+        const message = codeError
+          ? `Couldn't check the staff code: ${codeError.message}`
+          : "That staff code isn't right. Ask the hostel office for the current code.";
+        notify(message, "error");
+        return setError(message);
+      }
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -283,7 +306,12 @@ function MainApp() {
         // generic Supabase page instead of back into this app.
         emailRedirectTo: window.location.origin,
         data: isStaffSignup
-          ? { requested_role: staffRole, title: staffTitle || undefined, full_name: fullName || undefined }
+          ? {
+              requested_role: staffRole,
+              staff_code: staffCode.trim(),
+              title: staffTitle || undefined,
+              full_name: fullName || undefined,
+            }
           : undefined,
       },
     });
@@ -517,6 +545,8 @@ function MainApp() {
               ? mode === "login"
                 ? "Staff Login"
                 : "Staff Sign Up"
+              : mode === "signup"
+              ? "Create Account"
               : "Welcome Back"}
           </h1>
           <p className="subtitle">
@@ -590,6 +620,18 @@ function MainApp() {
                   <option value="technician">Technician</option>
                 </select>
               </label>
+
+              <label className="field">
+                <span className="field__label">Staff code</span>
+                <input
+                  type="text"
+                  autoComplete="off"
+                  placeholder="From the hostel office, e.g. DS-XXXX-XXXX"
+                  value={staffCode}
+                  onChange={(e) => setStaffCode(e.target.value)}
+                  required
+                />
+              </label>
             </>
           )}
 
@@ -656,7 +698,7 @@ function MainApp() {
             disabled={
               loading ||
               (mode === "forgot" ? !email : mode === "reset" ? !newPassword : !email || !password) ||
-              (isStaffPortal && mode === "signup" && (!fullName || !staffTitle)) ||
+              (isStaffPortal && mode === "signup" && (!fullName || !staffTitle || !staffCode.trim())) ||
               ((mode === "signup" || mode === "forgot") && cooldownLeft > 0)
             }
           >
