@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { formatDateTime } from "../../lib/formatters";
 import HelpThread, { HELP_STATUS_LABELS, helpTone } from "./HelpThread";
@@ -33,6 +33,23 @@ function HelpTab({ tickets, studentId, onChanged }) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [notice, setNotice] = useState("");
+  const [wardens, setWardens] = useState([]);
+  const [wardenId, setWardenId] = useState("");
+
+  // Each request goes to one warden, so it only shows up in their inbox.
+  useEffect(() => {
+    supabase.rpc("list_wardens").then(({ data }) => {
+      const list = data ?? [];
+      setWardens(list);
+      if (list.length === 1) setWardenId(list[0].id);
+    });
+  }, []);
+
+  const wardenLabel = (w) => [w.title, w.full_name || "Warden"].filter(Boolean).join(" ");
+  const wardenName = (id) => {
+    const w = wardens.find((x) => x.id === id);
+    return w ? wardenLabel(w) : null;
+  };
 
   const open = tickets.find((t) => t.id === openId);
   if (open) {
@@ -42,11 +59,15 @@ function HelpTab({ tickets, studentId, onChanged }) {
   const submit = async (e) => {
     e.preventDefault();
     if (!subject.trim() || !message.trim()) return;
+    if (!wardenId) {
+      setNotice("Choose which warden to send this to.");
+      return;
+    }
     setSending(true);
     setNotice("");
     const { data: ticket, error } = await supabase
       .from("help_tickets")
-      .insert({ student_id: studentId, category, subject: subject.trim() })
+      .insert({ student_id: studentId, warden_id: wardenId, category, subject: subject.trim() })
       .select()
       .single();
     if (error || !ticket) {
@@ -61,7 +82,7 @@ function HelpTab({ tickets, studentId, onChanged }) {
     if (msgError) {
       setNotice(`Your request was created but the message failed: ${msgError.message}`);
     } else {
-      setNotice("Sent. The warden will reply here.");
+      setNotice(`Sent to ${wardenName(wardenId) ?? "the warden"}. Their reply will show here.`);
       setSubject("");
       setMessage("");
     }
@@ -75,6 +96,19 @@ function HelpTab({ tickets, studentId, onChanged }) {
       <p className="tab__subtitle-text">Need something from the warden? Send a request and follow the reply here.</p>
 
       <form className="panel-form" onSubmit={submit}>
+        <label className="field">
+          <span className="field__label">Send to</span>
+          <select value={wardenId} onChange={(e) => setWardenId(e.target.value)} required>
+            <option value="" disabled>
+              {wardens.length ? "Choose a warden" : "Loading wardens…"}
+            </option>
+            {wardens.map((w) => (
+              <option key={w.id} value={w.id}>
+                {wardenLabel(w)}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="field">
           <span className="field__label">Topic</span>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -107,7 +141,8 @@ function HelpTab({ tickets, studentId, onChanged }) {
               <div>
                 <p className="list-row__title">{t.subject}</p>
                 <p className="list-row__meta">
-                  {t.category} · updated {formatDateTime(t.updated_at ?? t.created_at)}
+                  {t.category}
+                  {wardenName(t.warden_id) ? ` · to ${wardenName(t.warden_id)}` : ""} · updated {formatDateTime(t.updated_at ?? t.created_at)}
                 </p>
               </div>
               <span className={"badge badge--" + helpTone(t.status)}>{HELP_STATUS_LABELS[t.status] ?? t.status}</span>

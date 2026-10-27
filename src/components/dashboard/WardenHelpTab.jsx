@@ -35,7 +35,7 @@ function WardenHelpTab({ tickets, students, onChanged }) {
   return (
     <div className="tab">
       <h2 className="tab__title">Help Center</h2>
-      <p className="tab__subtitle-text">Requests students have sent to you. Reply to answer; mark resolved when done.</p>
+      <p className="tab__subtitle-text">Requests students have sent to you. Only you can see these. Reply to answer; mark resolved when done.</p>
 
       <div className="day-tabs" role="tablist" aria-label="Filter requests">
         {FILTERS.map((f) => (
@@ -62,6 +62,7 @@ function WardenHelpTab({ tickets, students, onChanged }) {
                 <p className="list-row__title">{t.subject}</p>
                 <p className="list-row__meta">
                   {nameOf(t.student_id)} · {t.category} · {formatDateTime(t.updated_at ?? t.created_at)}
+                  {!t.warden_id && " · Unassigned (your reply takes it)"}
                 </p>
               </div>
               <span className={"badge badge--" + helpTone(t.status)}>{HELP_STATUS_LABELS[t.status] ?? t.status}</span>
