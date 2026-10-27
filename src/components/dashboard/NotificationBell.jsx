@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { BellIcon } from "./icons";
 import { formatDateTime } from "../../lib/formatters";
 
@@ -8,6 +9,7 @@ import { formatDateTime } from "../../lib/formatters";
 function NotificationBell({ notif, onNavigate, className = "" }) {
   const [open, setOpen] = useState(false);
   const panelRef = useRef(null);
+  const buttonRef = useRef(null);
   const { items, seen, unreadCount, markAllRead, permission, enablePhoneAlerts } = notif;
 
   useEffect(() => {
@@ -29,9 +31,18 @@ function NotificationBell({ notif, onNavigate, className = "" }) {
     onNavigate?.(item.tab);
   };
 
+  // The bell sits inside the sidebar / phone top bar. Those are "sticky"
+  // elements, which trap anything inside them on their own layer — so the
+  // page content was being drawn over the open list (it looked clipped
+  // behind the page). Render the list at the dashboard's root instead, so
+  // it floats above everything but still picks up the warden theme colours.
+  const portalTarget =
+    (typeof document !== "undefined" && (buttonRef.current?.closest(".dashboard") ?? document.body)) || null;
+
   return (
     <>
       <button
+        ref={buttonRef}
         type="button"
         className={"theme-toggle notif-bell " + className}
         onClick={() => (open ? close() : setOpen(true))}
@@ -46,7 +57,7 @@ function NotificationBell({ notif, onNavigate, className = "" }) {
         <span className="theme-toggle__label">Notifications</span>
       </button>
 
-      {open && (
+      {open && portalTarget && createPortal(
         <>
           <div className="notif-backdrop" onClick={close} aria-hidden="true" />
           <section ref={panelRef} className="notif-panel" role="dialog" aria-label="Notifications">
@@ -96,7 +107,8 @@ function NotificationBell({ notif, onNavigate, className = "" }) {
               </ul>
             )}
           </section>
-        </>
+        </>,
+        portalTarget
       )}
     </>
   );

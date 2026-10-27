@@ -1025,13 +1025,40 @@
 
 .ai-chat-widget__panel {
   width: min(360px, calc(100vw - 3rem));
-  max-height: min(520px, calc(100vh - 8rem));
+  max-height: min(560px, calc(100vh - 7rem));
   margin-bottom: 0;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  /* Column layout where only the chips and the messages flex. Before, the
+     suggested-question chips kept their full height and squeezed the
+     message list down to nothing on shorter screens, so answers (and the
+     "Thinking…" bubble) were there but invisible. */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ai-chat-widget__panel .ai-summary-panel__header,
+.ai-chat-widget__panel .ai-chat__form,
+.ai-chat-widget__panel .ai-chat__chips-toggle {
+  flex-shrink: 0;
+}
+
+.ai-chat-widget__panel .ai-chat__chips {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 38%;
+  overflow-y: auto;
 }
 
 .ai-chat-widget__panel .ai-chat__messages {
-  max-height: 260px;
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: none;
+}
+
+.ai-chat__chips-toggle {
+  align-self: flex-start;
+  font-size: 0.78rem;
 }
 
 .ai-chat-widget__close {

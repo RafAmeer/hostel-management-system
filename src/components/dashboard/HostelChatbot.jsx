@@ -25,6 +25,9 @@ function HostelChatbot({ stats }) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  // Suggested questions take a lot of room. Once a conversation has started,
+  // fold them away so the answers have space to show.
+  const [showChips, setShowChips] = useState(true);
   const listRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -39,6 +42,7 @@ function HostelChatbot({ stats }) {
 
     setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
+    setShowChips(false);
     setSending(true);
     scrollToBottom();
 
@@ -78,6 +82,13 @@ function HostelChatbot({ stats }) {
             </button>
           </div>
 
+          {messages.length > 0 && (
+            <button type="button" className="link-btn ai-chat__chips-toggle" onClick={() => setShowChips((v) => !v)}>
+              {showChips ? "Hide suggested questions" : "Show suggested questions"}
+            </button>
+          )}
+
+          {showChips && (
           <div className="ai-chat__chips">
             {SUGGESTED_QUESTIONS.map((q) => (
               <button
@@ -91,6 +102,7 @@ function HostelChatbot({ stats }) {
               </button>
             ))}
           </div>
+          )}
 
           <div className="ai-chat__messages" ref={listRef}>
             {messages.length === 0 && (

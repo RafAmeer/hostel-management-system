@@ -38,11 +38,16 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // ---------- Groq config (main provider, OpenAI-compatible API) ----------
 // Tried in order. Each model has its own free-tier rate limit, so if the
-// 70B model is rate-limited the smaller 8B model usually still answers.
+// big model is rate-limited the smaller one usually still answers.
+// NOTE: Groq stopped serving llama-3.3-70b-versatile and llama-3.1-8b-instant
+// to free-tier keys on 16 Aug 2026 (they now return 404 model_not_found).
+// These are Groq's recommended replacements. See
+// https://console.groq.com/docs/deprecations if a model stops working again.
 const GROQ_MODELS = [
   Deno.env.get("GROQ_MODEL"),
-  "llama-3.3-70b-versatile",
-  "llama-3.1-8b-instant",
+  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b",
+  "qwen/qwen3.8-27b",
 ].filter((m, i, all): m is string => Boolean(m) && all.indexOf(m) === i);
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -200,6 +205,7 @@ Deno.serve(async (req) => {
       if (lastStop > 0) summary = summary.slice(0, lastStop + 1);
     }
 
+    console.log(`ai-summary: answered by ${result.provider} in ${Date.now() - startedAt}ms`);
     return question
       ? jsonResponse({ answer: summary, provider: result.provider })
       : jsonResponse({ summary, provider: result.provider });
@@ -235,9 +241,13 @@ async function generateWithGroq(prompt: string, apiKey: string, deadline: number
           signal: AbortSignal.timeout(Math.min(PER_CALL_TIMEOUT_MS, remaining)),
           body: JSON.stringify({
             model,
-            max_tokens: MAX_OUTPUT_TOKENS,
+            // These newer models "think" before answering, and the thinking
+            // counts toward the token limit — so give them extra room and ask
+            // for only a little thinking (these answers are short).
+            max_tokens: MAX_OUTPUT_TOKENS + 1200,
             temperature: 0.4,
             messages: [{ role: "user", content: prompt }],
+            ...groqReasoningOptions(model),
           }),
         });
       } catch (err) {
@@ -249,7 +259,7 @@ async function generateWithGroq(prompt: string, apiKey: string, deadline: number
       if (res.ok) {
         const data = await res.json();
         const choice = data?.choices?.[0];
-        const text = (choice?.message?.content ?? "").trim();
+        const text = stripThinking(choice?.message?.content ?? "");
         if (!text) {
           if (choice?.finish_reason === "content_filter") throw new Error("SAFETY_BLOCKED");
           lastError = `${model}: empty response (finish_reason ${choice?.finish_reason})`;
@@ -274,6 +284,19 @@ async function generateWithGroq(prompt: string, apiKey: string, deadline: number
   }
 
   throw new Error(lastError || "no Groq model answered");
+}
+
+// Per-model extras so reasoning models keep their thinking short and out of
+// the answer text.
+function groqReasoningOptions(model: string): Record<string, unknown> {
+  if (model.startsWith("openai/gpt-oss")) return { reasoning_effort: "low", include_reasoning: false };
+  if (model.startsWith("qwen/")) return { reasoning_format: "hidden" };
+  return {};
+}
+
+// Safety net in case a model still puts its thinking in the answer.
+function stripThinking(text: string) {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
 }
 
 // ---------------------------------------------------------------------------
