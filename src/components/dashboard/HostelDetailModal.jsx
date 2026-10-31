@@ -26,6 +26,7 @@ function HostelDetailModal({
   roomGenders = {},
   bookingRoomId,
   bookingLocked = false,
+  lockedLabel,
   message,
   onBook,
   onClose,
@@ -281,7 +282,7 @@ function HostelDetailModal({
                             disabled={full || isBookingThis || bookingLocked}
                             onClick={() => onBook(room, { residence, floor: selectedFloor })}
                           >
-                            {full ? "Full" : isBookingThis ? "Requesting…" : bookingLocked ? "You have a request" : "Request booking"}
+                            {full ? "Full" : isBookingThis ? "Requesting…" : bookingLocked ? lockedLabel ?? "You have a request" : "Request booking"}
                           </button>
                         </div>
                       );

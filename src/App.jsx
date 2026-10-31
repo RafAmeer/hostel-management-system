@@ -19,6 +19,7 @@ import "./hooks/useTheme";
 import { useToast } from "./hooks/useToast";
 import { usePwaInstall } from "./hooks/usePwaInstall";
 import { loginWithPasskey, passkeysSupported } from "./lib/passkeys";
+import StalePasskeyHelp from "./components/StalePasskeyHelp";
 import { FingerprintIcon, EyeIcon, EyeOffIcon, ScanIcon, DownloadIcon } from "./components/dashboard/icons";
 
 // Warden, Finance and Technician all share one "Staff" sign-in page now
@@ -103,6 +104,7 @@ function MainApp() {
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [staleHelp, setStaleHelp] = useState(null); // null | { forgotten: boolean }
   const { toast, notify, dismiss } = useToast();
   const { canInstall, showIosHint, install } = usePwaInstall();
   const [splashMinDone, setSplashMinDone] = useState(false);
@@ -383,6 +385,7 @@ function MainApp() {
     } catch (e) {
       notify(e.message, "error");
       setError(e.message);
+      if (e.unknownCredential) setStaleHelp({ forgotten: Boolean(e.forgotten) });
     }
     setLoading(false);
   };
@@ -755,6 +758,14 @@ function MainApp() {
             <button type="button" className="biometric-btn" onClick={handlePasskeyLogin} disabled={loading}>
               <FingerprintIcon aria-hidden="true" /> Sign in with fingerprint
             </button>
+          )}
+
+          {mode === "login" && passkeysSupported() && (
+            <StalePasskeyHelp
+              open={Boolean(staleHelp)}
+              forgotten={staleHelp?.forgotten}
+              onToggle={() => setStaleHelp((v) => (v ? null : { forgotten: false }))}
+            />
           )}
 
           {mode === "login" && canInstall && (

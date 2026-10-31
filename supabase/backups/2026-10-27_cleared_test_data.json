@@ -1,0 +1,33 @@
+{
+  "note": "Rows removed or changed during the QA cleanup on 2026-10-27, kept so anything can be restored.",
+  "complaints_deleted": [
+    {"id":7,"student_id":"1aea5e4a-b461-4442-b44c-c5efcd5f441e","category":"Electrical","description":"TEST","photo_url":null,"status":"pending","assigned_technician":null,"created_at":"2026-09-24T14:39:40.814289+00:00","room_number":"308","student_name":"Kennedy Ngau","remarks":[],"hostel":"Main-Campus Hostel"},
+    {"id":12,"student_id":"b122f4b1-a9a3-4133-94be-1e0bf6fd8a84","category":"Cleanliness","description":"nig","photo_url":null,"status":"pending","assigned_technician":null,"created_at":"2026-10-15T12:50:31.47652+00:00","room_number":"SR-G05","student_name":"Kusairi Patha","remarks":[],"hostel":"Main-Campus Hostel"}
+  ],
+  "rooms_deleted": [
+    {"id":1,"room_number":"A-101","capacity":2,"occupied_count":1,"price":450,"status":"available","residence":null,"floor":null,"gender":null},
+    {"id":2,"room_number":"A-102","capacity":2,"occupied_count":0,"price":450,"status":"available","residence":null,"floor":null,"gender":null},
+    {"id":3,"room_number":"B-205","capacity":4,"occupied_count":3,"price":350,"status":"available","residence":null,"floor":null,"gender":null},
+    {"id":4,"room_number":"B-207","capacity":4,"occupied_count":4,"price":400,"status":"full","residence":null,"floor":null,"gender":null},
+    {"id":5,"room_number":"C-301","capacity":3,"occupied_count":0,"price":380,"status":"available","residence":null,"floor":null,"gender":null},
+    {"id":10,"room_number":"309","capacity":2,"occupied_count":0,"price":200,"status":"available","residence":"main-campus","floor":"TEST","gender":"male"},
+    {"id":11,"room_number":"505","capacity":2,"occupied_count":0,"price":250,"status":"available","residence":"kts-village","floor":"Ground Floor","gender":"male"}
+  ],
+  "kusairi_patha": {
+    "profile_before": {"id":"b122f4b1-a9a3-4133-94be-1e0bf6fd8a84","full_name":"Kusairi Patha","student_id":"2502040406","role":"warden","room_number":"SR-G05","in_hostel":true,"semester":"S2/2026"},
+    "change": "role warden -> student; room_number -> null; in_hostel -> false",
+    "bookings_deleted": [
+      {"id":28,"room_number":"SR-G05","semester":"S2/2026","status":"approved","hostel":"72 Residence","floor":"Ground Floor"},
+      {"id":29,"room_number":"DB-401","semester":"S3/2026","status":"rejected","hostel":"D'belle Residence","floor":"Floor 4"}
+    ],
+    "help_tickets_deleted": [
+      {"id":"34cc0905-bb05-4e49-89b6-b84155a781dc","subject":"aku di rodok","category":"Room & booking"},
+      {"id":"9ad8e98b-c40c-4bf5-8f33-10e99c6f6d9b","subject":"Uncle Budi Sexy","category":"Transport"}
+    ]
+  },
+  "renamed_wardens": [
+    {"id":"04fd343f-a469-4a57-8081-e3ca4e708476","email":"warden.test1@dormsphere.test","full_name":"Test Warden 1"},
+    {"id":"013db439-f42d-4826-871f-2197589d1bbe","email":"warden.test2@dormsphere.test","full_name":"Test Warden 2"},
+    {"id":"7b2ad66f-ad87-4e4c-ac97-4203be4c8139","email":"warden.test3@dormsphere.test","full_name":"Test Warden 3"}
+  ]
+}

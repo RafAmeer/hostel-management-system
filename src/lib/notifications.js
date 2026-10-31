@@ -12,8 +12,14 @@ const roomText = (r) => (r?.room_number ? `Room ${r.room_number}` : "your room")
 
 const byNewest = (a, b) => new Date(b.at ?? 0) - new Date(a.at ?? 0);
 
-export function buildStudentNotifications({ bookings = [], complaints = [], helpTickets = [], announcements = [] }) {
+export function buildStudentNotifications({ bookings = [], complaints = [], helpTickets = [], announcements = [], profile = null }) {
   const items = [];
+
+  // Finance verification of a new account (profiles.finance_status).
+  if (profile?.finance_status === "verified" && profile.finance_verified_at)
+    items.push({ id: `finance-verified-${profile.finance_verified_at}`, tab: "rooms", tone: "ok", at: profile.finance_verified_at, title: "Account verified ✅", body: "Finance verified your account. Room booking is open." });
+  else if (profile?.finance_status === "rejected")
+    items.push({ id: `finance-rejected-${profile.finance_verified_at ?? ""}`, tab: "overview", tone: "danger", at: profile.finance_verified_at, title: "Finance couldn't verify you", body: profile.finance_note || "Please visit the Finance office." });
 
   bookings.forEach((b) => {
     if (b.status === "approved")

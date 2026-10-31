@@ -3,7 +3,8 @@ import AnnouncementsPanel from "./AnnouncementsPanel";
 import CurfewScanCard from "./CurfewScanCard";
 import TransportToday from "./TransportToday";
 import { scopeSchedule, studentTransportScope } from "../../lib/transport";
-import { formatDateTime, ELIGIBILITY_LABELS, eligibilityTone } from "../../lib/formatters";
+import { formatDateTime, ELIGIBILITY_LABELS, eligibilityTone, FINANCE_LABELS, financeTone } from "../../lib/formatters";
+import FinanceNotice from "./FinanceNotice";
 import { FALLBACK_SEMESTER, nextSemester, parseSemester } from "../../lib/semesters";
 
 function getGreetingTime() {
@@ -167,6 +168,7 @@ function OverviewTab({
   return (
     <div className="tab home-grid">
       <div className="home-grid__main">
+        <FinanceNotice status={profile?.finance_status ?? "verified"} note={profile?.finance_note} />
         <section className="glass-panel profile-panel home-greeting">
           <div className="profile-panel__head">
             <div>
@@ -202,6 +204,14 @@ function OverviewTab({
                 <dd>
                   <span className={"badge badge--" + eligibilityTone(profile?.eligibility_status)}>
                     {ELIGIBILITY_LABELS[profile?.eligibility_status] ?? "Pending"}
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt>Finance</dt>
+                <dd>
+                  <span className={"badge badge--" + financeTone(profile?.finance_status ?? "pending")}>
+                    {FINANCE_LABELS[profile?.finance_status ?? "pending"]}
                   </span>
                 </dd>
               </div>

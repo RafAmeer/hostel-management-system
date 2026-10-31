@@ -56,6 +56,8 @@ const NAV_ITEMS = [
 // Replace this with a Supabase view/RPC once one exists — until then this
 // keeps the warden side working against real curfew_logs rows instead of
 // sample data.
+const OVERDUE_AFTER_MS = 4 * 60 * 60 * 1000;
+
 function curfewStatusesFromLogs(logs, students) {
   const latestByStudent = new Map();
   for (const log of logs) {
@@ -77,7 +79,8 @@ function curfewStatusesFromLogs(logs, students) {
         room_number: student?.room_number ?? "—",
         check_out_time: new Date(log.timestamp).toTimeString().slice(0, 5),
         check_in_time: null,
-        status: "out",
+        // Same rule as the curfew_status view: out for more than 4 hours = overdue.
+        status: Date.now() - new Date(log.timestamp).getTime() > OVERDUE_AFTER_MS ? "overdue" : "out",
       };
     });
 }

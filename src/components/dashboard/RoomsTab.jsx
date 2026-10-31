@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import HostelDetailModal from "./HostelDetailModal";
 import LikeBurst from "../LikeBurst";
+import FinanceNotice from "./FinanceNotice";
 import { FALLBACK_SEMESTER, activeBookingFor, nextSemester } from "../../lib/semesters";
 
 const GENDER_LABEL = { male: "male", female: "female" };
@@ -19,7 +20,18 @@ function roomsForResidence(rooms, residenceId) {
   return hasResidenceData ? rooms.filter((r) => r.residence === residenceId) : rooms;
 }
 
-function RoomsTab({ rooms, residences, bookings = [], studentId, studentGender, semester, eligibility, onBookingCreated }) {
+function RoomsTab({
+  rooms,
+  residences,
+  bookings = [],
+  studentId,
+  studentGender,
+  semester,
+  eligibility,
+  financeStatus = "pending",
+  financeNote,
+  onBookingCreated,
+}) {
   const [openResidenceId, setOpenResidenceId] = useState(null);
   const [bookingRoomId, setBookingRoomId] = useState(null);
   const [message, setMessage] = useState("");
@@ -40,6 +52,14 @@ function RoomsTab({ rooms, residences, bookings = [], studentId, studentGender, 
       `A student can only apply to one hostel per semester.` +
       (bookingSemester === currentSemester ? ` You can still book for ${upcomingSemester}.` : "")
     : "";
+
+  // New accounts must be verified by Finance before they can request a room
+  // (the database blocks the insert too — this just explains why).
+  const financeVerified = financeStatus === "verified";
+  const financeLockText =
+    financeStatus === "rejected"
+      ? `Finance couldn't verify your account${financeNote ? `: ${financeNote}` : "."} Please visit the Finance office.`
+      : "Your account is waiting for Finance verification. You can browse rooms now and book once you're verified.";
 
   const openResidence = residences.find((r) => r.id === openResidenceId) ?? null;
 
@@ -85,6 +105,10 @@ function RoomsTab({ rooms, residences, bookings = [], studentId, studentGender, 
   // the warden can see it and add the real room later. Real rows (warden-
   // added, `room.mock` falsy) keep booking against room_id as before.
   const handleBook = async (room, context = {}) => {
+    if (!financeVerified) {
+      setMessage(financeLockText);
+      return;
+    }
     if (eligibility === "not_eligible") {
       setMessage("Your eligibility is marked as not eligible, so room requests are turned off. Please contact the warden.");
       return;
@@ -131,6 +155,8 @@ function RoomsTab({ rooms, residences, bookings = [], studentId, studentGender, 
       setMessage(
         error.code === "23505"
           ? `You already have a booking for ${bookingSemester}. A student can only apply to one hostel per semester.`
+          : /row-level security/i.test(error.message)
+          ? financeLockText
           : `Couldn't submit booking: ${error.message}`
       );
       return;
@@ -169,6 +195,8 @@ function RoomsTab({ rooms, residences, bookings = [], studentId, studentGender, 
           ))}
         </div>
       </section>
+
+      {!financeVerified && <FinanceNotice status={financeStatus} note={financeNote} />}
 
       {liveBooking && (
         <p className="message message--info" role="status">
@@ -219,7 +247,8 @@ function RoomsTab({ rooms, residences, bookings = [], studentId, studentGender, 
           rooms={roomsForResidence(rooms, openResidence.id)}
           roomGenders={roomGenders}
           bookingRoomId={bookingRoomId}
-          bookingLocked={Boolean(liveBooking)}
+          bookingLocked={Boolean(liveBooking) || !financeVerified}
+          lockedLabel={!financeVerified ? "Awaiting Finance" : undefined}
           message={message}
           onBook={handleBook}
           onClose={() => setOpenResidenceId(null)}

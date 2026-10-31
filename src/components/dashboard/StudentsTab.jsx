@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import Avatar from "./Avatar";
-import { ELIGIBILITY_LABELS, eligibilityTone } from "../../lib/formatters";
+import { ELIGIBILITY_LABELS, eligibilityTone, FINANCE_LABELS, financeTone } from "../../lib/formatters";
 
 const ELIGIBILITY_FILTERS = [
   { value: "all", label: "All eligibility" },
@@ -129,6 +129,7 @@ function StudentsTab({ students, bookings = [], onEligibilityChange }) {
                 <th>Contact</th>
                 <th>Hostel</th>
                 <th>Eligibility</th>
+                <th>Finance</th>
               </tr>
             </thead>
             <tbody>
@@ -180,6 +181,11 @@ function StudentsTab({ students, bookings = [], onEligibilityChange }) {
                         <option value="eligible">Force eligible</option>
                         <option value="not_eligible">Force not eligible</option>
                       </select>
+                    </td>
+                    <td>
+                      <span className={"badge badge--" + financeTone(s.finance_status ?? "pending")}>
+                        {FINANCE_LABELS[s.finance_status ?? "pending"]}
+                      </span>
                     </td>
                   </tr>
                 );

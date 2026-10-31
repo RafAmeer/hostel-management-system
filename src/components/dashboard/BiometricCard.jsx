@@ -54,8 +54,14 @@ function BiometricCard() {
 
   const remove = async (id) => {
     try {
-      await removePasskey(id);
+      const { forgotten } = await removePasskey(id);
       await refresh();
+      setMsg({
+        text: forgotten
+          ? "Removed. Your device was also asked to forget this fingerprint."
+          : "Removed from DormSphere. If this device still offers it at sign-in, delete the DormSphere passkey in your phone's password manager.",
+        tone: "info",
+      });
     } catch (e) {
       setMsg({ text: e.message, tone: "error" });
     }

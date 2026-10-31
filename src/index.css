@@ -666,3 +666,34 @@ body {
 
 .biometric-btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; margin-top: 0.6rem; padding: 0.7rem 1rem; border-radius: 12px; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
 .biometric-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* "Fingerprint not working?" help on the sign-in card (2026-10-31) */
+.stale-passkey {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+.stale-passkey .forgot-password-link {
+  margin: 0 auto;
+  text-align: center;
+}
+.stale-passkey__panel {
+  margin-top: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: rgb(var(--glass-rgb) / 0.55);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--text-primary);
+}
+.stale-passkey__panel p {
+  margin: 0 0 0.4rem;
+}
+.stale-passkey__panel ul {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+}
+.stale-passkey__panel li {
+  margin-bottom: 0.3rem;
+}

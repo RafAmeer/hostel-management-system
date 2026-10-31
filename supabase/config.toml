@@ -242,6 +242,25 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# DormSphere branded emails (2026-10-31). These paths only apply to the
+# local `supabase start` stack — on the live project paste each file into
+# Dashboard > Authentication > Emails > Templates.
+[auth.email.template.confirmation]
+subject = "Confirm your DormSphere account"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your DormSphere password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.magic_link]
+subject = "Your DormSphere sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new DormSphere email"
+content_path = "./supabase/templates/email_change.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"

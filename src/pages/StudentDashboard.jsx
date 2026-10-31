@@ -65,12 +65,13 @@ function StudentDashboard({ user, onLogout }) {
   // announced ("Your booking was approved") the moment it shows up.
   const bookingStatuses = useRef(null);
   const helpStatuses = useRef(null);
+  const financeStatusRef = useRef(null);
 
   const studentId = user?.id;
 
   const notifItems = useMemo(
-    () => buildStudentNotifications({ bookings, complaints, helpTickets, announcements }),
-    [bookings, complaints, helpTickets, announcements]
+    () => buildStudentNotifications({ bookings, complaints, helpTickets, announcements, profile }),
+    [bookings, complaints, helpTickets, announcements, profile]
   );
   const notif = useNotifications(studentId, notifItems, { ready: !loading });
 
@@ -141,6 +142,13 @@ function StudentDashboard({ user, onLogout }) {
       ]);
 
     if (profileRes.data) {
+      const before = financeStatusRef.current;
+      const after = profileRes.data.finance_status;
+      if (before && after && before !== after) {
+        if (after === "verified") notify("Finance verified your account. You can book a room now!", "success");
+        else if (after === "rejected") notify("Finance couldn't verify your account. See Home for details.", "error");
+      }
+      financeStatusRef.current = after;
       setProfile(profileRes.data);
       setProfileError("");
     } else if (profileRes.error && profileRes.error.code !== NO_ROWS_CODE) {
@@ -238,6 +246,8 @@ function StudentDashboard({ user, onLogout }) {
             studentGender={profile?.gender}
             semester={profile?.semester}
             eligibility={profile?.eligibility_status}
+            financeStatus={profile?.finance_status ?? "pending"}
+            financeNote={profile?.finance_note}
             onBookingCreated={() => loadAll(true)}
           />
         );

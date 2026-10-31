@@ -138,7 +138,21 @@ Deno.serve(async (req) => {
       if (!ch) return json({ error: "Challenge expired. Try again." }, 400);
       const { data: pk, error: pkError } = await admin.from("passkeys").select("*").eq("id", response.id).maybeSingle();
       if (pkError) return json({ error: `Could not look up the passkey: ${pkError.message}` }, 500);
-      if (!pk) return json({ error: "This passkey isn't registered. Sign in with your password, then enable it in Profile." }, 404);
+      // The phone still offers a fingerprint whose account (or saved passkey)
+      // was deleted. Say so clearly and send the credential id back so the
+      // browser can ask the phone's password manager to remove it
+      // (WebAuthn Signal API: PublicKeyCredential.signalUnknownCredential).
+      const unknown = () =>
+        json(
+          {
+            error:
+              "This fingerprint belongs to an account or device that was removed from DormSphere. Sign in with your email and password instead.",
+            code: "unknown_credential",
+            credential_id: response.id,
+          },
+          404
+        );
+      if (!pk) return unknown();
 
       const verification = await verifyAuthenticationResponse({
         response,
@@ -158,10 +172,23 @@ Deno.serve(async (req) => {
 
       const { data: u } = await admin.auth.admin.getUserById(pk.user_id);
       const email = u?.user?.email;
-      if (!email) return json({ error: "Account not found." }, 404);
+      if (!email) {
+        // Orphaned row (account gone) — clean it up so it can't be used again.
+        await admin.from("passkeys").delete().eq("id", pk.id);
+        return unknown();
+      }
       const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email });
       if (linkError || !link?.properties?.hashed_token) return json({ error: "Could not start a session." }, 500);
-      return json({ token_hash: link.properties.hashed_token });
+      // Also send this account's current passkey list so the browser can tell
+      // the phone which saved fingerprints are still valid (any others for
+      // this account, e.g. ones removed in Profile, get hidden/removed).
+      const { data: still } = await admin.from("passkeys").select("id").eq("user_id", pk.user_id);
+      return json({
+        token_hash: link.properties.hashed_token,
+        rp_id: rpID,
+        user_handle: bytesToB64u(new TextEncoder().encode(pk.user_id)),
+        credential_ids: (still ?? []).map((r) => r.id),
+      });
     }
 
     return json({ error: "Unknown action" }, 400);

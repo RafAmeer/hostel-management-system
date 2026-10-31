@@ -46,9 +46,11 @@ async function callFunctionOnce(name, body = {}, { timeoutMs = DEFAULT_TIMEOUT_M
   if (error) {
     if (error.name === "FunctionsHttpError") {
       let detail = "";
+      let payload = null;
       let status = error.context?.status;
       try {
         const j = await error.context.clone().json();
+        payload = j;
         detail = j?.error || j?.message || "";
       } catch {
         try {
@@ -57,7 +59,9 @@ async function callFunctionOnce(name, body = {}, { timeoutMs = DEFAULT_TIMEOUT_M
           /* no body */
         }
       }
-      if (status === 404 && /not.?found/i.test(detail)) {
+      // A `code` means our own function answered on purpose (e.g. the
+      // passkey function's "unknown_credential"), so it is deployed.
+      if (status === 404 && !payload?.code && /not.?found/i.test(detail)) {
         throw new Error(`The "${name}" edge function isn't deployed on this Supabase project yet.`);
       }
       if (status === 401 && /jwt/i.test(detail)) {
@@ -69,6 +73,8 @@ async function callFunctionOnce(name, body = {}, { timeoutMs = DEFAULT_TIMEOUT_M
         detail || `The "${name}" edge function returned an error${status ? ` (${status})` : ""}.`
       );
       httpErr.status = status;
+      httpErr.code = payload?.code;
+      httpErr.payload = payload;
       throw httpErr;
     }
     if (error.name === "FunctionsRelayError") {
