@@ -2,17 +2,21 @@ import { useEffect, useRef, useState } from "react";
 import { exportReportAsPdf, exportReportAsWord, exportReportAsExcel } from "../../lib/reportExport";
 
 const FORMATS = [
-  { key: "pdf", label: "Export as PDF" },
-  { key: "docx", label: "Export as Word (.docx)" },
-  { key: "xlsx", label: "Export as Excel (.xlsx)" },
+  { key: "pdf", label: "PDF" },
+  { key: "docx", label: "Word (.docx)" },
+  { key: "xlsx", label: "Excel (.xlsx)" },
 ];
 
-// Small "Export report" button with a dropdown for the three formats.
-// `buildReport()` is called lazily, only once a format is actually picked,
-// so nothing is computed unless the warden/finance user asks for it.
-function ReportExportButton({ buildReport }) {
+// "Export report" button with a dropdown for the three formats.
+//
+// Pass either `buildReport` (one report) or `reports` — a list of
+// { key, label, build } — to let the user pick which report first
+// (Overview offers summary, occupancy, curfew, complaints, bookings).
+// Reports are only built once a format is picked.
+function ReportExportButton({ buildReport, reports }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [choice, setChoice] = useState(reports?.[0]?.key ?? "");
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -28,7 +32,8 @@ function ReportExportButton({ buildReport }) {
     setOpen(false);
     setBusy(true);
     try {
-      const report = buildReport();
+      const build = reports ? reports.find((r) => r.key === choice)?.build : buildReport;
+      const report = build();
       if (formatKey === "pdf") await exportReportAsPdf(report);
       else if (formatKey === "docx") await exportReportAsWord(report);
       else await exportReportAsExcel(report);
@@ -51,6 +56,24 @@ function ReportExportButton({ buildReport }) {
       </button>
       {open && (
         <div className="report-export__menu" role="menu">
+          {reports && (
+            <div className="report-export__pick">
+              <span className="report-export__label">Report</span>
+              {reports.map((r) => (
+                <label key={r.key} className="report-export__option">
+                  <input
+                    type="radio"
+                    name="report-type"
+                    value={r.key}
+                    checked={choice === r.key}
+                    onChange={() => setChoice(r.key)}
+                  />
+                  <span>{r.label}</span>
+                </label>
+              ))}
+              <span className="report-export__label">Download as</span>
+            </div>
+          )}
           {FORMATS.map((f) => (
             <button
               key={f.key}
@@ -59,7 +82,7 @@ function ReportExportButton({ buildReport }) {
               className="report-export__item"
               onClick={() => handlePick(f.key)}
             >
-              {f.label}
+              {reports ? f.label : `Export as ${f.label}`}
             </button>
           ))}
         </div>

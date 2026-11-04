@@ -1,9 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import Avatar from "./Avatar";
+import { ageFromBirthday } from "../../lib/studentProfile";
 import { PROGRAMME_GROUPS, OTHER_PROGRAMME, isKnownProgramme } from "../../data/programmes";
 
 const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+
+const PHONE_RE = /^(\+?60|0)\d{8,10}$/;
+const RELATIONS = ["Father", "Mother", "Guardian", "Sibling", "Spouse", "Relative", "Other"];
 
 // One form for both the first-time setup and the later "Edit profile" page,
 // for students and for staff (warden). `variant` picks the field set:
@@ -22,7 +26,16 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
   const [fullName, setFullName] = useState(profile?.full_name ?? "");
   const [gender, setGender] = useState(profile?.gender ?? "");
   const [studentId, setStudentId] = useState(profile?.student_id ?? "");
-  const [age, setAge] = useState(profile?.age ? String(profile.age) : "");
+  // Birthday replaces the old typed-in age; age is now worked out from it
+  // (and still saved to profiles.age, which the eligibility rule reads).
+  const [birthday, setBirthday] = useState(profile?.date_of_birth ?? "");
+  const age = ageFromBirthday(birthday);
+  // Emergency contact — requested in the warden user-testing feedback so
+  // wardens can reach a student's family when necessary. Only the student
+  // and wardens can read it (profiles RLS).
+  const [emergencyName, setEmergencyName] = useState(profile?.emergency_name ?? "");
+  const [emergencyRelation, setEmergencyRelation] = useState(profile?.emergency_relation ?? "");
+  const [emergencyPhone, setEmergencyPhone] = useState(profile?.emergency_phone ?? "");
   const [phone, setPhone] = useState(profile?.phone ?? "");
   // The dropdown value is either a listed programme or OTHER_PROGRAMME (then
   // `otherProgramme` holds what they typed). A saved value that isn't in
@@ -80,14 +93,18 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
       if (!gender) return "Select your gender — this decides which hostel rooms you can book.";
       if (!studentId.trim()) return "Enter your student ID.";
       if (!/^\d{8,12}$/.test(studentId.trim())) return "Student ID should be numbers only, e.g. 2502040448.";
-      const n = Number(age);
-      if (!Number.isInteger(n) || n < 15 || n > 99) return "Enter a valid age (15–99).";
+      if (!birthday) return "Enter your birthday.";
+      if (age === null || age < 15 || age > 99) return "Check your birthday — you should be between 15 and 99 years old.";
       if (!programmeChoice) return "Select your programme.";
       if (programmeChoice === OTHER_PROGRAMME && !otherProgramme.trim()) return "Type your programme name.";
       if (!phone.trim()) return "Enter your phone number.";
-      if (!/^(\+?60|0)\d{8,10}$/.test(phone.replace(/[\s-]/g, "")))
+      if (!PHONE_RE.test(phone.replace(/[\s-]/g, "")))
         return "Enter a valid Malaysian phone number, e.g. 012-345 6789.";
       if (!semester) return "Select your current semester.";
+      if (emergencyName.trim().length < 2) return "Enter an emergency contact name.";
+      if (!emergencyRelation) return "Select how your emergency contact is related to you.";
+      if (!PHONE_RE.test(emergencyPhone.replace(/[\s-]/g, "")))
+        return "Enter a valid emergency contact phone number, e.g. 012-345 6789.";
       if (inHostel === null) return "Tell us whether you are currently staying in a hostel.";
     }
     return "";
@@ -112,7 +129,11 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
       Object.assign(fields, {
         gender,
         student_id: studentId.trim(),
-        age: Number(age),
+        age,
+        date_of_birth: birthday,
+        emergency_name: emergencyName.trim(),
+        emergency_relation: emergencyRelation,
+        emergency_phone: emergencyPhone.trim(),
         programme: programme || null,
         semester: semester || null,
         in_hostel: inHostel,
@@ -246,16 +267,15 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
             </label>
 
             <label className="field">
-              <span className="field__label">Age</span>
+              <span className="field__label">Birthday</span>
               <input
-                type="number"
-                inputMode="numeric"
-                min={15}
-                max={99}
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
+                type="date"
+                value={birthday}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setBirthday(e.target.value)}
                 required
               />
+              {age !== null && age > 0 && <span className="field__hint">Age: {age}</span>}
             </label>
 
             <label className="field">
@@ -322,6 +342,48 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
             required
           />
         </label>
+
+        {isStudent && (
+          <>
+            <h4 className="profile-form__section-title">Emergency contact</h4>
+            <p className="profile-form__note">
+              Only you and the hostel wardens can see this. It's used if the warden needs to reach your family.
+            </p>
+            <label className="field">
+              <span className="field__label">Contact name</span>
+              <input
+                type="text"
+                value={emergencyName}
+                onChange={(e) => setEmergencyName(e.target.value)}
+                placeholder="e.g. Ismail bin Ahmad"
+                required
+              />
+            </label>
+            <label className="field">
+              <span className="field__label">Relationship</span>
+              <select value={emergencyRelation} onChange={(e) => setEmergencyRelation(e.target.value)} required>
+                <option value="" disabled>
+                  Select relationship
+                </option>
+                {RELATIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span className="field__label">Contact phone</span>
+              <input
+                type="tel"
+                value={emergencyPhone}
+                onChange={(e) => setEmergencyPhone(e.target.value)}
+                placeholder="e.g. 013-456 7890"
+                required
+              />
+            </label>
+          </>
+        )}
 
         {!isStudent && (
           <>

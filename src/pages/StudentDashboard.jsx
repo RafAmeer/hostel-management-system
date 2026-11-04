@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../dashboard.css";
 import "../student-theme.css";
+import "../feedback-updates.css";
 import { supabase } from "../lib/supabaseClient.js";
 import Sidebar from "../components/dashboard/SideBar.jsx";
 import OverviewTab from "../components/dashboard/OverviewTab";
@@ -59,6 +60,7 @@ function StudentDashboard({ user, onLogout }) {
   const [schedule, setSchedule] = useState([]);
   const [transportError, setTransportError] = useState("");
   const [helpTickets, setHelpTickets] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast, notify, dismiss } = useToast(5000);
   // Last status seen for each booking, so a change made by the warden can be
@@ -70,8 +72,8 @@ function StudentDashboard({ user, onLogout }) {
   const studentId = user?.id;
 
   const notifItems = useMemo(
-    () => buildStudentNotifications({ bookings, complaints, helpTickets, announcements, profile }),
-    [bookings, complaints, helpTickets, announcements, profile]
+    () => buildStudentNotifications({ bookings, complaints, helpTickets, announcements, profile, payments }),
+    [bookings, complaints, helpTickets, announcements, profile, payments]
   );
   const notif = useNotifications(studentId, notifItems, { ready: !loading });
 
@@ -100,6 +102,7 @@ function StudentDashboard({ user, onLogout }) {
       hostelsRes,
       scheduleRes,
       helpRes,
+      paymentsRes,
     ] =
       await Promise.all([
         supabase.from("profiles").select("*").eq("id", studentId).single(),
@@ -139,6 +142,12 @@ function StudentDashboard({ user, onLogout }) {
           .select("*")
           .eq("student_id", studentId)
           .order("updated_at", { ascending: false }),
+        // Hostel fees owed (payments RLS only returns this student's rows).
+        supabase
+          .from("payments")
+          .select("*")
+          .eq("student_id", studentId)
+          .order("due_date", { ascending: true }),
       ]);
 
     if (profileRes.data) {
@@ -172,6 +181,7 @@ function StudentDashboard({ user, onLogout }) {
       setBookings(bookingsRes.data);
     }
     if (complaintsRes.data) setComplaints(complaintsRes.data);
+    if (paymentsRes.data) setPayments(paymentsRes.data);
     if (curfewRes.data) setCurfewLogs(curfewRes.data);
     if (announcementsRes.data) setAnnouncements(announcementsRes.data);
     setResidences(mergeResidences(hostelsRes.data));
@@ -218,6 +228,12 @@ function StudentDashboard({ user, onLogout }) {
         { event: "*", schema: "public", table: "bookings", filter: `student_id=eq.${studentId}` },
         refresh
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "payments", filter: `student_id=eq.${studentId}` },
+        refresh
+      )
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "announcements" }, refresh)
       .subscribe();
 
     const onVisible = () => {
@@ -301,6 +317,7 @@ function StudentDashboard({ user, onLogout }) {
             residences={residences}
             schedule={schedule}
             transportError={transportError}
+            payments={payments}
             onNavigate={setActiveTab}
           />
         );

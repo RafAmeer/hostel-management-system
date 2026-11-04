@@ -65,10 +65,11 @@ function AnnouncementsPanel({ announcements }) {
                   <span
                     className={
                       "announcement__title" +
-                      (a.pinned || a.category === "safety" ? " announcement__title--important" : "")
+                      (a.pinned || a.priority === "urgent" || a.category === "safety" ? " announcement__title--important" : "")
                     }
                   >
-                    {a.pinned && <span className="announcement__pin">Pinned</span>}
+                    {a.priority === "urgent" && <span className="announcement__urgent">Emergency</span>}
+                    {a.pinned && a.priority !== "urgent" && <span className="announcement__pin">Pinned</span>}
                     {a.title}
                   </span>
                   <span className="announcement__meta">

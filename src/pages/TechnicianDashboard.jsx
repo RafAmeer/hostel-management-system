@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "../dashboard.css";
+import "../feedback-updates.css";
 import { supabase } from "../lib/supabaseClient.js";
 import Sidebar from "../components/dashboard/SideBar.jsx";
 import TechnicianTasksTab from "../components/dashboard/TechnicianTasksTab";

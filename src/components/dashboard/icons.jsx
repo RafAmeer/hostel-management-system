@@ -312,7 +312,30 @@ export function ChevronRightIcon(props) {
   );
 }
 
+// Building with windows — hostel occupancy.
+export function BuildingIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="5" y="3.5" width="14" height="17" rx="1.5" />
+      <path d="M9 7.5h1.5M13.5 7.5H15M9 11h1.5M13.5 11H15M9 14.5h1.5M13.5 14.5H15" />
+      <path d="M10.5 20.5v-3h3v3" />
+    </svg>
+  );
+}
+
+// Shield with a check — audit / activity log.
+export function ShieldIcon(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3.5 19 6v5.5c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6l7-2.5Z" />
+      <path d="m9 12 2.2 2.2L15.5 10" />
+    </svg>
+  );
+}
+
 export const NAV_ICONS = {
+  occupancy: BuildingIcon,
+  activity: ShieldIcon,
   help: HelpIcon,
   home: HomeIcon,
   rooms: BedIcon,

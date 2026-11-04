@@ -1,0 +1,547 @@
+/* =====================================================================
+   Styles for the Nov 2026 updates (warden user-testing feedback):
+   urgent alerts, payment reminder, filter chips, occupancy grid,
+   activity log, attention strip, report picker.
+   Uses the same colour tokens as the rest of the app, so light/dark mode
+   and the student theme carry over.
+   ===================================================================== */
+
+.text-danger {
+  color: rgb(var(--danger-rgb));
+  font-weight: 600;
+}
+
+.field__hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.profile-form__note {
+  grid-column: 1 / -1;
+  margin: -0.2rem 0 0.6rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* ---- Filter chips (complaints, curfew, payments, occupancy) -------- */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 1rem;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-height: 36px;
+}
+.filter-chip:hover {
+  border-color: rgb(var(--accent-rgb) / 0.6);
+}
+.filter-chip--active {
+  background: rgb(var(--accent-rgb) / 0.18);
+  border-color: rgb(var(--accent-rgb) / 0.75);
+  font-weight: 600;
+}
+.filter-chip__count {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+/* ---- Stat tiles with a status tint -------------------------------- */
+.stat-mini--danger {
+  border-color: rgb(var(--danger-rgb) / 0.55);
+  background: rgb(var(--danger-rgb) / 0.12);
+}
+.stat-mini--danger strong {
+  color: rgb(var(--danger-rgb));
+}
+.stat-mini--warn {
+  border-color: rgb(var(--warn-rgb) / 0.5);
+  background: rgb(var(--warn-rgb) / 0.1);
+}
+.stat-mini--ok strong {
+  color: rgb(var(--success-rgb));
+}
+
+/* ---- Urgent rows / labels ----------------------------------------- */
+.list-row--urgent {
+  border-left: 4px solid rgb(var(--danger-rgb));
+  background: rgb(var(--danger-rgb) / 0.07);
+}
+.announcement__urgent {
+  display: inline-block;
+  margin-right: 0.45rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgb(var(--danger-rgb));
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.announce-form__urgent span {
+  color: rgb(var(--danger-rgb));
+  font-weight: 600;
+}
+.complaint-urgent {
+  margin: 0.2rem 0 0.9rem;
+  align-items: flex-start;
+}
+.hl--danger {
+  background: rgb(var(--danger-rgb) / 0.22);
+  color: inherit;
+}
+
+/* ---- Student: emergency alert banner ------------------------------ */
+.urgent-alerts {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.urgent-alert {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.95rem 1rem;
+  border-radius: 14px;
+  border: 2px solid rgb(var(--danger-rgb));
+  background: rgb(var(--danger-rgb) / 0.14);
+  animation: urgent-pulse 2.4s ease-in-out 3;
+}
+@keyframes urgent-pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgb(var(--danger-rgb) / 0.18);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .urgent-alert {
+    animation: none;
+  }
+}
+.urgent-alert__icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.urgent-alert__text {
+  flex: 1;
+  min-width: 0;
+}
+.urgent-alert__title {
+  margin: 0 0 0.2rem;
+  font-weight: 700;
+  font-size: 1.02rem;
+}
+.urgent-alert__body {
+  margin: 0 0 0.35rem;
+  white-space: pre-line;
+}
+.urgent-alert__meta {
+  margin: 0;
+  font-size: 0.78rem;
+  opacity: 0.8;
+}
+.urgent-alert__close {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 8px;
+}
+.urgent-alert__close:hover {
+  background: rgb(var(--danger-rgb) / 0.15);
+}
+
+/* ---- Student: payment reminder card ------------------------------- */
+.payment-reminder {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+  border-radius: 14px;
+  border: 1px solid rgb(var(--info-rgb) / 0.5);
+  background: rgb(var(--info-rgb) / 0.12);
+}
+.payment-reminder--soon {
+  border-color: rgb(var(--warn-rgb) / 0.6);
+  background: rgb(var(--warn-rgb) / 0.13);
+}
+.payment-reminder--overdue {
+  border: 2px solid rgb(var(--danger-rgb) / 0.8);
+  background: rgb(var(--danger-rgb) / 0.12);
+}
+.payment-reminder__icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.payment-reminder__body {
+  flex: 1;
+  min-width: 0;
+}
+.payment-reminder__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+.payment-reminder--overdue .payment-reminder__eyebrow {
+  color: rgb(var(--danger-rgb));
+  opacity: 1;
+}
+.payment-reminder__amount {
+  margin: 0.1rem 0 0.25rem;
+  font-family: "Manrope", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+.payment-reminder__amount span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 0.75;
+}
+.payment-reminder__text {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+}
+.payment-reminder__list {
+  margin: 0 0 0.4rem;
+  padding-left: 1.1rem;
+  font-size: 0.86rem;
+}
+.payment-reminder__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* ---- Warden: needs-attention strip -------------------------------- */
+.attention-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+}
+.attention-strip--clear {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.attention-strip__title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-right: 0.25rem;
+}
+.attention-chip {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid;
+  font: inherit;
+  font-size: 0.85rem;
+  color: inherit;
+  cursor: pointer;
+  min-height: 36px;
+}
+.attention-chip--danger {
+  border-color: rgb(var(--danger-rgb) / 0.7);
+  background: rgb(var(--danger-rgb) / 0.14);
+}
+.attention-chip--warn {
+  border-color: rgb(var(--warn-rgb) / 0.7);
+  background: rgb(var(--warn-rgb) / 0.13);
+}
+.attention-chip:hover {
+  filter: brightness(1.08);
+}
+
+/* ---- Warden: occupancy -------------------------------------------- */
+.occupancy-bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.occupancy-bar {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.8rem 0.95rem;
+  text-align: left;
+  border-radius: 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.occupancy-bar--active {
+  border-color: rgb(var(--accent-rgb) / 0.8);
+  box-shadow: 0 0 0 2px rgb(var(--accent-rgb) / 0.25);
+}
+.occupancy-bar__name {
+  font-weight: 600;
+}
+.occupancy-bar__track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgb(var(--success-rgb) / 0.25);
+  overflow: hidden;
+}
+.occupancy-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgb(var(--accent-rgb));
+}
+.occupancy-bar__nums {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.occupancy-hostel {
+  margin-bottom: 1.1rem;
+}
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0.6rem;
+}
+.room-cell {
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  border-top: 4px solid rgb(var(--warn-rgb));
+  background: var(--glass);
+}
+.room-cell--full {
+  border-top-color: rgb(var(--accent-rgb));
+}
+.room-cell--empty {
+  border-top-color: rgb(var(--success-rgb));
+}
+.room-cell__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+.room-cell__beds {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.25rem 0 0.4rem;
+  font-size: 0.85rem;
+}
+.room-cell__people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.85rem;
+}
+.room-cell__people li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.15rem 0;
+}
+.transfer-dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.6rem;
+}
+.transfer-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ---- Warden: activity log ----------------------------------------- */
+.activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.activity-item {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr auto;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+}
+.activity-item__time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.activity-item__action {
+  margin: 0;
+  font-weight: 600;
+}
+.activity-item__who {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  text-align: right;
+}
+@media (max-width: 640px) {
+  .activity-item {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+  .activity-item__who {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+  }
+}
+
+/* ---- Report picker inside the Export menu ------------------------- */
+.report-export__pick {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.5rem 0.6rem 0.2rem;
+  border-bottom: 1px solid var(--glass-border);
+}
+.report-export__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  margin-top: 0.3rem;
+}
+.report-export__option {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.3rem 0.2rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+/* ---- Finance overview: highest balances --------------------------- */
+.finance-owing {
+  list-style: none;
+  margin: 0 0 0.6rem;
+  padding: 0;
+}
+.finance-owing li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* ---- Phone tweaks -------------------------------------------------- */
+@media (max-width: 720px) {
+  .filter-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-left: -2px;
+    padding-bottom: 2px;
+  }
+  .filter-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .filter-chip {
+    flex: 0 0 auto;
+  }
+  .room-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .payment-reminder__amount {
+    font-size: 1.3rem;
+  }
+  .students-table-wrap {
+    overflow-x: auto;
+  }
+}
+@media (max-width: 420px) {
+  .room-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Warden console overrides (warden-console.css is more specific) */
+.dashboard--console .stat-mini.stat-mini--danger {
+  border-color: rgb(var(--danger-rgb) / 0.55);
+  background: rgb(var(--danger-rgb) / 0.12);
+}
+.dashboard--console .stat-mini.stat-mini--danger strong {
+  color: rgb(var(--danger-rgb));
+}
+.dashboard--console .stat-mini.stat-mini--warn {
+  border-color: rgb(var(--warn-rgb) / 0.5);
+  background: rgb(var(--warn-rgb) / 0.1);
+}
+.dashboard--console .stat-mini.stat-mini--ok strong {
+  color: rgb(var(--success-rgb));
+}
+.dashboard--console .list-row.list-row--urgent {
+  border-left: 4px solid rgb(var(--danger-rgb));
+  background: rgb(var(--danger-rgb) / 0.07);
+}
+
+/* Phone links inside lists/tables: readable on both themes. */
+.list-row__meta a,
+.students-table a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.room-cell__head {
+  flex-wrap: wrap;
+}
+.room-cell__head strong {
+  white-space: nowrap;
+}
+.room-grid {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+.students-toolbar .remember {
+  align-self: center;
+}
+.transfer-dialog__actions .primary-btn {
+  width: auto;
+  margin: 0;
+}

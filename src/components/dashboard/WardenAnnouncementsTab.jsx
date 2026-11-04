@@ -19,6 +19,10 @@ function WardenAnnouncementsTab({ announcements, onChanged, notify }) {
   const [body, setBody] = useState("");
   const [category, setCategory] = useState("general");
   const [pinned, setPinned] = useState(false);
+  // Emergency posts (warden feedback: "communicate urgent information
+  // directly to students") show as a red banner at the very top of student
+  // Home and as a phone notification, not just another item in the feed.
+  const [urgent, setUrgent] = useState(false);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState("");
   const [saving, setSaving] = useState(false);
@@ -67,11 +71,17 @@ function WardenAnnouncementsTab({ announcements, onChanged, notify }) {
       imageUrl = supabase.storage.from("announcements").getPublicUrl(path).data.publicUrl;
     }
 
+    if (urgent && !window.confirm("Send this as an EMERGENCY announcement? Every student will see a red alert and a phone notification.")) {
+      setSaving(false);
+      return;
+    }
+
     const { error: insertError } = await supabase.from("announcements").insert({
       title: title.trim(),
       body: body.trim(),
       category,
-      pinned,
+      pinned: pinned || urgent,
+      priority: urgent ? "urgent" : "normal",
       image_url: imageUrl,
     });
 
@@ -84,8 +94,12 @@ function WardenAnnouncementsTab({ announcements, onChanged, notify }) {
     setBody("");
     setCategory("general");
     setPinned(false);
+    setUrgent(false);
     clearFile();
-    notify?.("Announcement published. Students will see it on Home.", "success");
+    notify?.(
+      urgent ? "Emergency announcement sent. Students will see a red alert." : "Announcement published. Students will see it on Home.",
+      "success"
+    );
     onChanged?.();
   };
 
@@ -163,7 +177,18 @@ function WardenAnnouncementsTab({ announcements, onChanged, notify }) {
             <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} />
             <span>Pin to top</span>
           </label>
+
+          <label className="remember announce-form__pin announce-form__urgent">
+            <input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} />
+            <span>🚨 Emergency / urgent</span>
+          </label>
         </div>
+        {urgent && (
+          <p className="message message--error" role="status">
+            Emergency posts appear as a red alert at the top of every student's Home page and send a phone
+            notification. Use it for urgent safety or service information only.
+          </p>
+        )}
 
         <div className="field">
           <span className="field__label">Image (optional)</span>
@@ -183,7 +208,7 @@ function WardenAnnouncementsTab({ announcements, onChanged, notify }) {
           className="primary-btn primary-btn--wide"
           disabled={saving || !title.trim() || !body.trim()}
         >
-          {saving ? "Publishing…" : "Publish announcement"}
+          {saving ? "Publishing…" : urgent ? "Send emergency announcement" : "Publish announcement"}
         </button>
       </form>
 
@@ -197,7 +222,8 @@ function WardenAnnouncementsTab({ announcements, onChanged, notify }) {
               {a.image_url && <img className="announce-row__thumb" src={a.image_url} alt="" />}
               <div className="announce-row__main">
                 <p className="list-row__title">
-                  {a.pinned && <span className="announcement__pin">Pinned</span>}
+                  {a.priority === "urgent" && <span className="announcement__urgent">Emergency</span>}
+                  {a.pinned && a.priority !== "urgent" && <span className="announcement__pin">Pinned</span>}
                   {a.title}
                 </p>
                 <p className="list-row__meta">

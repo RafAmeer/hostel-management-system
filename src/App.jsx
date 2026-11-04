@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import "./index.css";
+import "./auth.css";
+import ThemeToggle from "./components/ThemeToggle";
+import HostelSlideshow from "./components/HostelSlideshow";
 import { supabase } from "./lib/supabaseClient";
 import { assetUrl } from "./lib/assetUrl";
-import HostelSlideshow from "./components/HostelSlideshow";
 import StudentDashboard from "./pages/StudentDashboard";
 import WardenDashboard from "./pages/WardenDashboard";
 import FinanceDashboard from "./pages/FinanceDashboard";
@@ -528,55 +530,106 @@ function MainApp() {
   }
 
   const isStaffPortal = portal === "staff";
+  const showPortalTabs = mode === "login" || mode === "signup";
+  const canUsePasskey = mode === "login" && passkeysSupported();
 
+  const heading =
+    mode === "forgot"
+      ? "Reset your password"
+      : mode === "reset"
+      ? "Choose a new password"
+      : mode === "signup"
+      ? isStaffPortal
+        ? "Create a staff account"
+        : "Create your account"
+      : isStaffPortal
+      ? "Staff sign in"
+      : "Sign in";
+
+  const subheading =
+    mode === "forgot"
+      ? "Enter your account email and we'll send you a reset link."
+      : mode === "reset"
+      ? "Enter a new password for your account."
+      : mode === "signup"
+      ? isStaffPortal
+        ? "For wardens, finance and technicians. You'll need a staff code from the hostel office."
+        : "Use your student email to get started."
+      : isStaffPortal
+      ? "Wardens, finance and technicians."
+      : "Welcome back. Sign in to your hostel account.";
+
+  // Sign-in page: a quiet split layout — hostel photos with a short intro on
+  // the left, a plain solid form on the right (stacked on phones). All the
+  // form logic below is unchanged; only the layout and styling moved to
+  // src/auth.css.
   return (
     <>
-    <div className="page">
-      <HostelSlideshow />
-      <div className="scrim" />
+    <div className="auth">
+      <aside className="auth__showcase" aria-hidden="true">
+        <HostelSlideshow />
+        <div className="auth__showcase-shade" />
+        <div className="auth__showcase-content">
+          <div className="auth__brand auth__brand--light">
+            <span className="auth__mark">
+              <img src={assetUrl("logo.png")} alt="" />
+            </span>
+            <span className="auth__brand-name">DormSphere</span>
+          </div>
 
-      <div className="container">
-        <form className="card card--enter" onSubmit={handleSubmit}>
-          <img src={assetUrl("logo.png")} alt="" className="avatar" aria-hidden="true" />
-          <p className="brand-name">DormSphere</p>
-          <h1 className="title">
-            {mode === "forgot"
-              ? "Reset your password"
-              : mode === "reset"
-              ? "Choose a new password"
-              : isStaffPortal
-              ? mode === "login"
-                ? "Staff Login"
-                : "Staff Sign Up"
-              : mode === "signup"
-              ? "Create Account"
-              : "Welcome Back"}
-          </h1>
-          <p className="subtitle">
-            {mode === "forgot"
-              ? "We'll email you a link to reset it."
-              : mode === "reset"
-              ? "Enter a new password for your account."
-              : isStaffPortal
-              ? mode === "login"
-                ? "Sign in to your staff dashboard"
-                : "Create a Warden, Finance, or Technician account"
-              : mode === "login"
-              ? "Sign in to your hostel account"
-              : "Create your hostel account"}
-          </p>
+          <div className="auth__pitch">
+            <h2 className="auth__pitch-title">Hostel life, managed in one place.</h2>
+            <p className="auth__pitch-text">
+              Room booking, maintenance requests and curfew records in one app — for students and hostel staff.
+            </p>
+            <ul className="auth__points">
+              <li>Book a room and follow its approval</li>
+              <li>Report problems and track the repair</li>
+              <li>Check in and out with the hostel QR</li>
+            </ul>
+          </div>
 
-          {!isStaffPortal && mode === "login" && (
-            <a className="scan-tile" href={assetUrl("curfew")}>
-              <span className="scan-tile__icon" aria-hidden="true">
-                <ScanIcon />
-              </span>
-              <span className="scan-tile__text">
-                <strong>Scan Curfew</strong>
-                <small>Check in or out at the hostel entrance</small>
-              </span>
-            </a>
+          <p className="auth__showcase-foot">DormSphere · Hostel Management System</p>
+        </div>
+      </aside>
+
+      <main className="auth__panel">
+        <div className="auth__panel-top">
+          <div className="auth__brand auth__brand--compact">
+            <span className="auth__mark">
+              <img src={assetUrl("logo.png")} alt="" />
+            </span>
+            <span className="auth__brand-name">DormSphere</span>
+          </div>
+          <ThemeToggle className="auth__theme" />
+        </div>
+
+        <form className="auth__form" onSubmit={handleSubmit} noValidate={false}>
+          {showPortalTabs && (
+            <div className="auth__tabs" role="tablist" aria-label="Account type">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!isStaffPortal}
+                className={"auth__tab" + (!isStaffPortal ? " auth__tab--active" : "")}
+                onClick={() => isStaffPortal && switchPortal("student")}
+              >
+                Student
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={isStaffPortal}
+                className={"auth__tab" + (isStaffPortal ? " auth__tab--active" : "")}
+                onClick={() => !isStaffPortal && switchPortal("staff")}
+              >
+                Staff
+              </button>
+            </div>
           )}
+
+          <h1 className="auth__title">{heading}</h1>
+          <p className="auth__subtitle">{subheading}</p>
 
           {error && (
             <p className="message message--error" role="alert">
@@ -591,50 +644,54 @@ function MainApp() {
 
           {isStaffPortal && mode === "signup" && (
             <>
-              <label className="field">
-                <span className="field__label">Title</span>
-                <select value={staffTitle} onChange={(e) => setStaffTitle(e.target.value)} required>
-                  <option value="" disabled>
-                    Select title
-                  </option>
-                  <option value="Mr">Mr</option>
-                  <option value="Ms">Ms</option>
-                  <option value="Mdm">Mdm</option>
-                </select>
-              </label>
+              <div className="auth__row">
+                <label className="field auth__field--narrow">
+                  <span className="field__label">Title</span>
+                  <select value={staffTitle} onChange={(e) => setStaffTitle(e.target.value)} required>
+                    <option value="" disabled>
+                      Select
+                    </option>
+                    <option value="Mr">Mr</option>
+                    <option value="Ms">Ms</option>
+                    <option value="Mdm">Mdm</option>
+                  </select>
+                </label>
 
-              <label className="field">
-                <span className="field__label">Full name</span>
-                <input
-                  type="text"
-                  autoComplete="name"
-                  placeholder="e.g. Ahmad bin Ismail"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-              </label>
+                <label className="field">
+                  <span className="field__label">Full name</span>
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    placeholder="e.g. Ahmad bin Ismail"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </label>
+              </div>
 
-              <label className="field">
-                <span className="field__label">Role</span>
-                <select value={staffRole} onChange={(e) => setStaffRole(e.target.value)}>
-                  <option value="warden">Warden</option>
-                  <option value="finance">Finance</option>
-                  <option value="technician">Technician</option>
-                </select>
-              </label>
+              <div className="auth__row">
+                <label className="field">
+                  <span className="field__label">Role</span>
+                  <select value={staffRole} onChange={(e) => setStaffRole(e.target.value)}>
+                    <option value="warden">Warden</option>
+                    <option value="finance">Finance</option>
+                    <option value="technician">Technician</option>
+                  </select>
+                </label>
 
-              <label className="field">
-                <span className="field__label">Staff code</span>
-                <input
-                  type="text"
-                  autoComplete="off"
-                  placeholder="From the hostel office, e.g. DS-XXXX-XXXX"
-                  value={staffCode}
-                  onChange={(e) => setStaffCode(e.target.value)}
-                  required
-                />
-              </label>
+                <label className="field">
+                  <span className="field__label">Staff code</span>
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    placeholder="DS-XXXX-XXXX"
+                    value={staffCode}
+                    onChange={(e) => setStaffCode(e.target.value)}
+                    required
+                  />
+                </label>
+              </div>
             </>
           )}
 
@@ -659,7 +716,7 @@ function MainApp() {
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete={mode === "signup" ? "new-password" : mode === "reset" ? "new-password" : "current-password"}
-                  placeholder="••••••••"
+                  placeholder={mode === "login" ? "Enter your password" : "At least 6 characters"}
                   value={mode === "reset" ? newPassword : password}
                   onChange={(e) => (mode === "reset" ? setNewPassword(e.target.value) : setPassword(e.target.value))}
                   minLength={6}
@@ -678,26 +735,29 @@ function MainApp() {
             </label>
           )}
 
-          {!isStaffPortal && mode === "login" && (
-            <label className="remember">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-              />
-              <span>Remember me</span>
-            </label>
-          )}
-
           {mode === "login" && (
-            <button type="button" className="forgot-password-link" onClick={() => switchMode("forgot")}>
-              Forgot password?
-            </button>
+            <div className="auth__row auth__row--between">
+              {!isStaffPortal ? (
+                <label className="auth__check">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <span>Remember me</span>
+                </label>
+              ) : (
+                <span />
+              )}
+              <button type="button" className="auth__link" onClick={() => switchMode("forgot")}>
+                Forgot password?
+              </button>
+            </div>
           )}
 
           <button
             type="submit"
-            className="primary-btn"
+            className="auth__submit"
             disabled={
               loading ||
               (mode === "forgot" ? !email : mode === "reset" ? !newPassword : !email || !password) ||
@@ -714,72 +774,81 @@ function MainApp() {
               : mode === "reset"
               ? "Update password"
               : mode === "login"
-              ? "Sign In"
-              : "Sign Up"}
+              ? "Sign in"
+              : "Create account"}
           </button>
 
+          {canUsePasskey && (
+            <>
+              <div className="auth__divider">
+                <span>or</span>
+              </div>
+              <button type="button" className="auth__secondary" onClick={handlePasskeyLogin} disabled={loading}>
+                <FingerprintIcon aria-hidden="true" /> Sign in with fingerprint
+              </button>
+              <StalePasskeyHelp
+                open={Boolean(staleHelp)}
+                forgotten={staleHelp?.forgotten}
+                onToggle={() => setStaleHelp((v) => (v ? null : { forgotten: false }))}
+              />
+            </>
+          )}
+
           {mode === "forgot" ? (
-            <p className="switch-mode">
-              <button type="button" onClick={() => switchMode("login")}>
+            <p className="auth__switch">
+              <button type="button" className="auth__link" onClick={() => switchMode("login")}>
                 ← Back to sign in
               </button>
             </p>
           ) : mode === "reset" ? null : (
-            <p className="switch-mode">
+            <p className="auth__switch">
               {mode === "login" ? (
                 <>
-                  {isStaffPortal ? "New staff member? " : "Don't have an account? "}
-                  <button type="button" onClick={() => switchMode("signup")}>
-                    Sign Up
+                  {isStaffPortal ? "New staff member? " : "New to DormSphere? "}
+                  <button type="button" className="auth__link auth__link--strong" onClick={() => switchMode("signup")}>
+                    Create an account
                   </button>
                 </>
               ) : (
                 <>
                   Already have an account?{" "}
-                  <button type="button" onClick={() => switchMode("login")}>
-                    Sign In
+                  <button type="button" className="auth__link auth__link--strong" onClick={() => switchMode("login")}>
+                    Sign in
                   </button>
                 </>
               )}
             </p>
           )}
+        </form>
 
-          {mode !== "reset" && (
-            <button
-              type="button"
-              className="portal-switch"
-              onClick={() => switchPortal(isStaffPortal ? "student" : "staff")}
-            >
-              {isStaffPortal ? "← Back to student login" : "Staff? Login here"}
-            </button>
-          )}
-
-          {mode === "login" && passkeysSupported() && (
-            <button type="button" className="biometric-btn" onClick={handlePasskeyLogin} disabled={loading}>
-              <FingerprintIcon aria-hidden="true" /> Sign in with fingerprint
-            </button>
-          )}
-
-          {mode === "login" && passkeysSupported() && (
-            <StalePasskeyHelp
-              open={Boolean(staleHelp)}
-              forgotten={staleHelp?.forgotten}
-              onToggle={() => setStaleHelp((v) => (v ? null : { forgotten: false }))}
-            />
+        <div className="auth__extras">
+          {!isStaffPortal && mode === "login" && (
+            <a className="auth__scan" href={assetUrl("curfew")}>
+              <span className="auth__scan-icon" aria-hidden="true">
+                <ScanIcon />
+              </span>
+              <span className="auth__scan-text">
+                <strong>Curfew check-in / check-out</strong>
+                <small>Scan the QR poster at your hostel entrance</small>
+              </span>
+              <span className="auth__scan-arrow" aria-hidden="true">→</span>
+            </a>
           )}
 
           {mode === "login" && canInstall && (
-            <button type="button" className="install-btn" onClick={install}>
-              <DownloadIcon aria-hidden="true" /> Install DormSphere app
+            <button type="button" className="auth__install" onClick={install}>
+              <DownloadIcon aria-hidden="true" /> Install the DormSphere app
             </button>
           )}
           {mode === "login" && showIosHint && (
-            <p className="install-hint">
+            <p className="auth__hint">
               To install on iPhone: tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.
             </p>
           )}
-        </form>
-      </div>
+        </div>
+
+        <p className="auth__legal">© {new Date().getFullYear()} DormSphere. All rights reserved.</p>
+      </main>
     </div>
     {overlays}
     </>

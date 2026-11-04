@@ -5,6 +5,10 @@ import TransportToday from "./TransportToday";
 import { scopeSchedule, studentTransportScope } from "../../lib/transport";
 import { formatDateTime, ELIGIBILITY_LABELS, eligibilityTone, FINANCE_LABELS, financeTone } from "../../lib/formatters";
 import FinanceNotice from "./FinanceNotice";
+import UrgentAlerts from "./UrgentAlerts";
+import PaymentReminder from "./PaymentReminder";
+import { missingProfileExtras } from "../../lib/studentProfile";
+import { money, summarisePayments } from "../../lib/payments";
 import { FALLBACK_SEMESTER, nextSemester, parseSemester } from "../../lib/semesters";
 
 function getGreetingTime() {
@@ -33,8 +37,11 @@ function OverviewTab({
   residences = [],
   schedule = [],
   transportError = "",
+  payments = [],
   onNavigate,
 }) {
+  const missingExtras = missingProfileExtras(profile);
+  const fees = summarisePayments(payments);
   // "Your room" only counts once the warden has approved it. A pending
   // request is shown as a request, not as the student's room.
   //
@@ -139,6 +146,14 @@ function OverviewTab({
       </>
     );
   }
+  if (fees.unpaidCount > 0) {
+    notifications.push(
+      <>
+        <mark className={"hl" + (fees.overdueCount ? " hl--danger" : "")}>{money(fees.outstanding)}</mark> hostel fee
+        {fees.overdueCount ? " is overdue" : " outstanding"}
+      </>
+    );
+  }
   if (openComplaints > 0) {
     notifications.push(
       <>
@@ -168,7 +183,23 @@ function OverviewTab({
   return (
     <div className="tab home-grid">
       <div className="home-grid__main">
+        <UrgentAlerts announcements={announcements} />
         <FinanceNotice status={profile?.finance_status ?? "verified"} note={profile?.finance_note} />
+        <PaymentReminder payments={payments} />
+        {missingExtras.length > 0 && (
+          <div className="finance-notice profile-extras-notice" role="status">
+            <span aria-hidden="true">📝</span>
+            <div>
+              <p className="finance-notice__title">Please add your {missingExtras.join(" and ")}</p>
+              <p className="finance-notice__text">
+                The hostel now keeps an emergency contact for every resident.{" "}
+                <button type="button" className="link-btn" onClick={() => onNavigate?.("profile")}>
+                  Update profile
+                </button>
+              </p>
+            </div>
+          </div>
+        )}
         <section className="glass-panel profile-panel home-greeting">
           <div className="profile-panel__head">
             <div>

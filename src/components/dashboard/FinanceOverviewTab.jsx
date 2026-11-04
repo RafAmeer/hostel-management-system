@@ -1,24 +1,21 @@
 import BarChart from "./BarChart";
 import ReportExportButton from "./ReportExportButton";
 import { buildFinanceReport } from "../../lib/buildReports";
+import { money, outstandingByStudent, paymentState, summarisePayments } from "../../lib/payments";
 
-// Basic payment/financial summary per the proposal's Finance Module
-// ("generate basic payment and financial summary reports"). Totals are
-// computed here in plain JS from the payment records passed in — no AI
-// involved on this side, just arithmetic on real rows.
-function FinanceOverviewTab({ payments }) {
-  const totalCollected = payments
-    .filter((p) => p.status === "paid")
-    .reduce((sum, p) => sum + p.amount, 0);
-  const totalOutstanding = payments
-    .filter((p) => p.status !== "paid")
-    .reduce((sum, p) => sum + p.amount, 0);
-  const overdueCount = payments.filter((p) => p.status === "overdue").length;
+// Payment/financial summary per the proposal's Finance Module. Totals use
+// the remaining balance of each charge, so part-payments are counted
+// correctly (collected = what's been received, outstanding = what's left).
+function FinanceOverviewTab({ payments, onNavigate }) {
+  const s = summarisePayments(payments);
+  const owing = outstandingByStudent(payments).slice(0, 5);
+  const count = (st) => payments.filter((p) => paymentState(p) === st).length;
 
   const chartData = [
-    { label: "Paid", value: payments.filter((p) => p.status === "paid").length, tone: "ok" },
-    { label: "Outstanding", value: payments.filter((p) => p.status === "outstanding").length, tone: "warn" },
-    { label: "Overdue", value: overdueCount, tone: "danger" },
+    { label: "Paid", value: count("paid"), tone: "ok" },
+    { label: "Partly paid", value: count("partial"), tone: "warn" },
+    { label: "Outstanding", value: count("outstanding"), tone: "warn" },
+    { label: "Overdue", value: count("overdue"), tone: "danger" },
   ];
 
   return (
@@ -30,19 +27,17 @@ function FinanceOverviewTab({ payments }) {
 
       <div className="stat-grid">
         <div className="stat-card">
-          <span className="stat-card__label">Collected (this semester)</span>
-          <span className="stat-card__value badge badge--ok">RM {totalCollected}</span>
+          <span className="stat-card__label">Collected</span>
+          <span className="stat-card__value badge badge--ok">{money(s.collected)}</span>
         </div>
-
         <div className="stat-card">
-          <span className="stat-card__label">Outstanding</span>
-          <span className="stat-card__value badge badge--warn">RM {totalOutstanding}</span>
+          <span className="stat-card__label">Outstanding remaining</span>
+          <span className="stat-card__value badge badge--warn">{money(s.outstanding)}</span>
         </div>
-
         <div className="stat-card">
-          <span className="stat-card__label">Overdue Payments</span>
-          <span className={"stat-card__value badge badge--" + (overdueCount > 0 ? "danger" : "neutral")}>
-            {overdueCount}
+          <span className="stat-card__label">Overdue</span>
+          <span className={"stat-card__value badge badge--" + (s.overdueCount > 0 ? "danger" : "neutral")}>
+            {money(s.overdueAmount)} · {s.overdueCount}
           </span>
         </div>
       </div>
@@ -51,6 +46,24 @@ function FinanceOverviewTab({ payments }) {
         <div className="chart-panel">
           <p className="chart__title">Payments by status</p>
           <BarChart data={chartData} />
+        </div>
+        <div className="chart-panel">
+          <p className="chart__title">Highest balances</p>
+          {owing.length === 0 ? (
+            <p className="tab__empty">Nobody owes anything right now.</p>
+          ) : (
+            <ul className="finance-owing">
+              {owing.map((o) => (
+                <li key={o.student_id ?? o.student_name}>
+                  <span>{o.student_name}</span>
+                  <strong className={o.overdue ? "text-danger" : ""}>{money(o.balance)}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button type="button" className="link-btn" onClick={() => onNavigate?.("payments")}>
+            See all and send reminders
+          </button>
         </div>
       </div>
     </div>

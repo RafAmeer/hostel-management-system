@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "../dashboard.css";
 import "../warden-console.css";
+import "../feedback-updates.css";
 import { supabase } from "../lib/supabaseClient.js";
 import Sidebar from "../components/dashboard/SideBar.jsx";
 import WardenOverviewTab from "../components/dashboard/WardenOverviewTab";
@@ -17,6 +18,8 @@ import StudentsTab from "../components/dashboard/StudentsTab";
 import WardenTransportTab from "../components/dashboard/WardenTransportTab";
 import WardenHelpTab from "../components/dashboard/WardenHelpTab";
 import WardenPredictionsTab from "../components/dashboard/WardenPredictionsTab";
+import WardenOccupancyTab from "../components/dashboard/WardenOccupancyTab";
+import WardenActivityTab from "../components/dashboard/WardenActivityTab";
 import { buildPredictions, predictionsForAi } from "../lib/predictions";
 import Toast from "../components/Toast";
 import ErrorBoundary from "../components/ErrorBoundary";
@@ -24,6 +27,7 @@ import { useToast } from "../hooks/useToast";
 import NotificationBell from "../components/dashboard/NotificationBell";
 import { useNotifications } from "../hooks/useNotifications";
 import { buildWardenNotifications } from "../lib/notifications";
+import { curfewStatusesFromLogs } from "../lib/curfew";
 
 // On phones the bottom tab bar shows Overview, Room Bookings, Complaints and
 // Curfew; items marked `mobileHidden` live in the "More" sheet instead.
@@ -32,64 +36,32 @@ const NAV_ITEMS = [
   { key: "predictions", label: "AI Predictions", icon: "analytics", mobileHidden: true },
   { key: "bookings", label: "Room Bookings", shortLabel: "Bookings", icon: "status" },
   { key: "students", label: "Students", icon: "students", mobileHidden: true },
+  { key: "occupancy", label: "Occupancy", icon: "occupancy", mobileHidden: true },
   { key: "hostels", label: "Hostels & Rooms", icon: "rooms", mobileHidden: true },
   { key: "transport", label: "Transport", icon: "transport", mobileHidden: true },
   { key: "news", label: "News", icon: "news", mobileHidden: true },
   { key: "complaints", label: "Complaints", icon: "complaint" },
   { key: "curfew", label: "Curfew", icon: "curfew" },
   { key: "help", label: "Help Center", icon: "help", mobileHidden: true },
+  { key: "activity", label: "Activity Log", icon: "activity", mobileHidden: true },
 ];
 
 // NOTE: this assumes tables `bookings` and `complaints` exist in Supabase
 // with RLS policies that let a warden read every row (not just their own,
-// like the student-side queries do). `curfew_logs` needs a view/RPC that
-// collapses each student's log down to one current status row per student —
-// see curfewStatusesFromLogs below, which does that collapsing on the
-// client for now.
+// like the student-side queries do). Curfew status ("who is out / overdue
+// right now") is worked out from raw curfew_logs rows in lib/curfew.js and
+// re-checked every minute, so a student turns "overdue" without a reload.
 //
 // Approve/reject/assign/check-in update local state immediately
 // (optimistic) so the workflow is testable right now, and best-effort
 // mirror the change to Supabase in the background.
 
-// Collapses raw curfew_logs rows (one per scan) into one current-status
-// row per student, matching the shape the Overview/Curfew tabs expect.
-// Replace this with a Supabase view/RPC once one exists — until then this
-// keeps the warden side working against real curfew_logs rows instead of
-// sample data.
-const OVERDUE_AFTER_MS = 4 * 60 * 60 * 1000;
-
-function curfewStatusesFromLogs(logs, students) {
-  const latestByStudent = new Map();
-  for (const log of logs) {
-    const existing = latestByStudent.get(log.student_id);
-    if (!existing || new Date(log.timestamp) > new Date(existing.timestamp)) {
-      latestByStudent.set(log.student_id, log);
-    }
-  }
-
-  const studentsById = new Map(students.map((s) => [s.id, s]));
-
-  return Array.from(latestByStudent.entries())
-    .filter(([, log]) => log.scan_type === "check_out")
-    .map(([studentId, log]) => {
-      const student = studentsById.get(studentId);
-      return {
-        id: studentId,
-        student_name: student?.full_name ?? "Unknown",
-        room_number: student?.room_number ?? "—",
-        check_out_time: new Date(log.timestamp).toTimeString().slice(0, 5),
-        check_in_time: null,
-        // Same rule as the curfew_status view: out for more than 4 hours = overdue.
-        status: Date.now() - new Date(log.timestamp).getTime() > OVERDUE_AFTER_MS ? "overdue" : "out",
-      };
-    });
-}
-
 function WardenDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState("overview");
   const [bookings, setBookings] = useState([]);
   const [complaints, setComplaints] = useState([]);
-  const [curfewStatuses, setCurfewStatuses] = useState([]);
+  // Ticks once a minute so "out for 3h 12m" and overdue flags stay current.
+  const [now, setNow] = useState(() => new Date());
   const [rooms, setRooms] = useState([]);
   const [students, setStudents] = useState([]);
   const [technicians, setTechnicians] = useState([]);
@@ -108,6 +80,11 @@ function WardenDashboard({ user, onLogout }) {
   const [period, setPeriod] = useState("7");
   const periodDays = period === "all" ? null : Number(period);
 
+  const curfewStatuses = useMemo(
+    () => curfewStatusesFromLogs(curfewLogs, students, now),
+    [curfewLogs, students, now]
+  );
+
   const analytics = useMemo(
     () => buildHostelAnalytics({ bookings, complaints, curfewStatuses, rooms, students, periodDays }),
     [bookings, complaints, curfewStatuses, rooms, students, periodDays]
@@ -124,8 +101,8 @@ function WardenDashboard({ user, onLogout }) {
   );
 
   const notifItems = useMemo(
-    () => buildWardenNotifications({ bookings, complaints, helpTickets, students }),
-    [bookings, complaints, helpTickets, students]
+    () => buildWardenNotifications({ bookings, complaints, helpTickets, students, curfewStatuses }),
+    [bookings, complaints, helpTickets, students, curfewStatuses]
   );
   const notif = useNotifications(user?.id, notifItems, { ready: !loading });
 
@@ -138,6 +115,21 @@ function WardenDashboard({ user, onLogout }) {
     ]);
     if (b.data) setBookings(b.data);
     if (c.data) setComplaints(c.data);
+  };
+
+  const loadCurfew = async () => {
+    const { data } = await supabase.from("curfew_logs").select("*").order("timestamp", { ascending: false });
+    if (data) setCurfewLogs(data);
+  };
+
+  const loadStudents = async () => {
+    const { data } = await supabase.from("profiles").select("*").eq("role", "student");
+    if (data) setStudents(data);
+  };
+
+  const loadRooms = async () => {
+    const { data } = await supabase.from("rooms").select("*");
+    if (data) setRooms(data);
   };
 
   const loadAnnouncements = async () => {
@@ -206,9 +198,6 @@ function WardenDashboard({ user, onLogout }) {
         setSchedule(scheduleRes.data ?? []);
       }
       if (helpRes.data) setHelpTickets(helpRes.data);
-      if (curfewRes.data && studentsRes.data) {
-        setCurfewStatuses(curfewStatusesFromLogs(curfewRes.data, studentsRes.data));
-      }
       if (techniciansRes.data) setTechnicians(techniciansRes.data);
       if (profileRes.data) setProfile(profileRes.data);
       setHostels(hostelsRes.data ?? []);
@@ -231,9 +220,28 @@ function WardenDashboard({ user, onLogout }) {
       loadHelp();
     }, 15000);
     const inbox = setInterval(loadInbox, 30000);
+    const clock = setInterval(() => setNow(new Date()), 60000);
+
+    // Real-time updates (warden feedback: "the system updates information
+    // in real time"). Any change to these tables refreshes just that slice.
+    // Polling above stays as a fallback in case realtime isn't enabled.
+    const channel = supabase
+      .channel("warden-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, loadInbox)
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaints" }, loadInbox)
+      .on("postgres_changes", { event: "*", schema: "public", table: "curfew_logs" }, loadCurfew)
+      .on("postgres_changes", { event: "*", schema: "public", table: "help_tickets" }, loadHelp)
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, loadStudents)
+      .on("postgres_changes", { event: "*", schema: "public", table: "rooms" }, loadRooms)
+      .subscribe();
+    const curfewPoll = setInterval(loadCurfew, 60000);
+
     return () => {
       clearInterval(id);
       clearInterval(inbox);
+      clearInterval(clock);
+      clearInterval(curfewPoll);
+      supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -342,20 +350,47 @@ function WardenDashboard({ user, onLogout }) {
       });
   };
 
-  const handleCheckIn = (id) => {
-    const now = new Date().toTimeString().slice(0, 5);
-    setCurfewStatuses((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: "checked_in", check_in_time: now } : s))
-    );
-    supabase.from("curfew_logs").insert({
-      student_id: id,
-      scan_type: "check_in",
-      timestamp: new Date().toISOString(),
-    });
+  // Manual check-in by the warden. Shown on screen straight away and kept
+  // only if the database accepts it.
+  const handleCheckIn = async (id) => {
+    const row = { student_id: id, scan_type: "check_in", timestamp: new Date().toISOString(), location: "Logged by warden" };
+    const tempId = `temp-${Date.now()}`;
+    setCurfewLogs((prev) => [{ id: tempId, ...row }, ...prev]);
+    const { data, error } = await supabase.from("curfew_logs").insert(row).select().maybeSingle();
+    if (error) {
+      setCurfewLogs((prev) => prev.filter((l) => l.id !== tempId));
+      notify(`Couldn't log the check-in: ${error.message}`, "error");
+      return;
+    }
+    setCurfewLogs((prev) => prev.map((l) => (l.id === tempId ? data ?? l : l)));
+    notify("Check-in logged.", "success");
+  };
+
+  // Room transfer / allocation from the Occupancy tab. Moves the student's
+  // profile to the new room; the database trigger records it in the
+  // Activity Log.
+  const handleTransfer = async (student, room) => {
+    const patch = { room_number: room.room_number, in_hostel: true };
+    const { data, error } = await supabase.from("profiles").update(patch).eq("id", student.id).select().maybeSingle();
+    if (error || !data) {
+      notify(error ? `Couldn't move the student: ${error.message}` : "The move wasn't saved (check the warden profile policy).", "error");
+      return false;
+    }
+    setStudents((prev) => prev.map((s) => (s.id === student.id ? { ...s, ...data } : s)));
+    notify(`${student.full_name ?? "Student"} moved to Room ${room.room_number}.`, "success");
+    return true;
   };
 
   const waitingHelp = helpTickets.filter((t) => t.status === "open").length;
-  const navItems = NAV_ITEMS.map((i) => (i.key === "help" ? { ...i, badge: waitingHelp } : i));
+  // Menu badges so overdue curfews, waiting approvals and urgent repairs are
+  // visible from any page (and on the phone's bottom bar).
+  const badges = {
+    help: waitingHelp,
+    curfew: curfewStatuses.filter((c) => c.status === "overdue").length,
+    bookings: bookings.filter((b) => b.status === "pending").length,
+    complaints: complaints.filter((c) => c.status !== "completed" && (c.priority === "urgent" || c.status === "pending")).length,
+  };
+  const navItems = NAV_ITEMS.map((i) => (badges[i.key] ? { ...i, badge: badges[i.key] } : i));
 
   const renderTab = () => {
     switch (activeTab) {
@@ -393,10 +428,24 @@ function WardenDashboard({ user, onLogout }) {
         return (
           <WardenCurfewTab
             curfewStatuses={curfewStatuses}
+            curfewLogs={curfewLogs}
+            students={students}
             onCheckIn={handleCheckIn}
             residences={mergeResidences(hostels)}
           />
         );
+      case "occupancy":
+        return (
+          <WardenOccupancyTab
+            residences={mergeResidences(hostels)}
+            rooms={rooms}
+            students={students}
+            bookings={bookings}
+            onTransfer={handleTransfer}
+          />
+        );
+      case "activity":
+        return <WardenActivityTab />;
       case "help":
         return <WardenHelpTab tickets={helpTickets} students={students} onChanged={loadHelp} />;
       case "transport":
@@ -441,6 +490,8 @@ function WardenDashboard({ user, onLogout }) {
             curfewLogs={curfewLogs}
             residences={mergeResidences(hostels)}
             wardenName={profile?.full_name}
+            technicians={technicians}
+            onNavigate={setActiveTab}
           />
         );
     }

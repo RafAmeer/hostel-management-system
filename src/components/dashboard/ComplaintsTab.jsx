@@ -27,6 +27,9 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
   const [hostelId, setHostelId] = useState(residences[0]?.id ?? "");
   const [roomNumber, setRoomNumber] = useState(defaultRoomNumber ?? "");
   const [description, setDescription] = useState("");
+  // "Urgent" = a safety risk or no water/electricity. Wardens get an
+  // urgent-maintenance alert for these (warden feedback).
+  const [urgent, setUrgent] = useState(false);
   const [photo, setPhoto] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -76,6 +79,7 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
       description: description.trim(),
       photo_url,
       status: "pending",
+      priority: urgent ? "urgent" : "normal",
     });
 
     setSubmitting(false);
@@ -86,6 +90,7 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
     }
 
     setDescription("");
+    setUrgent(false);
     setPhoto(null);
     setFileInputKey((k) => k + 1);
     setMessage(
@@ -145,6 +150,13 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
             onChange={(e) => setDescription(e.target.value)}
             required
           />
+        </label>
+
+        <label className="remember complaint-urgent">
+          <input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} />
+          <span>
+            <strong>Urgent</strong> — safety risk, no water or no electricity
+          </span>
         </label>
 
         <label className="field">

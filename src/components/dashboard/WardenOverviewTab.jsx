@@ -1,7 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import ChartCanvas from "./ChartCanvas";
 import ReportExportButton from "./ReportExportButton";
-import { buildWardenReport } from "../../lib/buildReports";
+import {
+  buildWardenReport,
+  buildOccupancyReport,
+  buildCurfewReport,
+  buildComplaintsReport,
+  buildBookingsReport,
+} from "../../lib/buildReports";
 import {
   countPerBucket,
   hostelNameForBooking,
@@ -30,6 +36,40 @@ function ChartCard({ title, hint, wide = false, empty = false, children }) {
   );
 }
 
+// "Needs attention" row at the top of Overview: overdue curfews, booking
+// approvals waiting, urgent repairs and complaints open 3+ days. Each chip
+// opens the page where the warden can act on it.
+function AttentionStrip({ curfewStatuses = [], bookings = [], complaints = [], onNavigate }) {
+  const day = 24 * 60 * 60 * 1000;
+  const [now] = useState(() => Date.now());
+  const open = complaints.filter((c) => c.status !== "completed");
+  const items = [
+    { key: "curfew", n: curfewStatuses.filter((c) => c.status === "overdue").length, label: "overdue curfew", plural: "overdue curfews", tone: "danger" },
+    { key: "complaints", n: open.filter((c) => c.priority === "urgent").length, label: "urgent repair", plural: "urgent repairs", tone: "danger" },
+    { key: "bookings", n: bookings.filter((b) => b.status === "pending").length, label: "booking to approve", plural: "bookings to approve", tone: "warn" },
+    { key: "complaints", n: open.filter((c) => now - new Date(c.created_at).getTime() >= 3 * day).length, label: "complaint open 3+ days", plural: "complaints open 3+ days", tone: "warn" },
+  ].filter((i) => i.n > 0);
+
+  if (items.length === 0)
+    return <p className="attention-strip attention-strip--clear">✅ Nothing needs your attention right now.</p>;
+
+  return (
+    <div className="attention-strip" role="status" aria-label="Needs attention">
+      <span className="attention-strip__title">Needs attention</span>
+      {items.map((i) => (
+        <button
+          key={i.label}
+          type="button"
+          className={"attention-chip attention-chip--" + i.tone}
+          onClick={() => onNavigate?.(i.key)}
+        >
+          <strong>{i.n}</strong> {i.n > 1 ? i.plural : i.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // Warden analytics: graphs of the same data the rest of the dashboard
 // already holds (bookings, complaints, rooms, students, curfew scans,
 // transport). Counting is done in lib/chartData.js, drawing in Chart.js.
@@ -45,6 +85,8 @@ function WardenOverviewTab({
   curfewLogs,
   residences,
   wardenName,
+  technicians = [],
+  onNavigate,
 }) {
   const periodDays = period === "all" ? null : Number(period);
 
@@ -259,9 +301,19 @@ function WardenOverviewTab({
           {greeting}
           {firstName ? `, ${firstName}` : ""}
         </h2>
-        <ReportExportButton buildReport={() => buildWardenReport(analytics, periodLabel, model)} />
+        <ReportExportButton
+          reports={[
+            { key: "summary", label: `Summary (${periodLabel})`, build: () => buildWardenReport(analytics, periodLabel, model) },
+            { key: "occupancy", label: "Occupancy & residents", build: () => buildOccupancyReport(residences, rooms, students, bookings) },
+            { key: "curfew", label: "Curfew records", build: () => buildCurfewReport(curfewLogs, students, curfewStatuses) },
+            { key: "complaints", label: "Complaints & maintenance", build: () => buildComplaintsReport(complaints, technicians) },
+            { key: "bookings", label: "Room bookings", build: () => buildBookingsReport(bookings) },
+          ]}
+        />
       </div>
       <p className="tab__lede">Here's how the hostels are doing.</p>
+
+      <AttentionStrip curfewStatuses={curfewStatuses} bookings={bookings} complaints={complaints} onNavigate={onNavigate} />
 
       <div className="stat-grid">
         <div className="stat-card">

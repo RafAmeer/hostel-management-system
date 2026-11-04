@@ -15,3 +15,28 @@ export function isStudentProfileComplete(profile) {
       typeof profile?.in_hostel === "boolean"
   );
 }
+
+// Age in whole years from a "YYYY-MM-DD" birthday string.
+export function ageFromBirthday(iso) {
+  if (!iso) return null;
+  const dob = new Date(iso + "T00:00:00");
+  if (Number.isNaN(dob.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const beforeBirthday =
+    now.getMonth() < dob.getMonth() || (now.getMonth() === dob.getMonth() && now.getDate() < dob.getDate());
+  if (beforeBirthday) age -= 1;
+  return age;
+}
+
+
+// Birthday + emergency contact were added after the first round of user
+// testing, so older profiles may not have them yet. They don't block the
+// dashboard (that rule mirrors the database's eligibility check) — Home
+// just shows a reminder to fill them in.
+export function missingProfileExtras(profile) {
+  const missing = [];
+  if (!profile?.date_of_birth) missing.push("birthday");
+  if (!profile?.emergency_name || !profile?.emergency_phone) missing.push("emergency contact");
+  return missing;
+}

@@ -54,7 +54,7 @@ function StudentsTab({ students, bookings = [], onEligibilityChange }) {
         if (hostel === "in" && s.in_hostel !== true) return false;
         if (hostel === "out" && s.in_hostel !== false) return false;
         if (!q) return true;
-        return [s.full_name, s.student_id, s.programme, s.phone, s.room_number]
+        return [s.full_name, s.student_id, s.programme, s.phone, s.room_number, s.emergency_name]
           .filter(Boolean)
           .some((v) => String(v).toLowerCase().includes(q));
       })
@@ -127,6 +127,7 @@ function StudentsTab({ students, bookings = [], onEligibilityChange }) {
                 <th>Semester</th>
                 <th>Gender</th>
                 <th>Contact</th>
+                <th>Emergency contact</th>
                 <th>Hostel</th>
                 <th>Eligibility</th>
                 <th>Finance</th>
@@ -152,7 +153,31 @@ function StudentsTab({ students, bookings = [], onEligibilityChange }) {
                     <td className="students-table__cap">{s.gender ?? "—"}</td>
                     <td>
                       <p>{s.phone ?? "—"}</p>
-                      {s.age ? <p className="students-table__sub">Age {s.age}</p> : null}
+                      {s.date_of_birth ? (
+                        <p className="students-table__sub">
+                          Born {new Date(s.date_of_birth + "T00:00:00").toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" })}
+                          {s.age ? ` · Age ${s.age}` : ""}
+                        </p>
+                      ) : s.age ? (
+                        <p className="students-table__sub">Age {s.age}</p>
+                      ) : null}
+                    </td>
+                    <td>
+                      {s.emergency_name ? (
+                        <>
+                          <p>{s.emergency_name}</p>
+                          <p className="students-table__sub">
+                            {s.emergency_relation ? `${s.emergency_relation} · ` : ""}
+                            {s.emergency_phone ? (
+                              <a href={`tel:${s.emergency_phone.replace(/[\s-]/g, "")}`}>{s.emergency_phone}</a>
+                            ) : (
+                              "No phone"
+                            )}
+                          </p>
+                        </>
+                      ) : (
+                        <span className="students-table__sub">Not provided yet</span>
+                      )}
                     </td>
                     <td>
                       {s.in_hostel === true ? (
