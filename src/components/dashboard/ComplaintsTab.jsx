@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabaseClient";
 import LikeBurst from "../LikeBurst";
 import ClearHistoryButton from "./ClearHistoryButton";
 import { useClearedHistory } from "../../lib/clearedHistory";
+import ComplaintPhoto from "./ComplaintPhoto";
 
 const CATEGORIES = ["Plumbing", "Electrical", "Furniture", "Cleanliness", "Other"];
 
@@ -207,6 +208,7 @@ function ComplaintsTab({ complaints, studentId, residences = [], defaultRoomNumb
                 {Array.isArray(c.remarks) && c.remarks.length > 0 && (
                   <p className="list-row__meta">Technician update: {c.remarks[c.remarks.length - 1]}</p>
                 )}
+                <ComplaintPhoto url={c.photo_url} label="Your photo" />
               </div>
               <span className={"badge badge--" + statusTone(c.status)}>
                 {STATUS_LABELS[c.status] ?? c.status}

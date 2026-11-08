@@ -28,6 +28,7 @@ function RoomsTab({
   studentGender,
   semester,
   eligibility,
+  eligibilityReason,
   financeStatus = "pending",
   financeNote,
   onBookingCreated,
@@ -60,6 +61,13 @@ function RoomsTab({
     financeStatus === "rejected"
       ? `Finance couldn't verify your account${financeNote ? `: ${financeNote}` : "."} Please visit the Finance office.`
       : "Your account is waiting for Finance verification. You can browse rooms now and book once you're verified.";
+
+  // Automatic eligibility check (or a warden override) — the database
+  // blocks the insert too; this explains why.
+  const notEligible = eligibility === "not_eligible";
+  const notEligibleText =
+    `You're currently not eligible to book a room${eligibilityReason ? `: ${eligibilityReason}` : "."}` +
+    " Please contact the warden or Finance office.";
 
   const openResidence = residences.find((r) => r.id === openResidenceId) ?? null;
 
@@ -109,8 +117,8 @@ function RoomsTab({
       setMessage(financeLockText);
       return;
     }
-    if (eligibility === "not_eligible") {
-      setMessage("Your eligibility is marked as not eligible, so room requests are turned off. Please contact the warden.");
+    if (notEligible) {
+      setMessage(notEligibleText);
       return;
     }
     if (liveBooking) {
@@ -198,6 +206,12 @@ function RoomsTab({
 
       {!financeVerified && <FinanceNotice status={financeStatus} note={financeNote} />}
 
+      {financeVerified && notEligible && (
+        <p className="message message--error" role="status">
+          {notEligibleText}
+        </p>
+      )}
+
       {liveBooking && (
         <p className="message message--info" role="status">
           {liveBookingText}
@@ -247,8 +261,8 @@ function RoomsTab({
           rooms={roomsForResidence(rooms, openResidence.id)}
           roomGenders={roomGenders}
           bookingRoomId={bookingRoomId}
-          bookingLocked={Boolean(liveBooking) || !financeVerified}
-          lockedLabel={!financeVerified ? "Awaiting Finance" : undefined}
+          bookingLocked={Boolean(liveBooking) || !financeVerified || notEligible}
+          lockedLabel={!financeVerified ? "Awaiting Finance" : notEligible ? "Not eligible" : undefined}
           message={message}
           onBook={handleBook}
           onClose={() => setOpenResidenceId(null)}

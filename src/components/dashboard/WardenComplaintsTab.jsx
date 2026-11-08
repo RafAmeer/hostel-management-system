@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import ComplaintPhoto from "./ComplaintPhoto";
 
 const STATUS_LABELS = {
   pending: "Pending",
@@ -180,6 +181,7 @@ function WardenComplaintsTab({ complaints, technicians, onAssign, onComplete }) 
                   {Array.isArray(c.remarks) && c.remarks.length > 0 && (
                     <p className="list-row__meta">Latest technician update: {c.remarks[c.remarks.length - 1]}</p>
                   )}
+                  <ComplaintPhoto url={c.photo_url} label={`Photo for ${c.category} complaint`} />
                 </div>
 
                 <div className="list-row__actions">

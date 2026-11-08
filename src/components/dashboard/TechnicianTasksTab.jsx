@@ -1,5 +1,6 @@
 import { formatDateTime } from "../../lib/formatters";
 import { useState } from "react";
+import ComplaintPhoto from "./ComplaintPhoto";
 
 const STATUS_FLOW = { pending: "in_progress", in_progress: "completed" };
 const STATUS_LABELS = { pending: "Pending", in_progress: "In Progress", completed: "Completed" };
@@ -8,9 +9,8 @@ const NEXT_LABEL = { pending: "Start Work", in_progress: "Mark Completed" };
 
 // "View assigned maintenance requests" / "update status (Pending, In
 // Progress, Completed)" / "add remarks" from the proposal's Technician
-// Module. Each request already carries category, description, location
-// (room number) and — once photo upload is wired up on the student side —
-// the uploaded photo, per the proposal's field list.
+// Module. Each request shows category, description, location (hostel +
+// room) and the photo the student uploaded, per the proposal's field list.
 function TechnicianTasksTab({ tasks, onAdvanceStatus, onAddRemark }) {
   const [draftRemark, setDraftRemark] = useState({});
 
@@ -38,6 +38,7 @@ function TechnicianTasksTab({ tasks, onAdvanceStatus, onAddRemark }) {
               </p>
               <p className="list-row__meta">{t.description}</p>
               <p className="list-row__meta">Reported by {t.student_name} &middot; {formatDateTime(t.created_at)}</p>
+              <ComplaintPhoto url={t.photo_url} label={`Photo for ${t.category} request`} />
 
               <div className="list-row__actions" style={{ marginTop: "0.5rem" }}>
                 <span className={"badge badge--" + (STATUS_TONE[t.status] ?? "neutral")}>

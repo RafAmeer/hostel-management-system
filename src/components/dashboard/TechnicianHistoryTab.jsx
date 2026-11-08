@@ -1,5 +1,6 @@
 import ClearHistoryButton from "./ClearHistoryButton";
 import { useClearedHistory } from "../../lib/clearedHistory";
+import ComplaintPhoto from "./ComplaintPhoto";
 
 // "View maintenance request history" from the proposal's Technician
 // Module — completed requests only, read-only.
@@ -35,6 +36,7 @@ function TechnicianHistoryTab({ tasks, userId }) {
                 {t.remarks?.length > 0 && (
                   <p className="list-row__meta">Remarks: {t.remarks.join(" · ")}</p>
                 )}
+                <ComplaintPhoto url={t.photo_url} label={`Photo for ${t.category} request`} />
               </div>
               <div className="list-row__actions">
                 <span className="badge badge--ok">Completed</span>

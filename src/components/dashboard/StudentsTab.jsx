@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import Avatar from "./Avatar";
-import { ELIGIBILITY_LABELS, eligibilityTone, FINANCE_LABELS, financeTone } from "../../lib/formatters";
+import { ELIGIBILITY_LABELS, eligibilityTone, FINANCE_LABELS, financeTone, formatDateTime } from "../../lib/formatters";
 
 const ELIGIBILITY_FILTERS = [
   { value: "all", label: "All eligibility" },
@@ -61,8 +61,31 @@ function StudentsTab({ students, bookings = [], onEligibilityChange }) {
       .sort((a, b) => (a.full_name ?? "").localeCompare(b.full_name ?? ""));
   }, [students, query, eligibility, hostel]);
 
+  // Overriding needs a written reason (proposal: "override eligibility
+  // flags with justification"), so picking a Force option opens a small
+  // form instead of saving straight away. Going back to Automatic saves
+  // immediately.
+  const [pending, setPending] = useState(null); // { id, status, note, error, saving }
+
   const handleSelect = (student, value) => {
-    onEligibilityChange?.(student.id, value === "auto" ? null : value);
+    if (value === "auto") {
+      setPending(null);
+      onEligibilityChange?.(student.id, null);
+      return;
+    }
+    setPending({ id: student.id, status: value, note: "", error: "", saving: false });
+  };
+
+  const confirmOverride = async () => {
+    const note = pending.note.trim();
+    if (note.length < 5) {
+      setPending((p) => ({ ...p, error: "Please write a short reason (at least 5 characters)." }));
+      return;
+    }
+    setPending((p) => ({ ...p, saving: true, error: "" }));
+    const ok = await onEligibilityChange?.(pending.id, pending.status, note);
+    if (ok === false) setPending((p) => ({ ...p, saving: false }));
+    else setPending(null);
   };
 
   return (
@@ -195,10 +218,17 @@ function StudentsTab({ students, bookings = [], onEligibilityChange }) {
                       <span className={"badge badge--" + eligibilityTone(status)}>
                         {ELIGIBILITY_LABELS[status] ?? status}
                       </span>
-                      {s.eligibility_override ? <p className="students-table__sub">Set by warden</p> : null}
+                      {s.eligibility_override ? (
+                        <p className="eligibility-reason">
+                          <strong>Warden override:</strong> {s.eligibility_note || "No reason recorded"}
+                          {s.eligibility_override_at ? ` (${formatDateTime(s.eligibility_override_at)})` : ""}
+                        </p>
+                      ) : s.eligibility_reason ? (
+                        <p className="eligibility-reason">{s.eligibility_reason}</p>
+                      ) : null}
                       <select
                         className="students-table__select"
-                        value={s.eligibility_override ? status : "auto"}
+                        value={pending?.id === s.id ? pending.status : s.eligibility_override ? status : "auto"}
                         onChange={(e) => handleSelect(s, e.target.value)}
                         aria-label={`Eligibility for ${s.full_name ?? "student"}`}
                       >
@@ -206,6 +236,30 @@ function StudentsTab({ students, bookings = [], onEligibilityChange }) {
                         <option value="eligible">Force eligible</option>
                         <option value="not_eligible">Force not eligible</option>
                       </select>
+                      {pending?.id === s.id && (
+                        <div className="override-form">
+                          <label className="students-table__sub" htmlFor={`override-note-${s.id}`}>
+                            Reason for marking {pending.status === "eligible" ? "eligible" : "not eligible"} (the student can see this)
+                          </label>
+                          <textarea
+                            id={`override-note-${s.id}`}
+                            value={pending.note}
+                            maxLength={300}
+                            autoFocus
+                            placeholder="e.g. Payment plan agreed with Finance office"
+                            onChange={(e) => setPending((p) => ({ ...p, note: e.target.value, error: "" }))}
+                          />
+                          {pending.error && <p className="override-form__error">{pending.error}</p>}
+                          <div className="override-form__actions">
+                            <button type="button" className="primary-btn btn-sm" onClick={confirmOverride} disabled={pending.saving}>
+                              {pending.saving ? "Saving…" : "Save override"}
+                            </button>
+                            <button type="button" className="btn-outline btn-sm" onClick={() => setPending(null)} disabled={pending.saving}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </td>
                     <td>
                       <span className={"badge badge--" + financeTone(s.finance_status ?? "pending")}>

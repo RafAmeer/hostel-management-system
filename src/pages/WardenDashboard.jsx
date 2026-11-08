@@ -160,6 +160,9 @@ function WardenDashboard({ user, onLogout }) {
   const loadAll = async () => {
     setLoading(true);
     try {
+      // Daily automatic eligibility re-check for all students (ignored if
+      // the 2026-11-09 migration hasn't been run yet).
+      await supabase.rpc("refresh_eligibility");
 
       const [
         bookingsRes,
@@ -296,11 +299,13 @@ function WardenDashboard({ user, onLogout }) {
   const handleReject = (id) => decideBooking(id, "rejected");
 
   // Warden eligibility override (Students tab). `status` is "eligible",
-  // "not_eligible", or null to hand the decision back to the automatic rule.
-  const handleEligibilityChange = async (studentId, status) => {
+  // "not_eligible", or null to hand the decision back to the automatic rule
+  // (2026-11-09_eligibility_rules.sql). An override must carry a reason.
+  // Returns true/false so the Students tab knows whether to close its form.
+  const handleEligibilityChange = async (studentId, status, note = "") => {
     const patch = status
-      ? { eligibility_status: status, eligibility_override: true }
-      : { eligibility_override: false };
+      ? { eligibility_status: status, eligibility_override: true, eligibility_note: note }
+      : { eligibility_override: false, eligibility_note: null };
     const { data, error } = await supabase
       .from("profiles")
       .update(patch)
@@ -309,10 +314,11 @@ function WardenDashboard({ user, onLogout }) {
       .maybeSingle();
     if (error || !data) {
       notify(error ? `Couldn't update eligibility: ${error.message}` : "Eligibility change wasn't saved (check the SQL migration).", "error");
-      return;
+      return false;
     }
     setStudents((prev) => prev.map((s) => (s.id === studentId ? { ...s, ...data } : s)));
-    notify("Eligibility updated.", "success");
+    notify(status ? "Eligibility override saved." : "Eligibility set back to automatic.", "success");
+    return true;
   };
 
   // Assigns a specific technician (picked from the dropdown in

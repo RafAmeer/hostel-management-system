@@ -236,6 +236,11 @@ function OverviewTab({
                   <span className={"badge badge--" + eligibilityTone(profile?.eligibility_status)}>
                     {ELIGIBILITY_LABELS[profile?.eligibility_status] ?? "Pending"}
                   </span>
+                  {profile?.eligibility_override && profile?.eligibility_note ? (
+                    <p className="eligibility-reason">Set by the warden: {profile.eligibility_note}</p>
+                  ) : profile?.eligibility_reason ? (
+                    <p className="eligibility-reason">{profile.eligibility_reason}</p>
+                  ) : null}
                 </dd>
               </div>
               <div>

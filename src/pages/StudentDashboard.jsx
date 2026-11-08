@@ -91,6 +91,10 @@ function StudentDashboard({ user, onLogout }) {
   // flashing the "Loading…" state over whatever the student is reading.
   const loadAll = async (silent = false) => {
     if (!silent) setLoading(true);
+    // Re-run the automatic eligibility check (at most once a day, see
+    // 2026-11-09_eligibility_rules.sql) so an overdue payment is picked up.
+    // Errors are ignored: the dashboard still loads without it.
+    if (!silent) await supabase.rpc("refresh_eligibility");
 
     const [
       profileRes,
@@ -262,6 +266,7 @@ function StudentDashboard({ user, onLogout }) {
             studentGender={profile?.gender}
             semester={profile?.semester}
             eligibility={profile?.eligibility_status}
+            eligibilityReason={profile?.eligibility_override ? profile?.eligibility_note : profile?.eligibility_reason}
             financeStatus={profile?.finance_status ?? "pending"}
             financeNote={profile?.finance_note}
             onBookingCreated={() => loadAll(true)}
