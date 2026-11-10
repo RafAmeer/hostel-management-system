@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CurfewScanCard from "./CurfewScanCard";
 import { formatDateTime } from "../../lib/formatters";
 import { getDeviceOwnership, releaseDevice } from "../../lib/deviceBinding";
 import { isPhoneDevice } from "../../lib/device";
 import ClearHistoryButton from "./ClearHistoryButton";
 import { useClearedHistory } from "../../lib/clearedHistory";
+import { buildMovementRecords, curfewLabel, isPastCurfew, MAX_OUT_HOURS } from "../../lib/curfew";
 
 // Which phone is allowed to scan for this student. One phone per student
 // and one student per phone (see lib/deviceBinding.js).
@@ -56,8 +57,35 @@ function CurfewTab({ curfewLogs, userId }) {
   const history = useClearedHistory("curfew", userId);
   const { shown: visibleLogs, hidden: hiddenLogs, clearable } = history.view(curfewLogs);
   const isOut = lastLog?.scan_type === "check_out";
-  const statusLabel = !lastLog ? "No scans yet" : isOut ? "Out of Hostel" : "In Hostel";
-  const statusTone = !lastLog ? "neutral" : isOut ? "warn" : "ok";
+
+  // Each scan is compared against the curfew deadline (proposal: "system
+  // timestamps each scan and compares against curfew deadline"), using the
+  // same rule the warden's Curfew tab uses (lib/curfew.js): a return is
+  // late if it happens during curfew hours or after more than
+  // MAX_OUT_HOURS out. Keyed by the check-in scan's timestamp.
+  const returns = useMemo(() => {
+    const map = new Map();
+    for (const r of buildMovementRecords(curfewLogs, [])) {
+      if (!r.out_at || !r.in_at) continue;
+      map.set(r.in_at, {
+        late: r.late,
+        reason: isPastCurfew(new Date(r.in_at)) ? "Returned after curfew" : `Out over ${MAX_OUT_HOURS} hours`,
+      });
+    }
+    return map;
+  }, [curfewLogs]);
+
+  // The clock ticks once a minute so "overdue" appears without a refresh.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
+  const pastCurfew = isPastCurfew(now);
+  const outTooLong = isOut && now.getTime() - new Date(lastLog.timestamp).getTime() > MAX_OUT_HOURS * 60 * 60 * 1000;
+  const overdue = isOut && (pastCurfew || outTooLong);
+  const statusLabel = !lastLog ? "No scans yet" : overdue ? "Out — Overdue" : isOut ? "Out of Hostel" : "In Hostel";
+  const statusTone = !lastLog ? "neutral" : overdue ? "danger" : isOut ? "warn" : "ok";
 
   return (
     <div className="tab">
@@ -70,6 +98,14 @@ function CurfewTab({ curfewLogs, userId }) {
             <span className={"badge badge--" + statusTone}>{statusLabel}</span>
           </p>
           {lastLog && <p className="list-row__meta">Last scan: {formatDateTime(lastLog.timestamp)}</p>}
+          {overdue && (
+            <p className="list-row__meta text-danger">
+              {pastCurfew ? "It's past curfew." : `You've been out over ${MAX_OUT_HOURS} hours.`} Please check in when you're back.
+            </p>
+          )}
+          <p className="list-row__meta">
+            Curfew: {curfewLabel()} · maximum {MAX_OUT_HOURS} hours out
+          </p>
         </div>
       </div>
 
@@ -89,15 +125,24 @@ function CurfewTab({ curfewLogs, userId }) {
         <p className="tab__empty">{curfewLogs.length === 0 ? "No curfew scans yet." : "History cleared."}</p>
       ) : (
         <div className="list">
-          {visibleLogs.map((log) => (
-            <div key={log.id} className="list-row">
-              <div>
-                <p className="list-row__title">{log.scan_type === "check_out" ? "Check Out" : "Check In"}</p>
-                {log.location && <p className="list-row__meta">{log.location}</p>}
+          {visibleLogs.map((log) => {
+            const ret = log.scan_type === "check_in" ? returns.get(log.timestamp) : null;
+            return (
+              <div key={log.id} className="list-row">
+                <div>
+                  <p className="list-row__title">{log.scan_type === "check_out" ? "Check Out" : "Check In"}</p>
+                  {log.location && <p className="list-row__meta">{log.location}</p>}
+                  {ret?.late && <p className="list-row__meta text-danger">{ret.reason}</p>}
+                </div>
+                <div className="list-row__actions">
+                  {ret && (
+                    <span className={"badge badge--" + (ret.late ? "danger" : "ok")}>{ret.late ? "Late" : "On time"}</span>
+                  )}
+                  <p className="list-row__meta">{formatDateTime(log.timestamp)}</p>
+                </div>
               </div>
-              <p className="list-row__meta">{formatDateTime(log.timestamp)}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
