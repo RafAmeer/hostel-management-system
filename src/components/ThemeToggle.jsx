@@ -1,7 +1,7 @@
 import { useTheme } from "../hooks/useTheme";
 import { SunIcon, MoonIcon } from "./dashboard/icons";
 
-// Switches the signed-in screens between white mode and black mode.
+// Switches the signed-in screens between light mode and dark mode.
 function ThemeToggle({ className = "" }) {
   const { theme, toggle } = useTheme();
   const isLight = theme === "light";
@@ -10,13 +10,13 @@ function ThemeToggle({ className = "" }) {
       type="button"
       className={"theme-toggle " + className}
       onClick={toggle}
-      aria-label={isLight ? "Switch to black mode" : "Switch to white mode"}
-      title={isLight ? "Black mode" : "White mode"}
+      aria-label={isLight ? "Switch to dark mode" : "Switch to light mode"}
+      title={isLight ? "Dark mode" : "Light mode"}
     >
       <span className="theme-toggle__icon" aria-hidden="true">
         {isLight ? <MoonIcon /> : <SunIcon />}
       </span>
-      <span className="theme-toggle__label">{isLight ? "Black mode" : "White mode"}</span>
+      <span className="theme-toggle__label">{isLight ? "Dark mode" : "Light mode"}</span>
     </button>
   );
 }

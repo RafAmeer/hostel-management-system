@@ -23,7 +23,7 @@ import {
 //   └──────────────────────────────┘
 //
 // Nav items marked `mobileHidden` (and anything past the first four) go into
-// the "More" sheet, together with Profile, white/black mode and Log out.
+// the "More" sheet, together with Profile, light/dark mode and Log out.
 const MAX_TABS = 4;
 
 function MobileShell({ navItems, activeTab, onSelect, userName, roleLabel, avatarUrl, onLogout, onProfile, bell }) {

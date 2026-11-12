@@ -75,7 +75,7 @@ function friendlyAuthError(error) {
     return "Incorrect email or password.";
   }
   if (/email not confirmed/i.test(msg)) {
-    return "Please confirm your email first — open the confirmation link we sent you.";
+    return "Your password is correct, but this email hasn't been confirmed yet. Open the confirmation link we emailed you (check Spam / Promotions too), or resend it below.";
   }
   if (/invalid staff code/i.test(msg) || /database error saving new user/i.test(msg)) {
     return "That staff code isn't right. Ask the hostel office for the current code.";
@@ -104,6 +104,7 @@ function MainApp() {
   const [role, setRole] = useState(null);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [needsConfirm, setNeedsConfirm] = useState(false); // login hit "email not confirmed"
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [staleHelp, setStaleHelp] = useState(null); // null | { forgotten: boolean }
@@ -194,6 +195,7 @@ function MainApp() {
   const resetMessages = () => {
     setError("");
     setInfo("");
+    setNeedsConfirm(false);
   };
 
   const switchPortal = (nextPortal) => {
@@ -214,7 +216,7 @@ function MainApp() {
     resetMessages();
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim(),
       password,
     });
 
@@ -222,7 +224,11 @@ function MainApp() {
       setLoading(false);
       const message = friendlyAuthError(error);
       notify(message, "error");
-      return setError(message);
+      setError(message);
+      if (error.code === "email_not_confirmed" || /email not confirmed/i.test(error.message ?? "")) {
+        setNeedsConfirm(true);
+      }
+      return;
     }
 
     let actualRole = await fetchRole(data.user.id);
@@ -303,7 +309,7 @@ function MainApp() {
     }
 
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
         // Without this, Supabase's confirmation email sends people to a
@@ -342,6 +348,23 @@ function MainApp() {
       setMode("login");
       setPassword("");
       return setError(message);
+    }
+
+    // Signing up AGAIN with an email that's still waiting for confirmation
+    // only re-sends the link — Supabase keeps the FIRST password and ignores
+    // the new one. Saying "Account created" here made testers think the new
+    // password was saved, and then sign-in failed with "incorrect password".
+    const createdMs = data.user?.created_at ? Date.parse(data.user.created_at) : NaN;
+    if (data.user && !data.session && Number.isFinite(createdMs) && Date.now() - createdMs > 60_000) {
+      setLoading(false);
+      startEmailCooldown();
+      notify("This email already has an account waiting for confirmation.", "error");
+      setInfo(
+        "This email already has an account that hasn't been confirmed yet, so we re-sent the confirmation link (check Spam / Promotions too). Your password is still the one you chose the first time — if you're not sure of it, use \"Forgot password?\" after confirming."
+      );
+      setMode("login");
+      setPassword("");
+      return;
     }
 
     // If email confirmation is required, Supabase returns a user but no session yet.
@@ -392,11 +415,38 @@ function MainApp() {
     setLoading(false);
   };
 
+  // Re-send the sign-up confirmation link (shown after a login attempt
+  // fails with "email not confirmed").
+  const handleResendConfirmation = async () => {
+    const address = email.trim();
+    if (!address) return setError("Enter your email first.");
+    setLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: address,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setLoading(false);
+    if (error) {
+      if (error.code === "over_email_send_rate_limit" || /rate limit/i.test(error.message)) {
+        startEmailCooldown();
+      }
+      const message = friendlyAuthError(error);
+      notify(message, "error");
+      return setError(message);
+    }
+    startEmailCooldown();
+    setError("");
+    setNeedsConfirm(true);
+    notify("Confirmation email sent again.", "success");
+    setInfo(`We sent a new confirmation link to ${address}. It can take a minute — check Spam / Promotions too.`);
+  };
+
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     resetMessages();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: window.location.origin,
     });
     setLoading(false);
@@ -640,6 +690,16 @@ function MainApp() {
             <p className="message message--info" role="status">
               {info}
             </p>
+          )}
+          {needsConfirm && mode === "login" && (
+            <button
+              type="button"
+              className="auth__link auth__link--strong"
+              onClick={handleResendConfirmation}
+              disabled={loading || cooldownLeft > 0}
+            >
+              {cooldownLeft > 0 ? `Resend available in ${cooldownLeft}s` : "Resend confirmation email"}
+            </button>
           )}
 
           {isStaffPortal && mode === "signup" && (

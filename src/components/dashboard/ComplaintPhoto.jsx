@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 // Thumbnail of the photo a student attached to a complaint
 // (complaints.photo_url, uploaded to the "complaint-photos" bucket).
@@ -13,7 +14,13 @@ function ComplaintPhoto({ url, label = "Complaint photo" }) {
     if (!open) return;
     const onKey = (e) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Stop the page behind from scrolling while the photo is open.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [open]);
 
   if (!url) return null;
@@ -31,14 +38,18 @@ function ComplaintPhoto({ url, label = "Complaint photo" }) {
         <span className="complaint-photo__hint">View photo</span>
       </button>
 
-      {open && (
+      {/* Rendered straight into <body>: the complaint cards animate with CSS
+          transforms, and a transformed ancestor traps position:fixed inside
+          itself — that's what clipped the photo to the card before. */}
+      {open && createPortal(
         <div className="complaint-photo__overlay" role="dialog" aria-modal="true" aria-label={label} onClick={() => setOpen(false)}>
           <img src={url} alt={label} onClick={(e) => e.stopPropagation()} />
           <div className="complaint-photo__bar" onClick={(e) => e.stopPropagation()}>
             <a href={url} target="_blank" rel="noreferrer">Open original</a>
             <button type="button" onClick={() => setOpen(false)}>Close</button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
