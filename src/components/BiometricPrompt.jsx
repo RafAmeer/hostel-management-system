@@ -45,6 +45,10 @@ function BiometricPrompt({ userId, onDone }) {
     };
 
     const tryOpen = async () => {
+      // A first-time student is shown the welcome tour first; ask about
+      // fingerprint once that's closed ("dormsphere:tour-done") instead of
+      // stacking two pop-ups.
+      if (document.querySelector("[data-welcome-tour]")) return;
       try {
         if (!(await profileReady())) return;
         const keys = await listPasskeys();
@@ -59,10 +63,12 @@ function BiometricPrompt({ userId, onDone }) {
     const t = setTimeout(tryOpen, 2500);
     const onSaved = () => setTimeout(tryOpen, 1500);
     window.addEventListener("dormsphere:profile-saved", onSaved);
+    window.addEventListener("dormsphere:tour-done", onSaved);
     return () => {
       cancelled = true;
       clearTimeout(t);
       window.removeEventListener("dormsphere:profile-saved", onSaved);
+      window.removeEventListener("dormsphere:tour-done", onSaved);
     };
   }, [userId]);
 

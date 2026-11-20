@@ -112,7 +112,7 @@
     height: 30px;
     padding: 3px;
     border-radius: 50%;
-    background: #fff;
+    background: #ffffff;
     object-fit: contain;
   }
 
@@ -657,55 +657,57 @@
     }
   }
 
-  /* ---- Student "Sunny Dorm" flavour -------------------------------- */
-  :root.student-fun .m-appbar__brand-name,
+  /* ---- Student "Earthy & Serene" flavour ---------------------------- */
   :root.student-fun .m-appbar__title,
-  :root.student-fun .m-tab__label,
   :root.student-fun .m-sheet__profile-name {
-    font-family: "Fredoka", "Nunito", sans-serif;
-    font-weight: 600;
+    font-family: var(--font-serif);
+    font-weight: 500;
   }
 
   :root.student-fun .m-appbar--scrolled {
-    border-bottom: 2px solid var(--fun-line);
+    border-bottom: 1px solid var(--glass-border);
   }
 
   :root.student-fun .m-tabbar {
-    background: var(--glass);
-    border-top: 2px solid var(--fun-line);
+    background: color-mix(in srgb, var(--sidebar-bg) 94%, transparent);
+    border-top: 1px solid var(--glass-border);
+  }
+
+  :root.student-fun .m-tab--active {
+    color: var(--accent-text);
   }
 
   :root.student-fun .m-tab--active .m-tab__pill {
-    background: var(--fun-sun);
-    color: #1a1430;
-    box-shadow: inset 0 0 0 2px var(--fun-line);
+    background: rgb(var(--accent-rgb) / 0.15);
+    color: var(--accent-text);
+    box-shadow: none;
   }
 
   :root.student-fun .m-avatar__initial {
-    background: var(--fun-sun);
-    color: #1a1430;
-    box-shadow: 0 0 0 2px var(--fun-line);
+    background: var(--earth-camel);
+    color: #10241a;
+    box-shadow: 0 0 0 1px var(--glass-border);
   }
 
   :root.student-fun .m-avatar--active .m-avatar__initial,
   :root.student-fun .m-avatar--active .m-avatar__img {
-    box-shadow: 0 0 0 2px var(--fun-line), 0 0 0 4px var(--fun-grape);
+    box-shadow: 0 0 0 2px var(--app-bg), 0 0 0 4px var(--accent);
   }
 
   :root.student-fun .m-sheet,
   :root.student-fun .modal-backdrop .modal {
-    border: 2px solid var(--fun-line);
+    border: 1px solid var(--glass-border);
     border-bottom: 0;
   }
 
   :root.student-fun .m-sheet__group,
   :root.student-fun .m-sheet__profile {
-    border: 2px solid var(--fun-line);
-    box-shadow: 3px 3px 0 var(--fun-pop);
+    border: 1px solid var(--glass-border);
+    box-shadow: none;
   }
 
   :root.student-fun .m-sheet__group li + li {
-    border-top: 2px solid var(--fun-line);
+    border-top: 1px solid var(--glass-border);
   }
 
   /* ---- Staff "console" flavour -------------------------------------- */

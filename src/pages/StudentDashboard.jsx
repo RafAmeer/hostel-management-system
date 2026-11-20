@@ -20,6 +20,8 @@ import { useToast } from "../hooks/useToast";
 import NotificationBell from "../components/dashboard/NotificationBell";
 import { useNotifications } from "../hooks/useNotifications";
 import { buildStudentNotifications } from "../lib/notifications";
+import WelcomeTour from "../components/dashboard/WelcomeTour";
+import HostelSlideshow from "../components/HostelSlideshow.jsx";
 
 // NOTE: this assumes tables `profiles`, `rooms`, `bookings`, `complaints`,
 // `curfew_logs` and `announcements` exist in Supabase (the announcements
@@ -336,6 +338,10 @@ function StudentDashboard({ user, onLogout }) {
   if (needsProfileSetup) {
     return (
       <div className="page page--app">
+        <div className="student-backdrop" aria-hidden="true">
+          <HostelSlideshow />
+          <div className="student-backdrop__shade" />
+        </div>
         <div className="container">
           <section className="card setup-card" aria-labelledby="setup-title">
             <h1 id="setup-title" className="title">
@@ -360,10 +366,14 @@ function StudentDashboard({ user, onLogout }) {
     );
   }
 
-  // After sign-in the dashboard sits on a plain white/black background
-  // (by theme) — the photo slideshow is only for the sign-in/sign-up pages.
+  // Like the first design: blurred hostel photos behind see-through panels
+  // (styles at the end of student-theme.css).
   return (
     <div className="page page--app">
+      <div className="student-backdrop" aria-hidden="true">
+        <HostelSlideshow />
+        <div className="student-backdrop__shade" />
+      </div>
       <div className="dashboard">
         <Sidebar
           navItems={NAV_ITEMS}
@@ -394,6 +404,13 @@ function StudentDashboard({ user, onLogout }) {
           )}
         </main>
       </div>
+      {!loading && !profileError && (
+        <WelcomeTour
+          userId={studentId}
+          firstName={(profile?.full_name ?? "there").split(" ")[0]}
+          onNavigate={setActiveTab}
+        />
+      )}
       <Toast toast={toast} onDismiss={dismiss} />
     </div>
   );

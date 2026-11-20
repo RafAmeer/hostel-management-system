@@ -1,29 +1,29 @@
 /* =====================================================================
    Sign-in / sign-up page.
-   A calm split layout: hostel photos + a short intro on the left, a plain
-   solid form panel on the right. No glass, glow or gradients on the form —
-   flat surfaces, one accent colour, clear type. Follows the app's
+   A calm split layout: hostel photos + a short intro on the left, a
+   frosted-glass form panel on the right (see the end of this file).
+   One accent colour, clear type. Follows the app's
    light/dark setting (html[data-theme]); stacks on phones.
    ===================================================================== */
 
 .auth {
-  /* Dark (default) */
-  --a-bg: #0e0f1a;
-  --a-surface: #14162a;
-  --a-field: #1a1d33;
-  --a-border: #262a45;
-  --a-border-strong: #353a5c;
-  --a-text: #eceefb;
-  --a-muted: #9aa0c3;
-  --a-accent: #8b8ff9;
-  --a-accent-hover: #a3a6fb;
-  --a-on-accent: #0e0f1a;
-  --a-accent-soft: rgba(139, 143, 249, 0.14);
-  --a-ring: rgba(139, 143, 249, 0.35);
+  /* Colours come from the shared Earthy & Serene palette (earthy-theme.css) */
+  --a-bg: var(--app-bg);
+  --a-surface: var(--glass);
+  --a-field: var(--glass-strong);
+  --a-border: var(--glass-border);
+  --a-border-strong: var(--border-strong);
+  --a-text: var(--text-primary);
+  --a-muted: var(--text-muted);
+  --a-accent: var(--accent);
+  --a-accent-hover: var(--accent-hover);
+  --a-on-accent: var(--on-accent);
+  --a-accent-soft: rgb(var(--accent-rgb) / 0.12);
+  --a-ring: var(--focus-ring);
   /* Brand panel */
-  --a-brand-1: #1e1b4b;
-  --a-brand-2: #3730a3;
-  --a-brand-3: #6366f1;
+  --a-brand-1: #15181b;
+  --a-brand-2: #1f3a2c;
+  --a-brand-3: #7cc395;
 
   position: relative;
   display: grid;
@@ -35,21 +35,11 @@
 }
 
 :root[data-theme="light"] .auth {
-  --a-bg: #f5f5fa;
-  --a-surface: #ffffff;
   --a-field: #ffffff;
-  --a-border: #e2e3ee;
-  --a-border-strong: #cbcde0;
-  --a-text: #161830;
-  --a-muted: #5f6385;
-  --a-accent: #4338ca;
-  --a-accent-hover: #3730a3;
-  --a-on-accent: #ffffff;
-  --a-accent-soft: rgba(67, 56, 202, 0.08);
-  --a-ring: rgba(67, 56, 202, 0.25);
-  --a-brand-1: #312e81;
-  --a-brand-2: #4338ca;
-  --a-brand-3: #6366f1;
+  --a-accent-soft: rgb(var(--accent-rgb) / 0.09);
+  --a-brand-1: #1d1f22;
+  --a-brand-2: #24523a;
+  --a-brand-3: #7cc395;
 }
 
 /* ---- Left: photo showcase ------------------------------------------- */
@@ -63,14 +53,14 @@
   inset: 0;
   z-index: -2;
 }
-/* Indigo tint over the photos so they sit in the colour scheme and the
-   white text stays readable. */
+/* Soft dark wash over the photos so they sit in the colour scheme and
+   the white text stays readable. */
 .auth__showcase-shade {
   position: absolute;
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(180deg, rgba(15, 12, 50, 0.45) 0%, rgba(15, 12, 50, 0.25) 35%, rgba(15, 12, 50, 0.88) 100%),
+    linear-gradient(180deg, rgba(12, 14, 16, 0.35) 0%, rgba(12, 14, 16, 0.15) 35%, rgba(12, 14, 16, 0.85) 100%),
     linear-gradient(155deg, color-mix(in srgb, var(--a-brand-1) 70%, transparent) 0%, color-mix(in srgb, var(--a-brand-2) 45%, transparent) 100%);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -90,7 +80,7 @@
   max-width: 30rem;
 }
 .auth__pitch-title {
-  font-family: "Manrope", "Inter", sans-serif;
+  font-family: "DM Sans", "DM Sans", sans-serif;
   font-size: clamp(1.8rem, 2.6vw, 2.5rem);
   font-weight: 800;
   line-height: 1.15;
@@ -152,7 +142,7 @@
   object-fit: contain;
 }
 .auth__brand-name {
-  font-family: "Manrope", "Inter", sans-serif;
+  font-family: "DM Sans", "DM Sans", sans-serif;
   font-weight: 800;
   font-size: 1.2rem;
   letter-spacing: -0.01em;
@@ -245,7 +235,7 @@
 }
 
 .auth__title {
-  font-family: "Manrope", "Inter", sans-serif;
+  font-family: "DM Sans", "DM Sans", sans-serif;
   font-size: 1.75rem;
   font-weight: 800;
   letter-spacing: -0.015em;
@@ -472,10 +462,10 @@
 :root[data-theme="light"] .auth .message--info {
   color: var(--a-accent);
   background: var(--a-accent-soft);
-  border-color: rgba(67, 56, 202, 0.25);
+  border-color: rgb(var(--accent-rgb) / 0.25);
 }
 :root[data-theme="light"] .auth .message--error {
-  color: #a52a2e;
+  color: var(--danger);
 }
 
 /* Below the form: curfew scan + install */
@@ -604,4 +594,104 @@
   color: var(--a-accent);
   background: var(--a-accent-soft);
   border: 1px solid color-mix(in srgb, var(--a-accent) 30%, transparent);
+}
+
+/* ---- Student feedback, Nov 2026 --------------------------------------- */
+/* "Confirm password" live hint + the short privacy note on sign-up. */
+.auth .field__hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--a-muted);
+}
+.auth .field__hint--error {
+  color: var(--danger);
+  font-weight: 600;
+}
+.auth__privacy {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin: 0.6rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--a-muted);
+}
+.auth__privacy svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.1rem;
+  color: var(--a-accent);
+}
+
+/* ======================================================================
+   Frosted glass is back (Nov 2026)
+   ----------------------------------------------------------------------
+   Like the very first sign-in design: the hostel photos fill the whole
+   screen and the form panel is a see-through, blurred pane of glass on
+   top of them. The left intro text keeps its espresso shade. Colours
+   still come from the Earthy & Serene palette, so light/dark mode work.
+   ====================================================================== */
+.auth {
+  isolation: isolate;
+  background: var(--app-bg); /* shows only while the first photo loads */
+}
+
+/* Photos cover the whole viewport, not just the left column. */
+.auth__showcase {
+  isolation: auto;
+  overflow: visible;
+}
+.auth__showcase .slideshow {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+}
+
+/* The form panel becomes frosted glass. */
+.auth__panel {
+  position: relative;
+  --a-bg: rgb(var(--ink) / 0.06);
+  --a-surface: rgb(var(--glass-rgb) / 0.72);
+  --a-field: rgb(var(--glass-rgb) / 0.55);
+  background: rgb(var(--glass-rgb) / 0.58);
+  border-left: 1px solid rgb(255 255 255 / 0.12);
+  backdrop-filter: blur(22px) saturate(1.3);
+  -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  box-shadow: -24px 0 60px -30px rgba(0, 0, 0, 0.45);
+}
+:root[data-theme="light"] .auth__panel {
+  --a-field: rgb(255 255 255 / 0.7);
+  background: rgb(var(--glass-rgb) / 0.66);
+  border-left-color: rgb(255 255 255 / 0.5);
+}
+
+/* Phones / tablets: the intro text hides, but the photos stay behind the glass. */
+@media (max-width: 960px) {
+  .auth__showcase {
+    display: block;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .auth__showcase-content {
+    display: none;
+  }
+  .auth__showcase-shade {
+    position: fixed;
+    background: rgba(12, 14, 16, 0.35);
+  }
+}
+
+/* Browsers without blur, or users who ask for less transparency: go solid. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .auth__panel { background: rgb(var(--glass-rgb) / 0.94); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .auth__panel {
+    background: var(--glass);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }

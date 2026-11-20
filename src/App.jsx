@@ -1,15 +1,21 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import "./index.css";
 import "./auth.css";
+// The dashboards' styles stay in the main stylesheet, in their original
+// order, even though the dashboards' code is now loaded on demand (see the
+// lazy() imports below). Styles are small, and keeping one stylesheet means
+// the look can't change depending on which dashboard happened to load first.
+import "./dashboard.css";
+import "./student-theme.css";
+import "./feedback-updates.css";
+import "./mobile.css";
+import "./warden-console.css";
+// One shared "Earthy & Serene" palette for every side — must stay last.
+import "./earthy-theme.css";
 import ThemeToggle from "./components/ThemeToggle";
 import HostelSlideshow from "./components/HostelSlideshow";
 import { supabase } from "./lib/supabaseClient";
 import { assetUrl } from "./lib/assetUrl";
-import StudentDashboard from "./pages/StudentDashboard";
-import WardenDashboard from "./pages/WardenDashboard";
-import FinanceDashboard from "./pages/FinanceDashboard";
-import TechnicianDashboard from "./pages/TechnicianDashboard";
-import CurfewScanPage from "./pages/CurfewScanPage";
 import Toast from "./components/Toast";
 import SplashScreen from "./components/SplashScreen";
 import SessionTimeoutModal from "./components/SessionTimeoutModal";
@@ -22,7 +28,17 @@ import { useToast } from "./hooks/useToast";
 import { usePwaInstall } from "./hooks/usePwaInstall";
 import { loginWithPasskey, passkeysSupported } from "./lib/passkeys";
 import StalePasskeyHelp from "./components/StalePasskeyHelp";
-import { FingerprintIcon, EyeIcon, EyeOffIcon, ScanIcon, DownloadIcon } from "./components/dashboard/icons";
+import { FingerprintIcon, EyeIcon, EyeOffIcon, ScanIcon, DownloadIcon, ShieldIcon } from "./components/dashboard/icons";
+
+// Each dashboard is downloaded only when it's needed (student feedback asked
+// for faster loading). Before this, a student's phone had to download the
+// warden's charts, reports and AI screens — and the sign-in page waited for
+// all of it too.
+const StudentDashboard = lazy(() => import("./pages/StudentDashboard"));
+const WardenDashboard = lazy(() => import("./pages/WardenDashboard"));
+const FinanceDashboard = lazy(() => import("./pages/FinanceDashboard"));
+const TechnicianDashboard = lazy(() => import("./pages/TechnicianDashboard"));
+const CurfewScanPage = lazy(() => import("./pages/CurfewScanPage"));
 
 // Warden, Finance and Technician all share one "Staff" sign-in page now
 // (previously each had — or would have needed — its own login form).
@@ -42,7 +58,7 @@ const IDLE_WARNING_MS = 60 * 1000;
 // Leaving the site (another tab/app, locked screen) for this long signs the
 // user out. Closing the tab or browser signs out immediately because the
 // session is kept in sessionStorage (see lib/supabaseClient.js).
-const AWAY_LOGOUT_MS = 60 * 1000;
+const AWAY_LOGOUT_MS = 10 * 60 * 1000; // 10 minutes
 
 // Reads the signed-in user's role from `profiles`. Assumes a `role` text
 // column on `profiles` with values "student" | "warden" | "finance" |
@@ -93,6 +109,7 @@ function MainApp() {
   const [mode, setMode] = useState("login"); // "login" | "signup" | "forgot" | "reset" (both portals)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); // signup only
   const [showPassword, setShowPassword] = useState(false);
   const [newPassword, setNewPassword] = useState(""); // "reset" mode only
   const [staffTitle, setStaffTitle] = useState(""); // staff signup only
@@ -201,6 +218,7 @@ function MainApp() {
   const switchPortal = (nextPortal) => {
     resetMessages();
     setPassword("");
+    setConfirmPassword("");
     setFullName("");
     setStaffCode("");
     setMode("login");
@@ -287,6 +305,16 @@ function MainApp() {
   // handleLogin reconciles it the first time the confirmed account logs in.
   const handleSignUp = async (expectedPortal) => {
     resetMessages();
+
+    // Student testing: accounts were created with a mistyped (hidden)
+    // password, and sign-in then failed with "incorrect password". Typing it
+    // twice catches that before the account exists.
+    if (password !== confirmPassword) {
+      const message = "The two passwords don't match. Please type them again.";
+      notify(message, "error");
+      return setError(message);
+    }
+
     setLoading(true);
 
     const isStaffSignup = expectedPortal === "staff";
@@ -372,12 +400,18 @@ function MainApp() {
       setLoading(false);
       startEmailCooldown();
       notify("Account created. Check your email to confirm it.", "success");
+      const address = email.trim();
       setInfo(
-        isStaffSignup
-          ? `Staff account created as ${STAFF_ROLE_LABELS[staffRole]}. Check your email to confirm, then sign in above.`
-          : "Account created. Check your email to confirm before signing in."
+        (isStaffSignup ? `Staff account created as ${STAFF_ROLE_LABELS[staffRole]}. ` : "Account created. ") +
+          `One more step: open the confirmation link we emailed to ${address} — you can't sign in until you do. ` +
+          "It can take a minute, so check Spam / Promotions too. Nothing there? Use the resend button below."
       );
       setMode("login");
+      setPassword("");
+      setConfirmPassword("");
+      // Shows "Resend confirmation email" straight away, instead of only
+      // after a failed sign-in attempt.
+      setNeedsConfirm(true);
       return;
     }
 
@@ -517,7 +551,7 @@ function MainApp() {
     onTimeout: handleIdleTimeout,
   });
 
-  // Leaving the site for a minute or more also signs the user out.
+  // Leaving the site for 10 minutes or more also signs the user out.
   useAwayLogout({
     enabled: Boolean(user),
     awayMs: AWAY_LOGOUT_MS,
@@ -544,6 +578,7 @@ function MainApp() {
   const switchMode = (nextMode) => {
     resetMessages();
     setPassword("");
+    setConfirmPassword("");
     setNewPassword("");
     setMode(nextMode);
   };
@@ -558,6 +593,9 @@ function MainApp() {
 
   if (checkingSession) return overlays;
 
+  // Shown for the moment a dashboard's code is still downloading.
+  const loadingScreen = <SplashScreen done={false} />;
+
   if (user) {
     const dashboard =
       role === "warden" ? (
@@ -571,7 +609,7 @@ function MainApp() {
       );
     return (
       <>
-        {dashboard}
+        <Suspense fallback={loadingScreen}>{dashboard}</Suspense>
         <SessionTimeoutModal secondsLeft={secondsLeft} onStay={stayActive} onLogout={handleLogOut} />
         <BiometricPrompt userId={user.id} onDone={(msg) => notify(msg, "success")} />
         {overlays}
@@ -795,6 +833,28 @@ function MainApp() {
             </label>
           )}
 
+          {mode === "signup" && (
+            <label className="field">
+              <span className="field__label">Confirm password</span>
+              <div className="password-input">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Type the same password again"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  minLength={6}
+                  required
+                />
+              </div>
+              {confirmPassword && confirmPassword !== password && (
+                <span className="field__hint field__hint--error" role="status">
+                  Doesn't match the password above yet.
+                </span>
+              )}
+            </label>
+          )}
+
           {mode === "login" && (
             <div className="auth__row auth__row--between">
               {!isStaffPortal ? (
@@ -821,6 +881,7 @@ function MainApp() {
             disabled={
               loading ||
               (mode === "forgot" ? !email : mode === "reset" ? !newPassword : !email || !password) ||
+              (mode === "signup" && !confirmPassword) ||
               (isStaffPortal && mode === "signup" && (!fullName || !staffTitle || !staffCode.trim())) ||
               ((mode === "signup" || mode === "forgot") && cooldownLeft > 0)
             }
@@ -837,6 +898,16 @@ function MainApp() {
               ? "Sign in"
               : "Create account"}
           </button>
+
+          {mode === "signup" && !isStaffPortal && (
+            <p className="auth__privacy">
+              <ShieldIcon aria-hidden="true" />
+              <span>
+                Your details are only visible to you and hostel staff. Your password is stored encrypted — nobody at
+                the hostel can read it.
+              </span>
+            </p>
+          )}
 
           {canUsePasskey && (
             <>
@@ -924,7 +995,13 @@ function MainApp() {
 function App() {
   // Matches "/curfew" at the site root and under Vite's `base` path
   // (e.g. "/hostel-management-system/curfew" when running `npm run dev`).
-  if (/(^|\/)curfew\/?$/.test(window.location.pathname)) return <CurfewScanPage />;
+  if (/(^|\/)curfew\/?$/.test(window.location.pathname)) {
+    return (
+      <Suspense fallback={<SplashScreen done={false} />}>
+        <CurfewScanPage />
+      </Suspense>
+    );
+  }
   return <MainApp />;
 }
 

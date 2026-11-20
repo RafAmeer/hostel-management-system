@@ -34,13 +34,13 @@ Chart.register(
 );
 
 const TONES = {
-  accent: "#1f6f94",
-  success: "#2f9e6e",
-  warn: "#d9a21b",
-  danger: "#cf4f52",
-  info: "#4f9bb8",
-  warm: "#e0792f",
-  muted: "#b4bcc3",
+  accent: "#2e7a4e",
+  success: "#2d7a43",
+  warn: "#b8860b",
+  danger: "#b3261e",
+  info: "#2f6690",
+  warm: "#3d6b93",
+  muted: "#c4c8cd",
 };
 
 // White canvas behind the chart (PNG would otherwise be transparent and
@@ -66,7 +66,7 @@ const valueLabels = {
     const type = chart.config.type;
     ctx.save();
     ctx.font = "600 13px sans-serif";
-    ctx.fillStyle = "#1f2a33";
+    ctx.fillStyle = "#1d1f22";
     chart.data.datasets.forEach((ds, di) => {
       const meta = chart.getDatasetMeta(di);
       if (meta.hidden) return;
@@ -84,7 +84,7 @@ const valueLabels = {
         } else if (type === "bar") {
           const horizontal = chart.options.indexAxis === "y";
           const p = el.tooltipPosition();
-          ctx.fillStyle = "#1f2a33";
+          ctx.fillStyle = "#1d1f22";
           if (horizontal) {
             ctx.textAlign = "left";
             ctx.textBaseline = "middle";
@@ -137,8 +137,8 @@ export async function renderChartImage(chart, { width = 640, height = 340 } = {}
   canvas.width = width * scale;
   canvas.height = height * scale;
 
-  const text = "#1f2a33";
-  const grid = "rgba(31,42,51,0.12)";
+  const text = "#1d1f22";
+  const grid = "rgba(29,31,34,0.12)";
   const showLegend = chart.legend ?? type === "doughnut";
 
   const options = {

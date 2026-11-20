@@ -1,0 +1,238 @@
+/* ======================================================================
+   DormSphere — "Natural" palette (Nov 2026)
+   ----------------------------------------------------------------------
+   ONE set of colour tokens for every side of the app: sign-in, student,
+   warden, finance and technician. Neutral greys and whites with a calm
+   leaf-green accent and a soft blue as the second colour. Replaces the
+   brown "Earthy & Serene" palette. (File name kept so imports don't
+   change; the old --earth-* names now point at neutral colours.)
+
+   Light mode = clean white.  Dark mode = soft charcoal.
+   Text / accent pairings are kept at WCAG AA (4.5:1) on their surfaces.
+
+   The tokens are set on :root so popups that render straight into <body>
+   (hostel details, toasts, modals) pick them up too. This file is
+   imported LAST in App.jsx so it wins over the older per-side files.
+   ====================================================================== */
+
+/* ---- Dark mode (default): soft charcoal ----------------------------- */
+:root {
+  /* Raw palette (old names kept, now neutral / green) */
+  --earth-espresso: #1d1f22;
+  --earth-walnut: #2e7a4e;
+  --earth-taupe: #6b7280;
+  --earth-camel: #8fbf9a;
+  --earth-mushroom: #9aa0a6;
+  --earth-sage: #6f9a7a;
+
+  /* Type */
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Fraunces", Georgia, "Times New Roman", serif;
+
+  /* Surfaces */
+  --ink: 236 237 238;               /* text colour as an rgb triplet, for tints */
+  --app-bg: #141517;
+  --app-bg-rgb: 20 21 23;
+  --sidebar-bg: #1a1b1e;
+  --glass: #1f2023;                 /* card surface */
+  --glass-solid: #1f2023;           /* same, never see-through (popups) */
+  --glass-strong: #27292c;          /* inputs, raised rows */
+  --glass-rgb: 31 32 35;
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --glass-blur: 18px;
+  --scrim: rgba(8, 9, 10, 0.6);
+
+  /* Text */
+  --text-primary: #ececed;
+  --text-secondary: #c8cacd;
+  --text-muted: #9b9fa5;
+
+  /* Accent: leaf green (lifted for dark backgrounds) */
+  --accent: #7cc395;
+  --accent-rgb: 124 195 149;
+  --accent-hover: #95d1aa;
+  --accent-text: #86c99d;
+  --on-accent: #0f2418;
+
+  /* Second colour: soft blue */
+  --accent-warm: #8fb6d6;
+  --accent-warm-deep: #739fc4;
+  --accent-warm-rgb: 143 182 214;
+
+  /* Status */
+  --success: #8cc79f;
+  --success-rgb: 140 199 159;
+  --warn: #e0b45c;
+  --warn-rgb: 224 180 92;
+  --warn-text: #e6c072;
+  --danger: #ef8f86;
+  --danger-rgb: 239 143 134;
+  --info: #93b8d6;
+  --info-rgb: 147 184 214;
+  --hl-warm: #ecc879;
+  --hl-ok: #a9d8b7;
+  --hl-danger: #f5b0a9;
+
+  --panel-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --focus-ring: rgba(124, 195, 149, 0.38);
+
+  /* Old names some screens still reference */
+  --navy-950: var(--app-bg);
+  --navy-900: var(--sidebar-bg);
+  --navy-800: var(--glass-strong);
+}
+
+/* ---- Light mode: clean white ----------------------------------------- */
+:root[data-theme="light"] {
+  --ink: 29 31 34;
+  --app-bg: #f4f5f6;
+  --app-bg-rgb: 244 245 246;
+  --sidebar-bg: #ffffff;
+  --glass: #ffffff;
+  --glass-solid: #ffffff;
+  --glass-strong: #f4f5f7;
+  --glass-rgb: 255 255 255;
+  --glass-border: #e3e5e8;
+  --border-strong: #c9cdd2;
+  --scrim: rgba(17, 19, 22, 0.45);
+
+  --text-primary: #1d1f22;
+  --text-secondary: #3f4348;
+  --text-muted: #5c6168;
+
+  --accent: #2e7a4e;
+  --accent-rgb: 46 122 78;
+  --accent-hover: #24623e;
+  --accent-text: #2a6f47;
+  --on-accent: #ffffff;
+
+  --accent-warm: #3d6b93;
+  --accent-warm-deep: #305878;
+  --accent-warm-rgb: 61 107 147;
+
+  --success: #2d7a43;
+  --success-rgb: 45 122 67;
+  --warn: #8f6200;
+  --warn-rgb: 143 98 0;
+  --warn-text: #7a5300;
+  --danger: #b3261e;
+  --danger-rgb: 179 38 30;
+  --info: #2f6690;
+  --info-rgb: 47 102 144;
+  --hl-warm: #7a5300;
+  --hl-ok: #2d7a43;
+  --hl-danger: #9c2019;
+
+  --panel-shadow: 0 1px 2px rgba(17, 19, 22, 0.05), 0 6px 20px -12px rgba(17, 19, 22, 0.14);
+  --focus-ring: rgba(46, 122, 78, 0.28);
+}
+
+/* ---- Page + type ------------------------------------------------------ */
+body,
+.page--app,
+.dashboard {
+  font-family: var(--font-sans);
+  background: var(--app-bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Calm serif for the big headings only; everything else stays sans. */
+.tab__title,
+.greeting-card__title,
+.hostel-modal__title,
+.auth__pitch-title,
+.auth__title,
+.title,
+.modal__title {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  font-optical-sizing: auto;
+}
+
+::selection {
+  background: rgb(var(--accent-rgb) / 0.25);
+}
+
+/* Small hard-coded colours from older files, re-pointed at the palette. */
+.sidebar__badge,
+.notif-bell__count,
+.m-tab__badge {
+  background: var(--danger) !important;
+  color: var(--on-accent) !important;
+}
+.notif-item--ok { --notif-tone: var(--success); }
+.notif-item--warn { --notif-tone: var(--warn); }
+.notif-item--danger { --notif-tone: var(--danger); }
+.notif-item--neutral { --notif-tone: var(--text-muted); }
+.notif-item--unread .notif-item__title::after {
+  background: var(--danger);
+}
+
+.day-tabs__btn--active {
+  color: var(--on-accent);
+}
+
+/* Logo badge: plain white tile. */
+.dashboard--console .sidebar__brand-logo,
+.auth__mark {
+  background: #ffffff;
+}
+
+/* Sign-in page: auth.css maps its --a-* tokens onto the palette above.
+   The serif heading is the only extra touch. */
+.auth__pitch-title {
+  font-weight: 500;
+}
+
+/* ---- Slim scrollbars (Nov 2026) ---------------------------------------
+   Popups (hostel details etc.) and the student page's scrolling areas get
+   a thin, rounded scrollbar in the theme colours instead of the chunky
+   default grey bar. It sits inside the popup's rounded corners and only
+   darkens when you hover it. */
+.modal,
+.dashboard__content,
+.sidebar__nav,
+.notif-panel,
+.m-sheet {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--ink) / 0.22) transparent;
+}
+.modal::-webkit-scrollbar,
+.dashboard__content::-webkit-scrollbar,
+.sidebar__nav::-webkit-scrollbar,
+.notif-panel::-webkit-scrollbar,
+.m-sheet::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.modal::-webkit-scrollbar-track,
+.dashboard__content::-webkit-scrollbar-track,
+.sidebar__nav::-webkit-scrollbar-track,
+.notif-panel::-webkit-scrollbar-track,
+.m-sheet::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal::-webkit-scrollbar-track {
+  margin: 18px 0; /* keep clear of the rounded corners */
+}
+.modal::-webkit-scrollbar-thumb,
+.dashboard__content::-webkit-scrollbar-thumb,
+.sidebar__nav::-webkit-scrollbar-thumb,
+.notif-panel::-webkit-scrollbar-thumb,
+.m-sheet::-webkit-scrollbar-thumb {
+  background: rgb(var(--ink) / 0.22);
+  border-radius: 999px;
+  border: 3px solid transparent; /* makes the thumb look thinner */
+  background-clip: padding-box;
+}
+.modal::-webkit-scrollbar-thumb:hover,
+.dashboard__content::-webkit-scrollbar-thumb:hover,
+.sidebar__nav::-webkit-scrollbar-thumb:hover,
+.notif-panel::-webkit-scrollbar-thumb:hover,
+.m-sheet::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--ink) / 0.38);
+  background-clip: padding-box;
+}

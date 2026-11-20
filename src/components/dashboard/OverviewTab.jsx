@@ -1,4 +1,5 @@
 import Avatar from "./Avatar";
+import { BedIcon, ClipboardIcon, ClockIcon, HelpIcon, UserIcon, WrenchIcon } from "./icons";
 import AnnouncementsPanel from "./AnnouncementsPanel";
 import CurfewScanCard from "./CurfewScanCard";
 import TransportToday from "./TransportToday";
@@ -6,6 +7,7 @@ import { scopeSchedule, studentTransportScope } from "../../lib/transport";
 import { formatDateTime, ELIGIBILITY_LABELS, eligibilityTone, FINANCE_LABELS, financeTone } from "../../lib/formatters";
 import FinanceNotice from "./FinanceNotice";
 import UrgentAlerts from "./UrgentAlerts";
+import InstallAppCard from "./InstallAppCard";
 import PaymentReminder from "./PaymentReminder";
 import { missingProfileExtras } from "../../lib/studentProfile";
 import { money, summarisePayments } from "../../lib/payments";
@@ -110,17 +112,17 @@ function OverviewTab({
       : { value: "Ask us", hint: "Questions & support", tone: "neutral" };
 
   const statusTiles = [
-    { key: "curfew", label: "Curfew", emoji: "🌙", ...curfewTile },
-    { key: "bookings", label: "Booking status", emoji: "📋", ...bookingTile },
-    { key: "help", label: "Help Center", emoji: "💬", ...helpTile },
+    { key: "curfew", label: "Curfew", Icon: ClockIcon, ...curfewTile },
+    { key: "bookings", label: "Booking status", Icon: ClipboardIcon, ...bookingTile },
+    { key: "help", label: "Help Center", Icon: HelpIcon, ...helpTile },
   ];
 
   const quickAccessItems = [
-    { key: "rooms", label: "Find a room", emoji: "🛏️" },
-    { key: "bookings", label: "My booking status", emoji: "📋" },
-    { key: "complaints", label: "Report a problem", emoji: "🛠️" },
-    { key: "curfew", label: "Curfew check-in", emoji: "🌙" },
-    { key: "help", label: "Ask the warden", emoji: "💬" },
+    { key: "rooms", label: "Find a room", Icon: BedIcon },
+    { key: "bookings", label: "My booking status", Icon: ClipboardIcon },
+    { key: "complaints", label: "Report a problem", Icon: WrenchIcon },
+    { key: "curfew", label: "Curfew check-in", Icon: ClockIcon },
+    { key: "help", label: "Ask the warden", Icon: HelpIcon },
   ];
 
   // Important words are wrapped in <mark className="hl"> so they stand out.
@@ -186,9 +188,10 @@ function OverviewTab({
         <UrgentAlerts announcements={announcements} />
         <FinanceNotice status={profile?.finance_status ?? "verified"} note={profile?.finance_note} />
         <PaymentReminder payments={payments} />
+        <InstallAppCard />
         {missingExtras.length > 0 && (
           <div className="finance-notice profile-extras-notice" role="status">
-            <span aria-hidden="true">📝</span>
+            <span aria-hidden="true"><UserIcon /></span>
             <div>
               <p className="finance-notice__title">Please add your {missingExtras.join(" and ")}</p>
               <p className="finance-notice__text">
@@ -204,10 +207,7 @@ function OverviewTab({
           <div className="profile-panel__head">
             <div>
               <h2 className="greeting-card__title">
-                Good {getGreetingTime()}, {firstName}!{" "}
-                <span className="home-greeting__wave" aria-hidden="true">
-                  👋
-                </span>
+                Good {getGreetingTime()}, {firstName}.
               </h2>
               <p className="greeting-card__subtitle">{GREETING_LINES[getGreetingTime()]}</p>
             </div>
@@ -285,7 +285,7 @@ function OverviewTab({
               onClick={() => onNavigate?.(t.key)}
             >
               <span className="home-status__label">
-                <span aria-hidden="true">{t.emoji}</span> {t.label}
+                <t.Icon aria-hidden="true" className="home-status__icon" /> {t.label}
               </span>
               <span className={"badge badge--" + t.tone + " home-status__value"}>{t.value}</span>
               <span className="home-status__hint">{t.hint}</span>
@@ -301,7 +301,7 @@ function OverviewTab({
 
       <div className="home-grid__side">
         <section className="glass-panel side-panel">
-          <h3 className="panel-heading">⚡ Quick Access</h3>
+          <h3 className="panel-heading">Quick access</h3>
           <div className="quick-access">
             {quickAccessItems.map((item) => {
               return (
@@ -312,7 +312,7 @@ function OverviewTab({
                   onClick={() => onNavigate?.(item.key)}
                 >
                   <span className="quick-access__icon" aria-hidden="true">
-                    {item.emoji}
+                    <item.Icon />
                   </span>
                   {item.label}
                 </button>
@@ -331,7 +331,7 @@ function OverviewTab({
         )}
 
         <section className="glass-panel side-panel">
-          <h3 className="panel-heading">🔔 Reminders</h3>
+          <h3 className="panel-heading">Reminders</h3>
           {notifications.length === 0 ? (
             <p className="notification-item notification-item--empty">
               All caught up! Nothing new right now.

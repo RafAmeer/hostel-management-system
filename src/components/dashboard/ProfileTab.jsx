@@ -1,5 +1,7 @@
 import ProfileForm from "./ProfileForm";
 import BiometricCard from "./BiometricCard";
+import PrivacyCard from "./PrivacyCard";
+import { SHOW_TOUR_EVENT } from "./WelcomeTour";
 import { ELIGIBILITY_LABELS, eligibilityTone } from "../../lib/formatters";
 
 // "Profile" page shared by Student (variant="student") and Warden
@@ -48,6 +50,22 @@ function ProfileTab({ user, profile, variant, onSaved }) {
         />
       </section>
       <BiometricCard />
+      <PrivacyCard variant={variant} />
+      {isStudent && (
+        <section className="glass-panel tour-replay">
+          <div>
+            <h3 className="panel-heading">New here?</h3>
+            <p className="list-row__meta">A 30-second walkthrough of where everything is.</p>
+          </div>
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={() => window.dispatchEvent(new Event(SHOW_TOUR_EVENT))}
+          >
+            Show the quick tour
+          </button>
+        </section>
+      )}
     </div>
   );
 }

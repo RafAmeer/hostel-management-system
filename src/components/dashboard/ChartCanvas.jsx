@@ -42,17 +42,17 @@ function readTheme(el) {
   const v = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
   const ink = v("--ink", "255 255 255").split(/\s+/).join(",");
   return {
-    text: v("--text-primary", "#ecebe6"),
-    muted: v("--text-muted", "#93a0a9"),
-    panel: v("--glass", "#1c232a"),
+    text: v("--text-primary", "#ececed"),
+    muted: v("--text-muted", "#9b9fa5"),
+    panel: v("--glass", "#1f2023"),
     grid: `rgba(${ink},0.12)`,
     tones: {
-      accent: v("--accent", "#5baac8"),
-      success: v("--success", "#74c9a1"),
-      warn: v("--warn", "#edc15a"),
-      danger: v("--danger", "#e0686b"),
-      info: v("--info", "#8cc3d8"),
-      warm: v("--accent-warm", "#ec8340"),
+      accent: v("--accent", "#7cc395"),
+      success: v("--success", "#8cc79f"),
+      warn: v("--warn", "#e0b45c"),
+      danger: v("--danger", "#ef8f86"),
+      info: v("--info", "#93b8d6"),
+      warm: v("--accent-warm", "#8fb6d6"),
       muted: `rgba(${ink},0.35)`,
     },
   };

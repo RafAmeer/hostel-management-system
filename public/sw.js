@@ -3,7 +3,7 @@
 // connection. Anything that talks to Supabase (auth, database, storage,
 // edge functions) always goes to the network and is never cached, so
 // bookings, statuses and curfew scans are always live.
-const CACHE = "dormsphere-shell-v1";
+const CACHE = "dormsphere-shell-v2";
 const SHELL = ["./", "manifest.webmanifest", "logo.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (event) => {

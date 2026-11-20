@@ -654,3 +654,120 @@
   font-size: 0.8rem;
   color: rgb(var(--danger-rgb));
 }
+
+/* ====================================================================== */
+/* Student feedback, Nov 2026                                              */
+/* ====================================================================== */
+
+/* "Add DormSphere to your home screen" card on student Home. Reuses the
+   .finance-notice layout but in the accent colour: it's an offer, not a
+   warning. */
+.install-card {
+  border-color: rgb(var(--accent-rgb) / 0.45);
+  background: rgb(var(--accent-rgb) / 0.1);
+}
+.install-card__body {
+  flex: 1;
+  min-width: 0;
+}
+.install-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.65rem;
+}
+.install-card__actions .primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: auto;
+}
+
+/* First-visit walkthrough. A light backdrop so the page each step talks
+   about stays visible behind the card; on phones the card sits at the
+   bottom, above the tab bar, for the same reason. */
+.welcome-tour {
+  background: rgba(0, 0, 0, 0.35);
+}
+.welcome-tour__card {
+  max-width: 380px;
+}
+.welcome-tour__emoji {
+  display: block;
+  font-size: 2.25rem;
+  line-height: 1;
+  margin-bottom: 0.6rem;
+}
+.welcome-tour__dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 1.1rem;
+}
+.welcome-tour__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgb(var(--ink) / 0.2);
+}
+.welcome-tour__dot--on {
+  width: 20px;
+  border-radius: 4px;
+  background: var(--accent);
+}
+@media (max-width: 720px) {
+  .welcome-tour {
+    align-items: flex-end;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Profile: "Your data & privacy" and "Show the quick tour". */
+.privacy-card,
+.tour-replay {
+  margin-top: 1rem;
+  padding: 1.1rem 1.25rem;
+}
+.privacy-card__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.privacy-card__heading svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--accent);
+}
+.privacy-card__list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.55rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.privacy-card__list strong {
+  color: var(--text-primary);
+}
+.tour-replay {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+/* ---- iPhone: full-height screens ------------------------------------- */
+/* 100vh on a phone includes the area hidden behind the browser's address
+   bar, so full-height screens were slightly taller than what's visible.
+   100dvh is the height you can actually see. */
+@supports (min-height: 100dvh) {
+  .page,
+  .page--app,
+  .container,
+  .dashboard {
+    min-height: 100dvh;
+  }
+}

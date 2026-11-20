@@ -1,42 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600&display=swap");
-
-/* Palette: "paper & planet" — warm off-white paper, dusty planet blue,
-   with small flat accents of orange, crimson and sage (see reference image).
-   Colours that need a transparent tint also have an *-rgb triplet so one
-   token drives both the solid and the tinted versions. */
-:root {
-  --scrim: rgba(12, 20, 26, 0.62);
-  /* Sign-in pages: dark ink glass over the hostel photo slideshow. */
-  --glass: rgba(20, 32, 40, 0.66);
-  --glass-strong: rgba(20, 32, 40, 0.8);
-  --glass-rgb: 20 32 40;
-  --glass-blur: 28px;
-  --glass-border: rgba(207, 227, 234, 0.24);
-  --text-primary: #f1f0eb;
-  --text-muted: #c3cbd0;
-
-  --accent: #5baac8;
-  --accent-rgb: 91 170 200;
-  --accent-hover: #4796b5;
-  --on-accent: #0e1a22;
-  /* Orange is the one pop colour: the room-key tag, highlights, scan CTA. */
-  --accent-warm: #ec8340;
-  --accent-warm-deep: #cf6522;
-  --accent-warm-rgb: 232 116 44;
-
-  --danger: #e0686b;
-  --danger-rgb: 224 104 107;
-  --success: #6fc4a0;
-  --success-rgb: 111 196 160;
-  --warn: #e8b13c;
-  --warn-rgb: 232 177 60;
-  --info: #8cc3d8;
-  --info-rgb: 140 195 216;
-  --focus-ring: rgba(91, 170, 200, 0.55);
-  --navy-950: #0f161b;
-  --navy-900: #141c22;
-  --navy-800: #1c262e;
-}
+/* Colour tokens: see earthy-theme.css. */
 
 /* Accessibility floor: every interactive element gets a visible keyboard
    focus ring, not just form fields. */
@@ -52,7 +14,7 @@
 }
 
 body {
-  font-family: "Inter", Arial, Helvetica, sans-serif;
+  font-family: "DM Sans", Arial, Helvetica, sans-serif;
   color: var(--text-primary);
   background: var(--navy-950);
 }
@@ -139,7 +101,7 @@ body {
 }
 
 .brand-name {
-  font-family: "Manrope", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 700;
   font-size: 0.78rem;
   letter-spacing: 0.14em;
@@ -149,7 +111,7 @@ body {
 }
 
 .title {
-  font-family: "Manrope", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 800;
   font-size: 1.4rem;
   letter-spacing: -0.01em;
@@ -297,7 +259,7 @@ body {
   padding: 0.75rem;
   border: none;
   border-radius: 12px;
-  font-family: "Manrope", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 700;
   font-size: 0.92rem;
   color: var(--on-accent);
@@ -355,7 +317,7 @@ body {
   border: 1px solid var(--glass-border);
   background: var(--glass-strong);
   color: var(--text-primary);
-  font-family: "Inter", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 500;
   font-size: 0.85rem;
   cursor: pointer;
@@ -448,12 +410,12 @@ body {
   padding: 7px;
   border-radius: 50%;
   object-fit: contain;
-  background: var(--text-primary);
+  background: #ffffff;
   animation: splash-pulse 1.6s ease-in-out infinite;
 }
 
 .splash__name {
-  font-family: "Manrope", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 800;
   font-size: 1.35rem;
   letter-spacing: 0.02em;
@@ -590,7 +552,7 @@ body {
 }
 
 .scan-tile__text strong {
-  font-family: "Manrope", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 1rem;
 }
 
@@ -696,4 +658,17 @@ body {
 }
 .stale-passkey__panel li {
   margin-bottom: 0.3rem;
+}
+
+/* ---- iPhone fixes (student feedback, Nov 2026) ------------------------ */
+/* Safari on iPhone zooms the whole page in when you tap a text box whose
+   font is smaller than 16px, and doesn't zoom back out — the layout then
+   looks broken and needs pinching. Most of our fields were 14–15px.
+   (-webkit-touch-callout only exists on iOS, so nothing else is affected.) */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
