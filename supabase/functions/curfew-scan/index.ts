@@ -36,6 +36,14 @@ function distanceMeters(lat1: number, lon1: number, lat2: number, lon2: number) 
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+// ⚠️ TEMPORARY — FOR TESTING ONLY. While true, the hostel location (GPS
+// geofence) check is skipped: a scan is accepted from anywhere, and GPS
+// coordinates are optional. Set back to false and redeploy before the
+// showcase / real use:
+//   supabase functions deploy curfew-scan --no-verify-jwt
+// (Must match SKIP_LOCATION_CHECK in src/pages/CurfewScanPage.jsx.)
+const SKIP_LOCATION_CHECK = true;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -59,7 +67,8 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "phone_only" }, 403);
     }
 
-    if (typeof latitude !== "number" || typeof longitude !== "number") {
+    const hasCoords = typeof latitude === "number" && typeof longitude === "number";
+    if (!hasCoords && !SKIP_LOCATION_CHECK) {
       return jsonResponse({ error: "location_required" }, 400);
     }
 
@@ -98,22 +107,23 @@ Deno.serve(async (req) => {
       if (allError) console.error("curfew-scan: hostel_locations list failed", allError);
 
       let best: { row: Record<string, unknown>; dist: number; radius: number } | null = null;
-      for (const row of all ?? []) {
+      for (const row of hasCoords ? all ?? [] : []) {
         if (typeof row.latitude !== "number" || typeof row.longitude !== "number") continue;
         const radius = Number(row.radius_m) || 150;
         const dist = distanceMeters(latitude, longitude, row.latitude, row.longitude);
         if (dist <= radius + slack && (!best || dist < best.dist)) best = { row, dist, radius };
       }
-      if (!best) {
+      if (best) {
+        target = { lat: best.row.latitude as number, lng: best.row.longitude as number, radius: best.radius };
+        hostelName = (best.row.name as string) ?? null;
+        hostelKey = (best.row.hostel_id as string) ?? null;
+      } else if (!SKIP_LOCATION_CHECK) {
         // Nothing set up yet, or the phone isn't at any hostel.
         return jsonResponse(
           { error: (all ?? []).length ? "no_hostel_nearby" : "unknown_hostel" },
           (all ?? []).length ? 403 : 400
         );
       }
-      target = { lat: best.row.latitude as number, lng: best.row.longitude as number, radius: best.radius };
-      hostelName = (best.row.name as string) ?? null;
-      hostelKey = (best.row.hostel_id as string) ?? null;
     }
 
     if (!target && Deno.env.get("HOSTEL_LAT") && Deno.env.get("HOSTEL_LNG")) {
@@ -124,7 +134,7 @@ Deno.serve(async (req) => {
       };
     }
 
-    if (target) {
+    if (target && hasCoords && !SKIP_LOCATION_CHECK) {
       const dist = distanceMeters(latitude, longitude, target.lat, target.lng);
       // Allow for GPS error: a poor fix (large accuracy) widens the circle a bit.
       if (dist > target.radius + slack) {
@@ -173,8 +183,8 @@ Deno.serve(async (req) => {
       scan_type: nextType,
       timestamp,
       location: hostelName || hostelKey || "Hostel entrance",
-      latitude,
-      longitude,
+      latitude: hasCoords ? latitude : null,
+      longitude: hasCoords ? longitude : null,
     });
 
     if (insertError) {

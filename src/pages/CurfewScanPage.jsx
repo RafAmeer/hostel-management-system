@@ -20,6 +20,12 @@ import { RESIDENCES } from "../data/residences";
 // (supabase/functions/curfew-scan) also checks the phone's GPS position is
 // inside the hostel being scanned.
 
+// ⚠️ TEMPORARY — FOR TESTING ONLY. While true, a scan goes through even if
+// the phone's GPS is off/blocked, and the server skips the hostel location
+// check. Set back to false (here AND in supabase/functions/curfew-scan/index.ts)
+// before the showcase / real use.
+const SKIP_LOCATION_CHECK = true;
+
 const RETURN_TO_LOGIN_MS = 3500;
 
 function goToLogin() {
@@ -97,9 +103,13 @@ function CurfewScanPage() {
     try {
       coords = await getCurrentPosition();
     } catch (err) {
-      setErrorMessage(err.message);
-      setPhase("error");
-      return;
+      if (SKIP_LOCATION_CHECK) {
+        coords = { latitude: null, longitude: null, accuracy: null };
+      } else {
+        setErrorMessage(err.message);
+        setPhase("error");
+        return;
+      }
     }
 
     setPhase("scanning");
