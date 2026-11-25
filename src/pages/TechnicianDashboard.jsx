@@ -98,7 +98,7 @@ function TechnicianDashboard({ user, onLogout }) {
   };
 
   return (
-    <div className="dashboard">
+    <div className="dashboard dashboard--staff">
       <Sidebar
         navItems={NAV_ITEMS}
         activeTab={activeTab}

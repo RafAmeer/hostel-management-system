@@ -3693,3 +3693,28 @@
   font-size: 0.9rem;
   opacity: 0.9;
 }
+
+/* ---------- Technician & Finance sidebar: fixed size (Nov 2026) -------- */
+/* The sidebar used to stretch down with a long task list. Now the page stays
+   one screen tall, the content scrolls on its own, and the sidebar keeps a
+   fixed height (same approach as the student side). */
+@media (min-width: 721px) {
+  .dashboard--staff {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .dashboard--staff .dashboard__content {
+    flex: 1;
+    height: 100%;
+    overflow-y: auto;
+  }
+  .dashboard--staff .sidebar {
+    align-self: flex-start;
+    height: calc(100vh - 2.5rem);
+    height: calc(100dvh - 2.5rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}

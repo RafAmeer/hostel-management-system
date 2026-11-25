@@ -162,7 +162,7 @@ function FinanceDashboard({ user, onLogout }) {
   };
 
   return (
-    <div className="dashboard">
+    <div className="dashboard dashboard--staff">
       <Sidebar
         navItems={navItems}
         activeTab={activeTab}
