@@ -52,9 +52,9 @@ function TechnicianTasksTab({ tasks, onAdvanceStatus, onAddRemark }) {
               </div>
 
               {t.remarks?.length > 0 && (
-                <ul className="tab__list" style={{ marginTop: "0.5rem" }}>
+                <ul className="tech-remarks">
                   {t.remarks.map((r, i) => (
-                    <li key={i} className="receipt__note">
+                    <li key={i} className="tech-remarks__item">
                       {r}
                     </li>
                   ))}
