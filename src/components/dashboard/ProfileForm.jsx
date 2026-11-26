@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import Avatar from "./Avatar";
+import HostelRoomPicker from "./HostelRoomPicker";
 import { ageFromBirthday } from "../../lib/studentProfile";
 import { PROGRAMME_GROUPS, OTHER_PROGRAMME, isKnownProgramme } from "../../data/programmes";
 
@@ -53,6 +54,8 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
     typeof profile?.in_hostel === "boolean" ? profile.in_hostel : null
   );
   const [roomNumber, setRoomNumber] = useState(profile?.room_number ?? "");
+  // Picked from the Hostel -> Floor -> Room dropdowns (HostelRoomPicker).
+  const [hostel, setHostel] = useState(profile?.hostel ?? "");
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -106,6 +109,7 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
       if (!PHONE_RE.test(emergencyPhone.replace(/[\s-]/g, "")))
         return "Enter a valid emergency contact phone number, e.g. 012-345 6789.";
       if (inHostel === null) return "Tell us whether you are currently staying in a hostel.";
+      if (inHostel && !hostel) return "Select the hostel you are staying in.";
     }
     return "";
   };
@@ -137,6 +141,7 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
         programme: programme || null,
         semester: semester || null,
         in_hostel: inHostel,
+        hostel: inHostel ? hostel || null : null,
         room_number: inHostel ? roomNumber.trim() || null : null,
       });
     }
@@ -425,15 +430,15 @@ function ProfileForm({ user, profile, variant = "student", mode = "edit", onSave
           </fieldset>
 
           {inHostel === true && (
-            <label className="field profile-form__room">
-              <span className="field__label">Current room (optional)</span>
-              <input
-                type="text"
-                value={roomNumber}
-                onChange={(e) => setRoomNumber(e.target.value)}
-                placeholder="e.g. A-101"
-              />
-            </label>
+            <HostelRoomPicker
+              hostel={hostel}
+              roomNumber={roomNumber}
+              gender={gender}
+              onChange={({ hostel: h, roomNumber: r }) => {
+                setHostel(h);
+                setRoomNumber(r);
+              }}
+            />
           )}
         </>
       )}
